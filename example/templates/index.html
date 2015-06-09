@@ -1,0 +1,22 @@
+<html>
+<head>
+<script src="{{ url_for('static', filename='engine.io.js') }}"></script>
+<script>
+  var socket = eio('http://localhost:5000');
+  socket.on('open', function() {
+      console.log('open');
+  });
+  socket.on('message', function(data) {
+      console.log('message:' + data)
+  });
+  socket.on('close', function() {
+      console.log('close');
+  });
+  window.setInterval(function() {
+      socket.send('hello from client side!');
+  }, 15000);
+</script>
+</head>
+<body>
+</body>
+</html>
