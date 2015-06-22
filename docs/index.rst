@@ -103,7 +103,7 @@ allowing the application to perform cleanup.
 Because Engine.IO is a bidirectional protocol, the server can send messages to
 any connected client at any time. The ``engineio.Server.send()`` method takes
 the client's ``sid`` and the message payload, which can be of type ``str``,
-``bytes`` or ``dict`` (JSON encoded).
+``bytes``, ``list`` or ``dict`` (the last two are JSON encoded).
 
 API Reference
 -------------
