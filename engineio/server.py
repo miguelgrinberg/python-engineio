@@ -72,44 +72,47 @@ class Server(object):
         """Generate a unique session id."""
         return uuid.uuid4().hex
 
-    def on(self, event):
-        """Decorator to register an event handler.
+    def on(self, event, handler=None):
+        """Register an event handler.
 
         :param event: The event name. Can be ``'connect'``, ``'message'`` or
                       ``'disconnect'``.
+        :param handler: The function that should be invoked to handle the
+                        event. When this parameter is not given, the method
+                        acts as a decorator for the handler function.
 
         Example usage::
 
+            # as a decorator:
             @eio.on('connect')
-            def connect(sid, environ):
+            def connect_handler(sid, environ):
                 print('Connection request')
                 if environ['REMOTE_ADDR'] in blacklisted:
                     return False  # reject
 
-            @eio.on('message')
-            def message(sid, msg):
+            # as a method:
+            def message_handler(sid, msg):
                 print('Received message: ', msg)
                 eio.send(sid, 'response')
+            eio.on('message', message_handler)
 
-            @eio.on('disconnect')
-            def disconnect(sid):
-                print('Disconnected: ', sid)
-
-        The decorated function is registered as handler for the event. The
-        first argument in this function is the ``sid`` (session ID) for the
-        client. The ``'connect'`` event handler receives the WSGI environment
-        as a second argument, and can return ``False`` to reject the
-        connection. The ``'message'`` handler receives the message payload as a
-        second argument. The ``'disconnect'`` handler does not take a second
-        argument.
+        The handler function receives the ``sid`` (session ID) for the
+        client as first argument. The ``'connect'`` event handler receives the
+        WSGI environment as a second argument, and can return ``False`` to
+        reject the connection. The ``'message'`` handler receives the message
+        payload as a second argument. The ``'disconnect'`` handler does not
+        take a second argument.
         """
         if event not in self.event_names:
             raise ValueError('Invalid event')
 
-        def decorator(f):
-            self.handlers[event] = f
-            return f
-        return decorator
+        def set_handler(handler):
+            self.handlers[event] = handler
+            return handler
+
+        if handler is None:
+            return set_handler
+        set_handler(handler)
 
     def send(self, sid, data):
         """Send a message to a client.

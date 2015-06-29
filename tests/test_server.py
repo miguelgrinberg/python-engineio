@@ -40,8 +40,10 @@ class TestServer(unittest.TestCase):
         @s.on('connect')
         def foo():
             pass
+        s.on('disconnect', foo)
 
         self.assertEqual(s.handlers['connect'], foo)
+        self.assertEqual(s.handlers['disconnect'], foo)
 
     def test_on_event_invalid(self):
         s = server.Server()
