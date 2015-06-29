@@ -13,7 +13,7 @@ f.close()
 
 setup(
     name='python-engineio',
-    version='0.1.0',
+    version='0.2.0',
     url='http://github.com/miguelgrinberg/python-engineio/',
     license='MIT',
     author='Miguel Grinberg',
