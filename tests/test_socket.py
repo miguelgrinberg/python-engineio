@@ -155,13 +155,14 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.queue.join = mock.MagicMock(return_value=None)
         ws = mock.MagicMock()
+        probe = six.text_type('probe')
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data='probe').encode(
+            packet.Packet(packet.PING, data=probe).encode(
                 always_bytes=False),
             packet.Packet(packet.NOOP).encode(always_bytes=False)]
         s._websocket_handler(ws)
         ws.send.assert_called_once_with(packet.Packet(
-            packet.PONG, data='probe').encode(always_bytes=False))
+            packet.PONG, data=probe).encode(always_bytes=False))
         self.assertEqual(s.queue.get().packet_type, packet.NOOP)
         self.assertFalse(s.upgraded)
 
@@ -169,14 +170,17 @@ class TestSocket(unittest.TestCase):
         mock_server = mock.Mock()
         s = socket.Socket(mock_server, 'sid')
         s.queue.join = mock.MagicMock(return_value=None)
+        foo = six.text_type('foo')
+        bar = six.text_type('bar')
+        probe = six.text_type('probe')
         s.poll = mock.MagicMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data='bar')], IOError])
+            [packet.Packet(packet.MESSAGE, data=bar)], IOError])
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data='probe').encode(
+            packet.Packet(packet.PING, data=probe).encode(
                 always_bytes=False),
             packet.Packet(packet.UPGRADE).encode(always_bytes=False),
-            packet.Packet(packet.MESSAGE, data='foo').encode(
+            packet.Packet(packet.MESSAGE, data=foo).encode(
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
@@ -192,15 +196,18 @@ class TestSocket(unittest.TestCase):
         mock_server = mock.Mock()
         s = socket.Socket(mock_server, 'sid')
         s.queue.join = mock.MagicMock(return_value=None)
+        foo = six.text_type('foo')
+        bar = six.text_type('bar')
+        probe = six.text_type('probe')
         s.poll = mock.MagicMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data='bar')], IOError])
+            [packet.Packet(packet.MESSAGE, data=bar)], IOError])
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data='probe').encode(
+            packet.Packet(packet.PING, data=probe).encode(
                 always_bytes=False),
             packet.Packet(packet.UPGRADE).encode(always_bytes=False),
             packet.Packet(packet.OPEN).encode(always_bytes=False),
-            packet.Packet(packet.MESSAGE, data='foo').encode(
+            packet.Packet(packet.MESSAGE, data=foo).encode(
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
@@ -208,7 +215,7 @@ class TestSocket(unittest.TestCase):
         self.assertTrue(s.upgraded)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
-            mock.call('message', 'sid', 'foo'),
+            mock.call('message', 'sid', foo),
             mock.call('disconnect', 'sid')])
         ws.send.assert_called_with('4bar')
 

@@ -1,5 +1,7 @@
 import unittest
 
+import six
+
 from engineio import packet
 from engineio import payload
 
@@ -15,7 +17,7 @@ class TestPayload(unittest.TestCase):
         self.assertEqual(p.encode(), b'')
 
     def test_encode_payload_xhr2(self):
-        pkt = packet.Packet(packet.MESSAGE, data='abc')
+        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
         p = payload.Payload([pkt])
         self.assertEqual(p.packets, [pkt])
         self.assertEqual(p.encode(), b'\x00\x04\xff4abc')
@@ -25,7 +27,7 @@ class TestPayload(unittest.TestCase):
         self.assertEqual(p.encode(), b'\x00\x04\xff4abc')
 
     def test_encode_payload_xhr_text(self):
-        pkt = packet.Packet(packet.MESSAGE, data='abc')
+        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
         p = payload.Payload([pkt])
         self.assertEqual(p.packets, [pkt])
         self.assertEqual(p.encode(b64=True), b'4:4abc')

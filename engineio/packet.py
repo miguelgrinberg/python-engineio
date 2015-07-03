@@ -16,7 +16,7 @@ class Packet(object):
         self.data = data
         if binary is not None:
             self.binary = binary
-        elif isinstance(data, six.string_types):
+        elif isinstance(data, six.text_type):
             self.binary = False
         elif isinstance(data, six.binary_type):
             self.binary = True

@@ -18,9 +18,10 @@ class TestPacket(unittest.TestCase):
         self.assertTrue(pkt.encode(), b'6')
 
     def test_encode_text_packet(self):
-        pkt = packet.Packet(packet.MESSAGE, data='text')
+        data = six.text_type('text')
+        pkt = packet.Packet(packet.MESSAGE, data=data)
         self.assertEqual(pkt.packet_type, packet.MESSAGE)
-        self.assertEqual(pkt.data, 'text')
+        self.assertEqual(pkt.data, data)
         self.assertFalse(pkt.binary)
         self.assertEqual(pkt.encode(), b'4text')
 
@@ -44,8 +45,6 @@ class TestPacket(unittest.TestCase):
         self.assertTrue(pkt.binary)
         self.assertEqual(pkt.encode(b64=True), b'b4AQIDBA==')
 
-    @unittest.skipIf(six.PY2,
-                     'automatic binary detection not support in Python 2')
     def test_encode_binary_packet_py3(self):
         pkt = packet.Packet(packet.MESSAGE, data=b'\x01\x02\x03')
         self.assertEqual(pkt.packet_type, packet.MESSAGE)

@@ -114,15 +114,20 @@ class Server(object):
             return set_handler
         set_handler(handler)
 
-    def send(self, sid, data):
+    def send(self, sid, data, binary=None):
         """Send a message to a client.
 
         :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
+        :param binary: ``True`` to send packet as binary, ``False`` to send
+                       as text. If not given, unicode (Python 2) and str
+                       (Python 3) are sent as text, and str (Python 2) and
+                       bytes (Python 3) are sent as binary.
         """
-        self._get_socket(sid).send(packet.Packet(packet.MESSAGE, data=data))
+        self._get_socket(sid).send(packet.Packet(packet.MESSAGE, data=data,
+                                                 binary=binary))
 
     def close(self, sid=None):
         """Close a client connection.
