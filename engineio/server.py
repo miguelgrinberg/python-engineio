@@ -124,8 +124,8 @@ class Server(object):
         self._get_socket(sid).send(packet.Packet(packet.MESSAGE, data=data,
                                                  binary=binary))
 
-    def close(self, sid=None):
-        """Close a client connection.
+    def disconnect(self, sid=None):
+        """Disconnect a client.
 
         :param sid: The session id of the client to close. If this parameter
                     is not given, then all clients are closed.

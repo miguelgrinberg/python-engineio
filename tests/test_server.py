@@ -53,7 +53,7 @@ class TestServer(unittest.TestCase):
         s = server.Server()
         mock_socket = mock.MagicMock()
         s.clients['foo'] = mock_socket
-        s.close('foo')
+        s.disconnect('foo')
         mock_socket.close.assert_called_once()
         self.assertNotIn('foo', s.clients)
 
@@ -63,7 +63,7 @@ class TestServer(unittest.TestCase):
         for sid in ['foo', 'bar', 'baz']:
             mock_sockets[sid] = mock.MagicMock()
             s.clients[sid] = mock_sockets[sid]
-        s.close()
+        s.disconnect()
         for socket in six.itervalues(mock_sockets):
             socket.close.assert_called_once()
         self.assertEqual(s.clients, {})
