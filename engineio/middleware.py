@@ -17,7 +17,7 @@ class Middleware(object):
         from . import wsgi_app
 
         eio = engineio.Server()
-        app = engineio.EngineIOMiddleware(eio, wsgi_app)
+        app = engineio.Middleware(eio, wsgi_app)
         eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
     """
     def __init__(self, engineio_app, wsgi_app=None, engineio_path='engine.io'):

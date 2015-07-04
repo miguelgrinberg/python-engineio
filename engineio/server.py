@@ -37,7 +37,6 @@ class Server(object):
                              allowed in requests to this server.
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``.
-
     """
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
@@ -67,10 +66,6 @@ class Server(object):
                 self.logger.setLevel(logging.INFO)
             else:
                 self.logger.setLevel(logging.ERROR)
-
-    def generate_id(self):
-        """Generate a unique session id."""
-        return uuid.uuid4().hex
 
     def on(self, event, handler=None):
         """Register an event handler.
@@ -154,7 +149,7 @@ class Server(object):
         :param environ: The WSGI environment.
         :param start_response: The WSGI ``start_response`` function.
 
-        Ths function returns the HTTP response body to deliver to the client
+        This function returns the HTTP response body to deliver to the client
         as a byte sequence.
         """
         method = environ['REQUEST_METHOD']
@@ -209,9 +204,13 @@ class Server(object):
         start_response(r['status'], r['headers'] + cors_headers)
         return [r['response']]
 
+    def _generate_id(self):
+        """Generate a unique session id."""
+        return uuid.uuid4().hex
+
     def _handle_connect(self, environ):
         """Handle a client connection request."""
-        sid = self.generate_id()
+        sid = self._generate_id()
         s = socket.Socket(self, sid)
         self.clients[sid] = s
         pkt = packet.Packet(
