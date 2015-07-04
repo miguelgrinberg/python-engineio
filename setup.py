@@ -7,9 +7,8 @@ Engine.IO server.
 from setuptools import setup
 
 
-f = open('README.md', 'r')
-long_description = f.read()
-f.close()
+with open('README.rst', 'r') as f:
+    long_description = f.read()
 
 setup(
     name='python-engineio',
