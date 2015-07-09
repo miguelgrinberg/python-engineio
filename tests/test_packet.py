@@ -27,7 +27,7 @@ class TestPacket(unittest.TestCase):
 
     def test_decode_text_packet(self):
         pkt = packet.Packet(encoded_packet=b'4text')
-        self.assertTrue(pkt.encode(), b'text')
+        self.assertEqual(pkt.encode(), b'4text')
 
     def test_encode_binary_packet(self):
         pkt = packet.Packet(packet.MESSAGE, data=b'\x01\x02\x03',
