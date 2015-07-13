@@ -1,3 +1,5 @@
+import time
+
 import eventlet
 from eventlet import websocket
 import six
@@ -14,6 +16,7 @@ class Socket(object):
         self.server = server
         self.sid = sid
         self.queue = eventlet.queue.Queue()
+        self.last_ping = time.time()
         self.upgraded = False
         self.closed = False
 
@@ -37,6 +40,7 @@ class Socket(object):
                                 packet.packet_names[pkt.packet_type],
                                 pkt.data)
         if pkt.packet_type == packet.PING:
+            self.last_ping = time.time()
             self.send(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.MESSAGE:
             self.server._trigger_event('message', self.sid, pkt.data)
@@ -49,6 +53,11 @@ class Socket(object):
         """Send a packet to the client."""
         if self.closed:
             raise IOError('Socket is closed')
+        if time.time() - self.last_ping > self.server.ping_interval:
+            self.server.logger.info('%s: Client is gone, closing socket',
+                                    self.sid)
+            self.close(wait=False, abort=True)
+            return
         self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s with %s', self.sid,
                                 packet.packet_names[pkt.packet_type],
@@ -81,10 +90,11 @@ class Socket(object):
             for pkt in p.packets:
                 self.receive(pkt)
 
-    def close(self, wait=True):
+    def close(self, wait=True, abort=False):
         """Close the socket connection."""
         self.server._trigger_event('disconnect', self.sid)
-        self.send(packet.Packet(packet.CLOSE))
+        if not abort:
+            self.send(packet.Packet(packet.CLOSE))
         self.closed = True
         if wait:
             self.queue.join()
@@ -124,8 +134,11 @@ class Socket(object):
                     packets = self.poll()
                 except IOError:
                     break
-                for pkt in packets:
-                    ws.send(pkt.encode(always_bytes=False))
+                try:
+                    for pkt in packets:
+                        ws.send(pkt.encode(always_bytes=False))
+                except:
+                    break
 
         writer_task = eventlet.spawn(writer)
 
@@ -133,7 +146,10 @@ class Socket(object):
             '%s: Upgrade to websocket succesful', self.sid)
 
         while True:
-            p = ws.wait()
+            try:
+                p = ws.wait()
+            except:
+                break
             if p is None:
                 break
             if isinstance(p, six.text_type):  # pragma: no cover
@@ -143,5 +159,5 @@ class Socket(object):
                 self.receive(pkt)
             except ValueError:
                 pass
-        self.close(wait=False)
+        self.close(wait=False, abort=True)
         writer_task.wait()

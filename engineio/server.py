@@ -55,7 +55,7 @@ class Server(object):
         self.cookie = cookie
         self.cors_allowed_origins = cors_allowed_origins
         self.cors_credentials = cors_credentials
-        self.clients = {}
+        self.sockets = {}
         self.handlers = {}
         if not isinstance(logger, bool):
             self.logger = logger
@@ -132,11 +132,11 @@ class Server(object):
         """
         if sid is not None:
             self._get_socket(sid).close()
-            del self.clients[sid]
+            del self.sockets[sid]
         else:
-            for client in six.itervalues(self.clients):
+            for client in six.itervalues(self.sockets):
                 client.close()
-            self.clients = {}
+            self.sockets = {}
 
     def handle_request(self, environ, start_response):
         """Handle an HTTP request from the client.
@@ -164,7 +164,7 @@ class Server(object):
                 if sid is None:
                     r = self._handle_connect(environ)
                 else:
-                    if sid not in self.clients:
+                    if sid not in self.sockets:
                         self.logger.warning('Invalid session %s', sid)
                         r = self._bad_request()
                     else:
@@ -174,10 +174,10 @@ class Server(object):
                                 environ, start_response)
                             r = self._ok(packets, b64=b64)
                         except IOError:
-                            del self.clients[sid]
+                            del self.sockets[sid]
                             r = self._bad_request()
             elif method == 'POST':
-                if sid is None or sid not in self.clients:
+                if sid is None or sid not in self.sockets:
                     self.logger.warning('Invalid session %s', sid)
                     r = self._bad_request()
                 else:
@@ -212,7 +212,7 @@ class Server(object):
         """Handle a client connection request."""
         sid = self._generate_id()
         s = socket.Socket(self, sid)
-        self.clients[sid] = s
+        self.sockets[sid] = s
         pkt = packet.Packet(
             packet.OPEN, {'sid': sid,
                           'upgrades': self._upgrades(sid),
@@ -221,7 +221,7 @@ class Server(object):
         s.send(pkt)
         if self._trigger_event('connect', sid, environ) is False:
             self.logger.warning('Application rejected connection')
-            del self.clients[sid]
+            del self.sockets[sid]
             return self._unauthorized()
         headers = None
         if self.cookie:
@@ -242,9 +242,13 @@ class Server(object):
     def _get_socket(self, sid):
         """Return the socket object for a given session."""
         try:
-            return self.clients[sid]
+            s = self.sockets[sid]
         except KeyError:
             raise KeyError('Session not found')
+        if s.closed:
+            del self.sockets[sid]
+            raise KeyError('Session is disconnected')
+        return s
 
     def _ok(self, packets=None, headers=None, b64=False):
         """Generate a successful HTTP response."""

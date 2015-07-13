@@ -15,6 +15,12 @@ from engineio import server
 
 
 class TestServer(unittest.TestCase):
+    def _get_mock_socket(self):
+        mock_socket = mock.MagicMock()
+        mock_socket.closed = False
+        mock_socket.upgraded = False
+        return mock_socket
+
     def test_create(self):
         kwargs = {
             'ping_timeout': 1,
@@ -51,39 +57,43 @@ class TestServer(unittest.TestCase):
 
     def test_close_one_socket(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
-        s.clients['foo'] = mock_socket
+        mock_socket = self._get_mock_socket()
+        s.sockets['foo'] = mock_socket
         s.disconnect('foo')
         self.assertEqual(mock_socket.close.call_count, 1)
-        self.assertNotIn('foo', s.clients)
+        self.assertNotIn('foo', s.sockets)
 
     def test_close_all_sockets(self):
         s = server.Server()
         mock_sockets = {}
         for sid in ['foo', 'bar', 'baz']:
-            mock_sockets[sid] = mock.MagicMock()
-            s.clients[sid] = mock_sockets[sid]
+            mock_sockets[sid] = self._get_mock_socket()
+            s.sockets[sid] = mock_sockets[sid]
         s.disconnect()
         for socket in six.itervalues(mock_sockets):
             self.assertEqual(socket.close.call_count, 1)
-        self.assertEqual(s.clients, {})
+        self.assertEqual(s.sockets, {})
 
     def test_upgrades(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
-        s.clients['foo'] = mock_socket
-        mock_socket.upgraded = False
+        s.sockets['foo'] = self._get_mock_socket()
         self.assertEqual(s._upgrades('foo'), ['websocket'])
-        mock_socket.upgraded = True
+        s.sockets['foo'].upgraded = True
         self.assertEqual(s._upgrades('foo'), [])
         s.allow_upgrades = False
-        mock_socket.upgraded = True
+        s.sockets['foo'].upgraded = True
         self.assertEqual(s._upgrades('foo'), [])
 
     def test_bad_session(self):
         s = server.Server()
-        s.clients['foo'] = 'client'
+        s.sockets['foo'] = 'client'
         self.assertRaises(KeyError, s._get_socket, 'bar')
+
+    def test_closed_socket(self):
+        s = server.Server()
+        s.sockets['foo'] = self._get_mock_socket()
+        s.sockets['foo'].closed = True
+        self.assertRaises(KeyError, s._get_socket, 'foo')
 
     def test_jsonp_not_supported(self):
         s = server.Server()
@@ -98,7 +108,7 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
-        self.assertEqual(len(s.clients), 1)
+        self.assertEqual(len(s.sockets), 1)
         self.assertEqual(start_response.call_count, 1)
         self.assertEqual(start_response.call_args[0][0], '200 OK')
         self.assertEqual(len(r), 1)
@@ -168,7 +178,7 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         mock_event.assert_called_once_with('123', environ)
-        self.assertEqual(len(s.clients), 1)
+        self.assertEqual(len(s.sockets), 1)
 
     def test_connect_event_rejects(self):
         s = server.Server()
@@ -178,7 +188,7 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
-        self.assertEqual(len(s.clients), 0)
+        self.assertEqual(len(s.sockets), 0)
         self.assertEqual(start_response.call_args[0][0], '401 UNAUTHORIZED')
 
     def test_method_not_found(self):
@@ -207,8 +217,8 @@ class TestServer(unittest.TestCase):
 
     def test_send(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
-        s.clients['foo'] = mock_socket
+        mock_socket = self._get_mock_socket()
+        s.sockets['foo'] = mock_socket
         s.send('foo', 'hello')
         self.assertEqual(mock_socket.send.call_count, 1)
         self.assertEqual(mock_socket.send.call_args[0][0].packet_type,
@@ -217,10 +227,10 @@ class TestServer(unittest.TestCase):
 
     def test_get_request(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
@@ -233,21 +243,21 @@ class TestServer(unittest.TestCase):
 
     def test_get_request_error(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(side_effect=[IOError])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         self.assertEqual(start_response.call_args[0][0],
                          '400 BAD REQUEST')
-        self.assertEqual(len(s.clients), 0)
+        self.assertEqual(len(s.sockets), 0)
 
     def test_post_request(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_post_request = mock.MagicMock()
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
@@ -256,10 +266,10 @@ class TestServer(unittest.TestCase):
 
     def test_post_request_error(self):
         s = server.Server()
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_post_request = mock.MagicMock(
             side_effect=[ValueError])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
@@ -274,10 +284,10 @@ class TestServer(unittest.TestCase):
 
     def test_gzip_compression(self):
         s = server.Server(compression_threshold=0)
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
                    'ACCEPT_ENCODING': 'gzip,deflate'}
         start_response = mock.MagicMock()
@@ -288,10 +298,10 @@ class TestServer(unittest.TestCase):
 
     def test_deflate_compression(self):
         s = server.Server(compression_threshold=0)
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
                    'ACCEPT_ENCODING': 'deflate;q=1,gzip'}
         start_response = mock.MagicMock()
@@ -302,10 +312,10 @@ class TestServer(unittest.TestCase):
 
     def test_gzip_compression_threshold(self):
         s = server.Server(compression_threshold=1000)
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
                    'ACCEPT_ENCODING': 'gzip'}
         start_response = mock.MagicMock()
@@ -316,10 +326,10 @@ class TestServer(unittest.TestCase):
 
     def test_compression_disabled(self):
         s = server.Server(http_compression=False, compression_threshold=0)
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
                    'ACCEPT_ENCODING': 'gzip'}
         start_response = mock.MagicMock()
@@ -330,10 +340,10 @@ class TestServer(unittest.TestCase):
 
     def test_compression_unknown(self):
         s = server.Server(http_compression=False, compression_threshold=0)
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
                    'ACCEPT_ENCODING': 'rar'}
         start_response = mock.MagicMock()
@@ -344,10 +354,10 @@ class TestServer(unittest.TestCase):
 
     def test_compression_no_encoding(self):
         s = server.Server(compression_threshold=0)
-        mock_socket = mock.MagicMock()
+        mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
-        s.clients['foo'] = mock_socket
+        s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
                    'ACCEPT_ENCODING': ''}
         start_response = mock.MagicMock()
