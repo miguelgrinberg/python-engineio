@@ -59,6 +59,8 @@ class Socket(object):
         connections = environ.get('HTTP_CONNECTION', '').lower().split(',')
         transport = environ.get('HTTP_UPGRADE', '').lower()
         if 'upgrade' in connections and transport in self.upgrade_protocols:
+            self.server.logger.info('%s: Received request to upgrade to %s',
+                                    self.sid, transport)
             return getattr(self, '_upgrade_' + transport)(environ,
                                                           start_response)
         try:
@@ -100,6 +102,8 @@ class Socket(object):
         if pkt != packet.Packet(packet.PING,
                                 data=six.text_type('probe')).encode(
                                     always_bytes=False):
+            self.server.logger.info(
+                '%s: Failed websocket upgrade, no PING packet', self.sid)
             return
         ws.send(packet.Packet(packet.PONG, data=six.text_type('probe')).encode(
             always_bytes=False))
@@ -110,6 +114,8 @@ class Socket(object):
         pkt = ws.wait()
         if pkt != packet.Packet(packet.UPGRADE).encode(always_bytes=False):
             self.upgraded = False
+            self.server.logger.info(
+                '%s: Failed websocket upgrade, no UPGRADE packet', self.sid)
             return
 
         def writer():
@@ -122,6 +128,9 @@ class Socket(object):
                     ws.send(pkt.encode(always_bytes=False))
 
         writer_task = eventlet.spawn(writer)
+
+        self.server.logger.info(
+            '%s: Upgrade to websocket succesful', self.sid)
 
         while True:
             p = ws.wait()
