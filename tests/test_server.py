@@ -54,7 +54,7 @@ class TestServer(unittest.TestCase):
         mock_socket = mock.MagicMock()
         s.clients['foo'] = mock_socket
         s.disconnect('foo')
-        mock_socket.close.assert_called_once()
+        self.assertEqual(mock_socket.close.call_count, 1)
         self.assertNotIn('foo', s.clients)
 
     def test_close_all_sockets(self):
@@ -65,7 +65,7 @@ class TestServer(unittest.TestCase):
             s.clients[sid] = mock_sockets[sid]
         s.disconnect()
         for socket in six.itervalues(mock_sockets):
-            socket.close.assert_called_once()
+            self.assertEqual(socket.close.call_count, 1)
         self.assertEqual(s.clients, {})
 
     def test_upgrades(self):
@@ -99,7 +99,7 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         self.assertEqual(len(s.clients), 1)
-        start_response.assert_called_once()
+        self.assertEqual(start_response.call_count, 1)
         self.assertEqual(start_response.call_args[0][0], '200 OK')
         self.assertEqual(len(r), 1)
         packets = payload.Payload(encoded_payload=r[0]).packets
@@ -210,7 +210,7 @@ class TestServer(unittest.TestCase):
         mock_socket = mock.MagicMock()
         s.clients['foo'] = mock_socket
         s.send('foo', 'hello')
-        mock_socket.send.assert_called_once()
+        self.assertEqual(mock_socket.send.call_count, 1)
         self.assertEqual(mock_socket.send.call_args[0][0].packet_type,
                          packet.MESSAGE)
         self.assertEqual(mock_socket.send.call_args[0][0].data, 'hello')
