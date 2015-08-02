@@ -262,25 +262,25 @@ class Server(object):
         else:
             return {'status': '200 OK',
                     'headers': [('Content-Type', 'text/plain')],
-                    'response': 'OK'}
+                    'response': b'OK'}
 
     def _bad_request(self):
         """Generate a bad request HTTP error response."""
         return {'status': '400 BAD REQUEST',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': 'Bad Request'}
+                'response': b'Bad Request'}
 
     def _method_not_found(self):
         """Generate a method not found HTTP error response."""
         return {'status': '405 METHOD NOT FOUND',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': 'Method Not Found'}
+                'response': b'Method Not Found'}
 
     def _unauthorized(self):
         """Generate a unauthorized HTTP error response."""
         return {'status': '401 UNAUTHORIZED',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': 'Unauthorized'}
+                'response': b'Unauthorized'}
 
     def _cors_headers(self, environ):
         """Return the cross-origin-resource-sharing headers."""
