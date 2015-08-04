@@ -1,7 +1,6 @@
 import time
 import unittest
 
-import eventlet
 import six
 if six.PY3:
     from unittest import mock
@@ -18,11 +17,22 @@ class TestSocket(unittest.TestCase):
         mock_server = mock.Mock()
         mock_server.ping_timeout = 0.1
         mock_server.ping_interval = 0.1
+
+        try:
+            import queue
+        except ImportError:
+            import Queue as queue
+        import threading
+        mock_server.async = {'queue': queue,
+                             'queue_class': 'Queue',
+                             'threading': threading,
+                             'websocket': None}
         return mock_server
 
     def test_create(self):
-        s = socket.Socket('server', 'sid')
-        self.assertEqual(s.server, 'server')
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        self.assertEqual(s.server, mock_server)
         self.assertEqual(s.sid, 'sid')
         self.assertFalse(s.upgraded)
         self.assertFalse(s.closed)
@@ -123,20 +133,24 @@ class TestSocket(unittest.TestCase):
         s.handle_get_request(environ, start_response)
         s._upgrade_websocket.assert_called_once_with(environ, start_response)
 
-    @mock.patch('eventlet.websocket.WebSocketWSGI')
-    def test_upgrade(self, WebSocketWSGI):
+    def test_upgrade(self):
+        mock_server = self._get_mock_server()
+        mock_server.async['websocket'] = mock.MagicMock()
         mock_ws = mock.MagicMock()
-        WebSocketWSGI.configure_mock(return_value=mock_ws)
-        s = socket.Socket('server', 'sid')
+        mock_server.async['websocket'].WebSocketWSGI.configure_mock(
+            return_value=mock_ws)
+        s = socket.Socket(mock_server, 'sid')
         environ = "foo"
         start_response = "bar"
         s._upgrade_websocket(environ, start_response)
-        WebSocketWSGI.assert_called_once_with(s._websocket_handler)
+        mock_server.async['websocket'].WebSocketWSGI.assert_called_once_with(
+            s._websocket_handler)
         mock_ws.assert_called_once_with(environ, start_response)
 
-    @mock.patch('eventlet.websocket.WebSocketWSGI')
-    def test_upgrade_twice(self, WebSocketWSGI):
-        s = socket.Socket('server', 'sid')
+    def test_upgrade_twice(self):
+        mock_server = self._get_mock_server()
+        mock_server.async['websocket'] = mock.MagicMock()
+        s = socket.Socket(mock_server, 'sid')
         s.upgraded = True
         environ = "foo"
         start_response = "bar"
@@ -194,7 +208,7 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
-        eventlet.sleep()
+        time.sleep(0)
         self.assertTrue(s.upgraded)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
@@ -221,7 +235,7 @@ class TestSocket(unittest.TestCase):
             RuntimeError]
         ws.send.side_effect = [None, RuntimeError]
         s._websocket_handler(ws)
-        eventlet.sleep()
+        time.sleep(0)
         self.assertEqual(s.closed, True)
 
     def test_websocket_ignore_invalid_packet(self):
@@ -243,7 +257,7 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
-        eventlet.sleep()
+        time.sleep(0)
         self.assertTrue(s.upgraded)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([

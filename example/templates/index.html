@@ -1,22 +1,28 @@
 <html>
 <head>
 <script src="{{ url_for('static', filename='engine.io.js') }}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.js"></script>
 <script>
-  var socket = eio('http://localhost:5000');
-  socket.on('open', function() {
-      console.log('open');
+  $(document).ready(function() {
+      var socket = eio('http://' + document.domain + ':' + location.port);
+      socket.on('open', function() {
+          $('#log').append("Connected to server.<br>");
+      });
+      socket.on('message', function(data) {
+          $('#log').append("Server says: " + data + "<br>");
+      });
+      socket.on('close', function() {
+          $('#log').append("Server closed the connection.<br>");
+      });
+      window.setInterval(function() {
+          $('#log').append("Sending message to server...<br>");
+          socket.send('hello from client side!');
+      }, 5000);
   });
-  socket.on('message', function(data) {
-      console.log('message:' + data)
-  });
-  socket.on('close', function() {
-      console.log('close');
-  });
-  window.setInterval(function() {
-      socket.send('hello from client side!');
-  }, 15000);
 </script>
 </head>
 <body>
+<h1>python-engineio example application</h1>
+<p id="log"></p>
 </body>
 </html>

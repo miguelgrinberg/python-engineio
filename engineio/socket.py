@@ -1,7 +1,4 @@
 import time
-
-import eventlet
-from eventlet import websocket
 import six
 
 from . import packet
@@ -15,7 +12,8 @@ class Socket(object):
     def __init__(self, server, sid):
         self.server = server
         self.sid = sid
-        self.queue = eventlet.queue.Queue()
+        self.queue = getattr(self.server.async['queue'],
+                             self.server.async['queue_class'])()
         self.last_ping = time.time()
         self.upgraded = False
         self.closed = False
@@ -25,12 +23,12 @@ class Socket(object):
         try:
             packets = [self.queue.get(timeout=self.server.ping_timeout)]
             self.queue.task_done()
-        except eventlet.queue.Empty:
+        except self.server.async['queue'].Empty:
             raise IOError()
         try:
             packets.append(self.queue.get(block=False))
             self.queue.task_done()
-        except eventlet.queue.Empty:
+        except self.server.async['queue'].Empty:
             pass
         return packets
 
@@ -53,7 +51,7 @@ class Socket(object):
         """Send a packet to the client."""
         if self.closed:
             raise IOError('Socket is closed')
-        if time.time() - self.last_ping > self.server.ping_interval:
+        if time.time() - self.last_ping > self.server.ping_interval * 5 / 4:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             self.close(wait=False, abort=True)
@@ -103,7 +101,8 @@ class Socket(object):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
             raise IOError('Socket has been upgraded already')
-        ws = websocket.WebSocketWSGI(self._websocket_handler)
+        ws = self.server.async['websocket'].WebSocketWSGI(
+            self._websocket_handler)
         return ws(environ, start_response)
 
     def _websocket_handler(self, ws):
@@ -140,10 +139,11 @@ class Socket(object):
                 except:
                     break
 
-        writer_task = eventlet.spawn(writer)
+        writer_task = self.server.async['threading'].Thread(target=writer)
+        writer_task.start()
 
         self.server.logger.info(
-            '%s: Upgrade to websocket succesful', self.sid)
+            '%s: Upgrade to websocket successful', self.sid)
 
         while True:
             try:
@@ -160,4 +160,4 @@ class Socket(object):
             except ValueError:
                 pass
         self.close(wait=False, abort=True)
-        writer_task.wait()
+        writer_task.join()

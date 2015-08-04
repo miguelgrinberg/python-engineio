@@ -25,10 +25,10 @@ setup(
     platforms='any',
     install_requires=[
         'six>=1.9.0',
-        'eventlet>=0.17.4',
     ],
     tests_require=[
         'mock',
+        'eventlet'
     ],
     test_suite='tests',
     classifiers=[

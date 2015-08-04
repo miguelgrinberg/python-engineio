@@ -9,26 +9,22 @@ Python implementation of the `Engine.IO`_ realtime server.
 Features
 --------
 
--  Fully compatible with the Javascript `engine.io-client`_ library.
--  Compatible with Python 2.7 and Python 3.3+.
--  Based on `Eventlet`_, enabling large number of clients even on modest
-   hardware.
--  Includes a WSGI middleware that integrates Engine.IO traffic with
-   standard WSGI applications.
--  Uses an event-based architecture implemented with decorators that
-   hides the details of the protocol.
--  Implements HTTP long-polling and WebSocket transports.
--  Supports XHR2 and XHR browsers as clients.
--  Supports text and binary messages.
--  Supports gzip and deflate HTTP compression.
--  Configurable CORS responses to avoid cross-origin problems with
-   browsers.
+- Fully compatible with the Javascript `engine.io-client`_ library, versions 1.5.0 and up.
+- Compatible with Python 2.7 and Python 3.3+.
+- Supports large number of clients even on modest hardware when used with an asynchronous server based on `eventlet`_ or `gevent`_. For development and testing, any WSGI compliant multi-threaded server can be used.
+- Includes a WSGI middleware that integrates Engine.IO traffic with standard WSGI applications.
+- Uses an event-based architecture implemented with decorators that hides the details of the protocol.
+- Implements HTTP long-polling and WebSocket transports.
+- Supports XHR2 and XHR browsers as clients.
+- Supports text and binary messages.
+- Supports gzip and deflate HTTP compression.
+- Configurable CORS responses to avoid cross-origin problems with browsers.
 
 Example
 -------
 
-The following application uses Flask to serve the HTML/Javascript to the
-client:
+The following application uses the Eventlet asynchronous server, and includes a
+small Flask application that serves the HTML/Javascript to the client:
 
 ::
 
@@ -72,6 +68,7 @@ Resources
 
 .. _Engine.IO: https://github.com/Automattic/engine.io
 .. _engine.io-client: https://github.com/Automattic/engine.io-client
-.. _Eventlet: http://eventlet.net/
+.. _eventlet: http://eventlet.net/
+.. _gevent: http://gevent.org/
 .. _Documentation: http://pythonhosted.org/python-engineio
 .. _PyPI: https://pypi.python.org/pypi/python-engineio

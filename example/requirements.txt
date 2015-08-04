@@ -1,6 +1,4 @@
-eventlet==0.17.4
 Flask==0.10.1
-greenlet==0.4.7
 itsdangerous==0.24
 Jinja2==2.7.3
 MarkupSafe==0.23
