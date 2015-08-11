@@ -80,13 +80,15 @@ class Server(object):
                 async = importlib.import_module('engineio.async.eventlet')
                 async_mode = 'eventlet'
             except ImportError:
-                pass
+                if async_mode == 'eventlet':
+                    raise
         if async_mode is None or async_mode == 'gevent':
             try:
                 async = importlib.import_module('engineio.async.gevent')
                 async_mode = 'gevent'
             except ImportError:
-                pass
+                if async_mode == 'gevent':
+                    raise
         if async_mode is None or async_mode == 'threading':
             async = importlib.import_module('engineio.async.threading')
             async_mode = 'threading'
