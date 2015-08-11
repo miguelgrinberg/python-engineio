@@ -23,10 +23,12 @@ class TestSocket(unittest.TestCase):
         except ImportError:
             import Queue as queue
         import threading
-        mock_server.async = {'queue': queue,
-                             'queue_class': 'Queue',
-                             'threading': threading,
-                             'websocket': None}
+        mock_server.async = mock.Mock()
+        mock_server.async.Queue = queue.Queue
+        mock_server.async.QueueEmpty = queue.Empty
+        mock_server.async.thread = lambda t: threading.Thread(target=t)
+        mock_server.async.has_websocket = False
+
         return mock_server
 
     def test_create(self):
@@ -135,21 +137,23 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade(self):
         mock_server = self._get_mock_server()
-        mock_server.async['websocket'] = mock.MagicMock()
+        mock_server.async.has_websocket = True
+        mock_server.async.wrap_websocket = mock.MagicMock()
         mock_ws = mock.MagicMock()
-        mock_server.async['websocket'].WebSocketWSGI.configure_mock(
+        mock_server.async.wrap_websocket.configure_mock(
             return_value=mock_ws)
         s = socket.Socket(mock_server, 'sid')
         environ = "foo"
         start_response = "bar"
         s._upgrade_websocket(environ, start_response)
-        mock_server.async['websocket'].WebSocketWSGI.assert_called_once_with(
+        mock_server.async.wrap_websocket.assert_called_once_with(
             s._websocket_handler)
         mock_ws.assert_called_once_with(environ, start_response)
 
     def test_upgrade_twice(self):
         mock_server = self._get_mock_server()
-        mock_server.async['websocket'] = mock.MagicMock()
+        mock_server.async.has_websocket = True
+        mock_server.async.wrap_websocket = mock.MagicMock()
         s = socket.Socket(mock_server, 'sid')
         s.upgraded = True
         environ = "foo"

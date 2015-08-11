@@ -21,6 +21,9 @@ class TestServer(unittest.TestCase):
         mock_socket.upgraded = False
         return mock_socket
 
+    def _get_mock_module(name):
+        return name
+
     def test_create(self):
         kwargs = {
             'ping_timeout': 1,
@@ -36,58 +39,47 @@ class TestServer(unittest.TestCase):
         for arg in six.iterkeys(kwargs):
             self.assertEqual(getattr(s, arg), kwargs[arg])
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=_get_mock_module)
     def test_async_mode_threading(self, import_module):
         s = server.Server(async_mode='threading')
         self.assertEqual(s.async_mode, 'threading')
-        self.assertEqual(s.async['threading'], 'threading')
-        self.assertEqual(s.async['queue'], 'queue')
-        self.assertEqual(s.async['websocket'], None)
+        self.assertEqual(s.async, 'engineio.async.threading')
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=_get_mock_module)
     def test_async_mode_eventlet(self, import_module):
         s = server.Server(async_mode='eventlet')
         self.assertEqual(s.async_mode, 'eventlet')
-        self.assertEqual(s.async['threading'], 'eventlet.green.threading')
-        self.assertEqual(s.async['queue'], 'eventlet.queue')
-        self.assertEqual(s.async['websocket'], 'eventlet.websocket')
+        self.assertEqual(s.async, 'engineio.async.eventlet')
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=_get_mock_module)
     def test_async_mode_gevent(self, import_module):
         s = server.Server(async_mode='gevent')
         self.assertEqual(s.async_mode, 'gevent')
-        self.assertEqual(s.async['threading'], 'gevent.threading')
-        self.assertEqual(s.async['queue'], 'gevent.queue')
-        self.assertEqual(s.async['websocket'], None)
+        self.assertEqual(s.async, 'engineio.async.gevent')
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=_get_mock_module)
     def test_async_mode_invalid(self, import_module):
         self.assertRaises(ValueError, server.Server, async_mode='foo')
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=_get_mock_module)
     def test_async_mode_auto_eventlet(self, import_module):
         s = server.Server()
         self.assertEqual(s.async_mode, 'eventlet')
-        self.assertEqual(s.async['threading'], 'eventlet.green.threading')
-        self.assertEqual(s.async['queue'], 'eventlet.queue')
-        self.assertEqual(s.async['websocket'], 'eventlet.websocket')
+        self.assertEqual(s.async, 'engineio.async.eventlet')
 
-    @mock.patch('importlib.import_module', side_effect=[ImportError, 'a', 'b'])
+    @mock.patch('importlib.import_module', side_effect=[ImportError,
+                                                        'a', 'b'])
     def test_async_mode_auto_gevent(self, import_module):
         s = server.Server()
         self.assertEqual(s.async_mode, 'gevent')
-        self.assertEqual(s.async['threading'], 'a')
-        self.assertEqual(s.async['queue'], 'b')
-        self.assertEqual(s.async['websocket'], None)
+        self.assertEqual(s.async, 'a')
 
     @mock.patch('importlib.import_module', side_effect=[ImportError,
-                                                        ImportError, 'a', 'b'])
+                                                        ImportError, 'a'])
     def test_async_mode_auto_threading(self, import_module):
         s = server.Server()
         self.assertEqual(s.async_mode, 'threading')
-        self.assertEqual(s.async['threading'], 'a')
-        self.assertEqual(s.async['queue'], 'b')
-        self.assertEqual(s.async['websocket'], None)
+        self.assertEqual(s.async, 'a')
 
     def test_generate_id(self):
         s = server.Server()
@@ -129,6 +121,7 @@ class TestServer(unittest.TestCase):
 
     def test_upgrades(self):
         s = server.Server()
+        s.async.has_websocket = True
         s.sockets['foo'] = self._get_mock_socket()
         self.assertEqual(s._upgrades('foo'), ['websocket'])
         s.sockets['foo'].upgraded = True
@@ -158,6 +151,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect(self):
         s = server.Server()
+        s.async.has_websocket = True
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)

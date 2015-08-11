@@ -12,8 +12,7 @@ class Socket(object):
     def __init__(self, server, sid):
         self.server = server
         self.sid = sid
-        self.queue = getattr(self.server.async['queue'],
-                             self.server.async['queue_class'])()
+        self.queue = self.server.async.Queue()
         self.last_ping = time.time()
         self.upgraded = False
         self.closed = False
@@ -23,17 +22,19 @@ class Socket(object):
         try:
             packets = [self.queue.get(timeout=self.server.ping_timeout)]
             self.queue.task_done()
-        except self.server.async['queue'].Empty:
+        except self.server.async.QueueEmpty:
             raise IOError()
         try:
             packets.append(self.queue.get(block=False))
             self.queue.task_done()
-        except self.server.async['queue'].Empty:
+        except self.server.async.QueueEmpty:
             pass
         return packets
 
     def receive(self, pkt):
         """Receive packet from the client."""
+        if pkt.packet_type < 0 or pkt.packet_type >= len(packet.packet_names):
+            raise ValueError
         self.server.logger.info('%s: Received packet %s with %s', self.sid,
                                 packet.packet_names[pkt.packet_type],
                                 pkt.data)
@@ -63,7 +64,10 @@ class Socket(object):
 
     def handle_get_request(self, environ, start_response):
         """Handle a long-polling GET request from the client."""
-        connections = environ.get('HTTP_CONNECTION', '').lower().split(',')
+        connections = [
+            s.strip()
+            for s in environ.get('HTTP_CONNECTION', '').lower().split(',')
+        ]
         transport = environ.get('HTTP_UPGRADE', '').lower()
         if 'upgrade' in connections and transport in self.upgrade_protocols:
             self.server.logger.info('%s: Received request to upgrade to %s',
@@ -101,8 +105,7 @@ class Socket(object):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
             raise IOError('Socket has been upgraded already')
-        ws = self.server.async['websocket'].WebSocketWSGI(
-            self._websocket_handler)
+        ws = self.server.async.wrap_websocket(self._websocket_handler)
         return ws(environ, start_response)
 
     def _websocket_handler(self, ws):
@@ -139,7 +142,7 @@ class Socket(object):
                 except:
                     break
 
-        writer_task = self.server.async['threading'].Thread(target=writer)
+        writer_task = self.server.async.thread(writer)
         writer_task.start()
 
         self.server.logger.info(
