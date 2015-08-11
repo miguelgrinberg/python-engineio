@@ -22,7 +22,8 @@ class Server(object):
                        options are "threading", "eventlet" and "gevent". If
                        this argument is not given, "eventlet" is tried first,
                        then "gevent", and finally "threading". The websocket
-                       transport is only supported in "eventlet" mode.
+                       transport is only supported in "eventlet" mode
+                       and "gevent" mode if gevent-websocket is available.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting.
     :param ping_interval: The interval in seconds at which the client pings
@@ -73,44 +74,26 @@ class Server(object):
             else:
                 self.logger.setLevel(logging.ERROR)
 
-        threading = None
-        queue = None
-        queue_class = None
-        websocket = None
+        async = None
         if async_mode is None or async_mode == 'eventlet':
             try:
-                threading = importlib.import_module('eventlet.green.threading')
-                queue = importlib.import_module('eventlet.queue')
-                queue_class = 'Queue'
-                websocket = importlib.import_module('eventlet.websocket')
+                async = importlib.import_module('engineio.async.eventlet')
                 async_mode = 'eventlet'
             except ImportError:
                 pass
         if async_mode is None or async_mode == 'gevent':
             try:
-                threading = importlib.import_module('gevent.threading')
-                queue = importlib.import_module('gevent.queue')
-                queue_class = 'JoinableQueue'
-                websocket = None
+                async = importlib.import_module('engineio.async.gevent')
                 async_mode = 'gevent'
             except ImportError:
                 pass
         if async_mode is None or async_mode == 'threading':
-            threading = importlib.import_module('threading')
-            try:
-                queue = importlib.import_module('queue')
-            except ImportError:  # pragma: no cover
-                queue = importlib.import_module('Queue')  # pragma: no cover
-            queue_class = 'Queue'
-            websocket = None
+            async = importlib.import_module('engineio.async.threading')
             async_mode = 'threading'
-        if threading is None:
+        if async is None:
             raise ValueError('Invalid async_mode specified')
         self.async_mode = async_mode
-        self.async = {'threading': threading,
-                      'queue': queue,
-                      'queue_class': queue_class,
-                      'websocket': websocket}
+        self.async = async
         self.logger.info('Server initialized for %s.', self.async_mode)
 
     def on(self, event, handler=None):
@@ -277,7 +260,7 @@ class Server(object):
     def _upgrades(self, sid):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self.async['websocket'] is None:
+                not self.async.has_websocket:
             return []
         return ['websocket']
 
