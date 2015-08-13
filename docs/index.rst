@@ -17,7 +17,7 @@ features:
   versions 1.5.0 and up.
 - Compatible with Python 2.7 and Python 3.3+.
 - Supports large number of clients even on modest hardware when used with
-  an asynchronous server based on `Eventlet <http://eventlet.net/>`_ or
+  an asynchronous server based on `eventlet <http://eventlet.net/>`_ or
   `gevent <http://gevent.org>`_. For development and testing, any WSGI
   compliant multi-threaded server can be used.
 - Includes a WSGI middleware that integrates Engine.IO traffic with standard
@@ -111,7 +111,7 @@ the client's ``sid`` and the message payload, which can be of type ``str``,
 Deployment
 ----------
 
-The following sections describe a variaty of deployment strategies for
+The following sections describe a variety of deployment strategies for
 Engine.IO servers.
 
 Eventlet
@@ -132,8 +132,8 @@ explicitly, the ``async_mode`` option can be given in the constructor::
 A server configured for eventlet is deployed as a regular WSGI application,
 using the provided ``engineio.Middleware``::
 
-    import eventlet
     app = engineio.Middleware(eio)
+    import eventlet
     eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
 
 An alternative to running the eventlet WSGI server as above is to use
@@ -142,12 +142,12 @@ command to launch the application under gunicorn is shown below::
 
     $ gunicorn -k eventlet -w 1 module:app
 
-It is important to specify that only one worker process is used with gunicorn.
-A single worker can handle a large number of clients when using eventlet.
+Due to limitations in its load balancing algorithm, gunicorn can only be used
+with one worker process, so the ``-w 1`` option is required. Note that a
+single eventlet worker can handle a large number of concurrent clients.
 
-Note that when using gunicorn the WebSocket transport is not available. To make
-WebSocket work, eventlet uses its own extensions to the WSGI standard, which
-gunicorn does not support.
+Another limitation when using gunicorn is that the WebSocket transport is not
+available, because this transport it requires extensions to the WSGI standard.
 
 Note: Eventlet provides a ``monkey_patch()`` function that replaces all the
 blocking functions in the standard library with equivalent asynchronous
@@ -173,7 +173,7 @@ using the provided ``engineio.Middleware``::
 
     from gevent import pywsgi
     app = engineio.Middleware(eio)
-    pywsgi.WSGIServer(('', 5000), app).serve_forever()
+    pywsgi.WSGIServer(('', 8000), app).serve_forever()
 
 An alternative to running the eventlet WSGI server as above is to use
 `gunicorn <gunicorn.org>`_, a fully featured pure Python web server. The
@@ -181,8 +181,10 @@ command to launch the application under gunicorn is shown below::
 
     $ gunicorn -k gevent -w 1 module:app
 
-It is important to specify that only one worker process is used with gunicorn.
-A single worker can handle a large number of clients when using gevent.
+Same as with eventlet, due to limitations in its load balancing algorithm,
+gunicorn can only be used with one worker process, so the ``-w 1`` option is
+required. Note that a single eventlet worker can handle a large number of
+concurrent clients.
 
 Note: Gevent provides a ``monkey_patch()`` function that replaces all the
 blocking functions in the standard library with equivalent asynchronous
@@ -193,14 +195,15 @@ Standard Threading Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 While not comparable to eventlet and gevent in terms of performance,
-python-engineio can also be configured to work with multi-threaded web servers
-that use standard Python threads. This is an ideal setup to use with
+the Engine.IO server can also be configured to work with multi-threaded web
+servers that use standard Python threads. This is an ideal setup to use with
 development servers such as `Werkzeug <http://werkzeug.pocoo.org>`_. Only the
-long-polling transport is currently available when using gevent.
+long-polling transport is currently available when using standard threads.
 
 Instances of class ``engineio.Server`` will automatically use the threading
-mode if eventlet and gevent are not installed. To request the threading
-mode explicitly, the ``async_mode`` option can be given in the constructor::
+mode if neither eventlet nor gevent are not installed. To request the
+threading mode explicitly, the ``async_mode`` option can be given in the
+constructor::
 
     eio = engineio.Server(async_mode='threading')
 
@@ -219,19 +222,20 @@ development web server based on Werkzeug::
         app.run(threaded=True)
 
 When using the threading mode, it is important to ensure that the WSGI server
-can handle concurrent requests using threads, as a client can have up to two
-outstanding requests at any given time. The Werkzeug server is single-threaded
-by default, so the ``threaded=True`` option must be included.
+can handle multiple concurrent requests using threads, since a client can have
+up to two outstanding requests at any given time. The Werkzeug server is
+single-threaded by default, so the ``threaded=True`` option is required.
 
 Multi-process deployments
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Engine.IO is a stateful protocol, which makes horizontal scaling more
-difficult. To deploy a cluster of Engine.IO processes, possibly hosted in
-multiple servers, the following conditions must be met:
+difficult. To deploy a cluster of Engine.IO processes (hosted on one or
+multiple servers), the following conditions must be met:
 
 - Each Engine.IO process must be able to handle multiple requests, either by
-  using eventlet, gevent, or standard threads.
+  using eventlet, gevent, or standard threads. Worker processes that only
+  handle one request at a time are not supported.
 - The load balancer must be configured to always forward requests from a client
   to the same process. Load balancers call this *sticky sessions*, or
   *session affinity*.
