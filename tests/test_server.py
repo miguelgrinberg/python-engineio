@@ -200,7 +200,8 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_allowed_origin(self):
         s = server.Server(cors_allowed_origins=['a', 'b'])
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'ORIGIN': 'b'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                   'HTTP_ORIGIN': 'b'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
@@ -208,11 +209,13 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_not_allowed_origin(self):
         s = server.Server(cors_allowed_origins=['a', 'b'])
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'ORIGIN': 'c'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                   'HTTP_ORIGIN': 'c'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
+        self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
 
     def test_connect_cors_no_credentials(self):
         s = server.Server(cors_credentials=False)

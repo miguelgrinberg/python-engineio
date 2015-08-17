@@ -332,10 +332,11 @@ class Server(object):
     def _cors_headers(self, environ):
         """Return the cross-origin-resource-sharing headers."""
         if self.cors_allowed_origins is not None and \
-                environ.get('ORIGIN', '') not in self.cors_allowed_origins:
+                environ.get('HTTP_ORIGIN', '') not in \
+                self.cors_allowed_origins:
             return []
-        if 'ORIGIN' in environ:
-            headers = [('Access-Control-Allow-Origin', environ['ORIGIN'])]
+        if 'HTTP_ORIGIN' in environ:
+            headers = [('Access-Control-Allow-Origin', environ['HTTP_ORIGIN'])]
         else:
             headers = [('Access-Control-Allow-Origin', '*')]
         if self.cors_credentials:
