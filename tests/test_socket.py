@@ -136,14 +136,15 @@ class TestSocket(unittest.TestCase):
     def test_upgrade(self):
         mock_server = self._get_mock_server()
         mock_server.async['websocket'] = mock.MagicMock()
+        mock_server.async['websocket_class'] = 'WebSocket'
         mock_ws = mock.MagicMock()
-        mock_server.async['websocket'].WebSocketWSGI.configure_mock(
+        mock_server.async['websocket'].WebSocket.configure_mock(
             return_value=mock_ws)
         s = socket.Socket(mock_server, 'sid')
         environ = "foo"
         start_response = "bar"
         s._upgrade_websocket(environ, start_response)
-        mock_server.async['websocket'].WebSocketWSGI.assert_called_once_with(
+        mock_server.async['websocket'].WebSocket.assert_called_once_with(
             s._websocket_handler)
         mock_ws.assert_called_once_with(environ, start_response)
 

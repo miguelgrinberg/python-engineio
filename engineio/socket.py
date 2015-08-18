@@ -101,8 +101,9 @@ class Socket(object):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
             raise IOError('Socket has been upgraded already')
-        ws = self.server.async['websocket'].WebSocketWSGI(
-            self._websocket_handler)
+        websocket_class = getattr(self.server.async['websocket'],
+                                  self.server.async['websocket_class'])
+        ws = websocket_class(self._websocket_handler)
         return ws(environ, start_response)
 
     def _websocket_handler(self, ws):

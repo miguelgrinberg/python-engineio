@@ -73,44 +73,22 @@ class Server(object):
             else:
                 self.logger.setLevel(logging.ERROR)
 
-        threading = None
-        queue = None
-        queue_class = None
-        websocket = None
-        if async_mode is None or async_mode == 'eventlet':
+        if async_mode is None:
+            modes = ['eventlet', 'gevent', 'threading']
+        else:
+            modes = [async_mode]
+        self.async = None
+        self.async_mode = None
+        for mode in modes:
             try:
-                threading = importlib.import_module('eventlet.green.threading')
-                queue = importlib.import_module('eventlet.queue')
-                queue_class = 'Queue'
-                websocket = importlib.import_module('eventlet.websocket')
-                async_mode = 'eventlet'
+                self.async = importlib.import_module(
+                    'engineio.async_' + mode).async
+                self.async_mode = mode
+                break
             except ImportError:
                 pass
-        if async_mode is None or async_mode == 'gevent':
-            try:
-                threading = importlib.import_module('gevent.threading')
-                queue = importlib.import_module('gevent.queue')
-                queue_class = 'JoinableQueue'
-                websocket = None
-                async_mode = 'gevent'
-            except ImportError:
-                pass
-        if async_mode is None or async_mode == 'threading':
-            threading = importlib.import_module('threading')
-            try:
-                queue = importlib.import_module('queue')
-            except ImportError:  # pragma: no cover
-                queue = importlib.import_module('Queue')  # pragma: no cover
-            queue_class = 'Queue'
-            websocket = None
-            async_mode = 'threading'
-        if threading is None:
+        if self.async_mode is None:
             raise ValueError('Invalid async_mode specified')
-        self.async_mode = async_mode
-        self.async = {'threading': threading,
-                      'queue': queue,
-                      'queue_class': queue_class,
-                      'websocket': websocket}
         self.logger.info('Server initialized for %s.', self.async_mode)
 
     def on(self, event, handler=None):
@@ -277,7 +255,7 @@ class Server(object):
     def _upgrades(self, sid):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self.async['websocket'] is None:
+                self.async['websocket_class'] is None:
             return []
         return ['websocket']
 

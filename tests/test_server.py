@@ -1,4 +1,5 @@
 import gzip
+import importlib
 import logging
 import unittest
 import zlib
@@ -14,7 +15,23 @@ from engineio import payload
 from engineio import server
 
 
+original_import_module = importlib.import_module
+
+
+def _mock_import(module, pkg=None):
+    if module.startswith('engineio.'):
+        return original_import_module(module, pkg)
+    return module
+
+
 class TestServer(unittest.TestCase):
+    _mock_async = mock.MagicMock()
+    _mock_async.async = {
+        'threading': 't',
+        'queue': 'q',
+        'queue_class': 'qc',
+        'websocket_class': 'wc'}
+
     def _get_mock_socket(self):
         mock_socket = mock.MagicMock()
         mock_socket.closed = False
@@ -36,58 +53,67 @@ class TestServer(unittest.TestCase):
         for arg in six.iterkeys(kwargs):
             self.assertEqual(getattr(s, arg), kwargs[arg])
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
-    def test_async_mode_threading(self, import_module):
+    def test_async_mode_threading(self):
         s = server.Server(async_mode='threading')
         self.assertEqual(s.async_mode, 'threading')
-        self.assertEqual(s.async['threading'], 'threading')
-        self.assertEqual(s.async['queue'], 'queue')
-        self.assertEqual(s.async['websocket'], None)
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
-    def test_async_mode_eventlet(self, import_module):
+        import threading
+        try:
+            import queue
+        except ImportError:
+            import Queue as queue
+
+        self.assertEqual(s.async['threading'], threading)
+        self.assertEqual(s.async['queue'], queue)
+        self.assertEqual(s.async['queue_class'], 'Queue')
+        self.assertEqual(s.async['websocket'], None)
+        self.assertEqual(s.async['websocket_class'], None)
+
+    def test_async_mode_eventlet(self):
         s = server.Server(async_mode='eventlet')
         self.assertEqual(s.async_mode, 'eventlet')
-        self.assertEqual(s.async['threading'], 'eventlet.green.threading')
-        self.assertEqual(s.async['queue'], 'eventlet.queue')
-        self.assertEqual(s.async['websocket'], 'eventlet.websocket')
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+        from eventlet.green import threading
+        from eventlet import queue
+        from eventlet import websocket
+
+        self.assertEqual(s.async['threading'], threading)
+        self.assertEqual(s.async['queue'], queue)
+        self.assertEqual(s.async['queue_class'], 'Queue')
+        self.assertEqual(s.async['websocket'], websocket)
+        self.assertEqual(s.async['websocket_class'], 'WebSocketWSGI')
+
+    @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent(self, import_module):
         s = server.Server(async_mode='gevent')
         self.assertEqual(s.async_mode, 'gevent')
         self.assertEqual(s.async['threading'], 'gevent.threading')
         self.assertEqual(s.async['queue'], 'gevent.queue')
+        self.assertEqual(s.async['queue_class'], 'Queue')
         self.assertEqual(s.async['websocket'], None)
+        self.assertEqual(s.async['websocket_class'], None)
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=[ImportError])
     def test_async_mode_invalid(self, import_module):
         self.assertRaises(ValueError, server.Server, async_mode='foo')
 
-    @mock.patch('importlib.import_module', side_effect=lambda mod: mod)
+    @mock.patch('importlib.import_module', side_effect=[_mock_async])
     def test_async_mode_auto_eventlet(self, import_module):
         s = server.Server()
         self.assertEqual(s.async_mode, 'eventlet')
-        self.assertEqual(s.async['threading'], 'eventlet.green.threading')
-        self.assertEqual(s.async['queue'], 'eventlet.queue')
-        self.assertEqual(s.async['websocket'], 'eventlet.websocket')
 
-    @mock.patch('importlib.import_module', side_effect=[ImportError, 'a', 'b'])
+    @mock.patch('importlib.import_module', side_effect=[ImportError,
+                                                        _mock_async])
     def test_async_mode_auto_gevent(self, import_module):
         s = server.Server()
         self.assertEqual(s.async_mode, 'gevent')
-        self.assertEqual(s.async['threading'], 'a')
-        self.assertEqual(s.async['queue'], 'b')
-        self.assertEqual(s.async['websocket'], None)
 
     @mock.patch('importlib.import_module', side_effect=[ImportError,
-                                                        ImportError, 'a', 'b'])
+                                                        ImportError,
+                                                        _mock_async])
     def test_async_mode_auto_threading(self, import_module):
         s = server.Server()
         self.assertEqual(s.async_mode, 'threading')
-        self.assertEqual(s.async['threading'], 'a')
-        self.assertEqual(s.async['queue'], 'b')
-        self.assertEqual(s.async['websocket'], None)
 
     def test_generate_id(self):
         s = server.Server()
