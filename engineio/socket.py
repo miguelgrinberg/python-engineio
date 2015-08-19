@@ -63,7 +63,9 @@ class Socket(object):
 
     def handle_get_request(self, environ, start_response):
         """Handle a long-polling GET request from the client."""
-        connections = environ.get('HTTP_CONNECTION', '').lower().split(',')
+        connections = [
+            s.strip()
+            for s in environ.get('HTTP_CONNECTION', '').lower().split(',')]
         transport = environ.get('HTTP_UPGRADE', '').lower()
         if 'upgrade' in connections and transport in self.upgrade_protocols:
             self.server.logger.info('%s: Received request to upgrade to %s',
