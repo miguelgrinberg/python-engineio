@@ -42,4 +42,6 @@ if __name__ == '__main__':
     elif async_mode == 'gevent':
         # deploy with gevent
         from gevent import pywsgi
-        pywsgi.WSGIServer(('', 5000), app).serve_forever()
+        from geventwebsocket.handler import WebSocketHandler
+        pywsgi.WSGIServer(('', 5000), app,
+                          handler_class=WebSocketHandler).serve_forever()

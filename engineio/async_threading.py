@@ -7,6 +7,7 @@ except ImportError:  # pragma: no cover
 
 async = {
     'threading': importlib.import_module('threading'),
+    'thread_class': 'Thread',
     'queue': queue,
     'queue_class': 'Queue',
     'websocket': None,

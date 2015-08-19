@@ -23,9 +23,10 @@ class TestSocket(unittest.TestCase):
         except ImportError:
             import Queue as queue
         import threading
-        mock_server.async = {'queue': queue,
+        mock_server.async = {'threading': threading,
+                             'thread_class': 'Thread',
+                             'queue': queue,
                              'queue_class': 'Queue',
-                             'threading': threading,
                              'websocket': None}
         return mock_server
 
