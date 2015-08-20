@@ -159,8 +159,9 @@ Gevent
 
 `Gevent <http://gevent.org>`_ is another asynchronous framework based on
 coroutines, very similar to eventlet. An Engine.IO server deployed with
-gevent has access to the long-polling transport. If project gevent-websocket
-is also installed, the WebSocket transport is also available.
+gevent has access to the long-polling transport. If project
+`gevent-websocket <https://bitbucket.org/Jeffrey/gevent-websocket/>`_ is
+installed, the WebSocket transport is also available.
 
 Instances of class ``engineio.Server`` will automatically use gevent for
 asynchronous operations if the library is installed and eventlet is not
@@ -197,7 +198,7 @@ Or to include WebSocket::
 
 Same as with eventlet, due to limitations in its load balancing algorithm,
 gunicorn can only be used with one worker process, so the ``-w 1`` option is
-required. Note that a single eventlet worker can handle a large number of
+required. Note that a single gevent worker can handle a large number of
 concurrent clients.
 
 Note: Gevent provides a ``monkey_patch()`` function that replaces all the
@@ -239,6 +240,9 @@ When using the threading mode, it is important to ensure that the WSGI server
 can handle multiple concurrent requests using threads, since a client can have
 up to two outstanding requests at any given time. The Werkzeug server is
 single-threaded by default, so the ``threaded=True`` option is required.
+
+Note that servers that use worker processes instead of threads, such as
+gunicorn, do not support an Engine.IO server configured in threading mode.
 
 Multi-process deployments
 ~~~~~~~~~~~~~~~~~~~~~~~~~
