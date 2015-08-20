@@ -186,7 +186,7 @@ follows::
     pywsgi.WSGIServer(('', 8000), app,
                       handler_class=WebSocketHandler).serve_forever()
 
-An alternative to running the eventlet WSGI server as above is to use
+An alternative to running the gevent WSGI server as above is to use
 `gunicorn <gunicorn.org>`_, a fully featured pure Python web server. The
 command to launch the application under gunicorn is shown below::
 
