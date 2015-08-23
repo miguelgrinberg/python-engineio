@@ -66,12 +66,14 @@ class Server(object):
         if not isinstance(logger, bool):
             self.logger = logger
         else:
-            logging.basicConfig()
             self.logger = logging.getLogger('engineio')
-            if logger:
-                self.logger.setLevel(logging.INFO)
-            else:
-                self.logger.setLevel(logging.ERROR)
+            if not logging.root.handlers and \
+                    self.logger.level == logging.NOTSET:
+                if logger:
+                    self.logger.setLevel(logging.INFO)
+                else:
+                    self.logger.setLevel(logging.ERROR)
+                self.logger.addHandler(logging.StreamHandler())
 
         if async_mode is None:
             modes = ['eventlet', 'gevent', 'threading']
