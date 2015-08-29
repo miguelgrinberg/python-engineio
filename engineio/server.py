@@ -74,7 +74,6 @@ class Server(object):
                 else:
                     self.logger.setLevel(logging.ERROR)
                 self.logger.addHandler(logging.StreamHandler())
-
         if async_mode is None:
             modes = ['eventlet', 'gevent', 'threading']
         else:
@@ -185,10 +184,13 @@ class Server(object):
             r = self._bad_request()
         else:
             sid = query['sid'][0] if 'sid' in query else None
-            b64 = query['b64'][0] if 'b64' in query else False
+            b64 = False
+            if 'b64' in query:
+                if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
+                    b64 = True
             if method == 'GET':
                 if sid is None:
-                    r = self._handle_connect(environ)
+                    r = self._handle_connect(environ, b64)
                 else:
                     if sid not in self.sockets:
                         self.logger.warning('Invalid session %s', sid)
@@ -234,7 +236,7 @@ class Server(object):
         """Generate a unique session id."""
         return uuid.uuid4().hex
 
-    def _handle_connect(self, environ):
+    def _handle_connect(self, environ, b64=False):
         """Handle a client connection request."""
         sid = self._generate_id()
         s = socket.Socket(self, sid)
@@ -252,7 +254,7 @@ class Server(object):
         headers = None
         if self.cookie:
             headers = [('Set-Cookie', self.cookie + '=' + sid)]
-        return self._ok(s.poll(), headers=headers)
+        return self._ok(s.poll(), headers=headers, b64=b64)
 
     def _upgrades(self, sid):
         """Return the list of possible upgrades for a client connection."""
