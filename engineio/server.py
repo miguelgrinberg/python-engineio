@@ -43,6 +43,10 @@ class Server(object):
                              allowed in requests to this server.
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``.
+    :param json: An alternative json module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions.
     """
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
@@ -51,7 +55,7 @@ class Server(object):
                  max_http_buffer_size=100000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie='io', cors_allowed_origins=None,
-                 cors_credentials=True, logger=False):
+                 cors_credentials=True, logger=False, json=None):
         self.ping_timeout = ping_timeout
         self.ping_interval = ping_interval
         self.max_http_buffer_size = max_http_buffer_size
@@ -63,6 +67,8 @@ class Server(object):
         self.cors_credentials = cors_credentials
         self.sockets = {}
         self.handlers = {}
+        if json is not None:
+            packet.Packet.json = json
         if not isinstance(logger, bool):
             self.logger = logger
         else:

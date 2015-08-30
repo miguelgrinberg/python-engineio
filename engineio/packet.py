@@ -1,5 +1,5 @@
 import base64
-import json
+import json as _json
 
 import six
 
@@ -9,6 +9,8 @@ packet_names = ['OPEN', 'CLOSE', 'PING', 'PONG', 'MESSAGE', 'UPGRADE', 'NOOP']
 
 class Packet(object):
     """Engine.IO packet."""
+
+    json = _json
 
     def __init__(self, packet_type=NOOP, data=None, binary=None,
                  encoded_packet=None):
@@ -41,8 +43,8 @@ class Packet(object):
         elif isinstance(self.data, six.string_types):
             encoded_packet += self.data
         elif isinstance(self.data, dict) or isinstance(self.data, list):
-            encoded_packet += json.dumps(self.data,
-                                         separators=(',', ':'))
+            encoded_packet += self.json.dumps(self.data,
+                                              separators=(',', ':'))
         elif self.data is not None:
             encoded_packet += str(self.data)
         if always_bytes and not isinstance(encoded_packet, six.binary_type):
@@ -73,6 +75,7 @@ class Packet(object):
                     self.data = encoded_packet[1:]
             else:
                 try:
-                    self.data = json.loads(encoded_packet[1:].decode('utf-8'))
+                    self.data = self.json.loads(
+                        encoded_packet[1:].decode('utf-8'))
                 except ValueError:
                     self.data = encoded_packet[1:].decode('utf-8')

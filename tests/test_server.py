@@ -1,5 +1,6 @@
 import gzip
 import importlib
+import json
 import logging
 import sys
 import unittest
@@ -43,6 +44,10 @@ class TestServer(unittest.TestCase):
 
     def setUp(self):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
+
+    def tearDown(self):
+        # restore JSON encoder, in case a test changed it
+        packet.Packet.json = json
 
     def test_create(self):
         kwargs = {
@@ -563,3 +568,25 @@ class TestServer(unittest.TestCase):
         my_logger = logging.Logger('foo')
         s = server.Server(logger=my_logger)
         self.assertEqual(s.logger, my_logger)
+
+    def test_custom_json(self):
+        # Warning: this test cannot run in parallel with other tests, as it
+        # changes the JSON encoding/decoding functions
+
+        class CustomJSON(object):
+            @staticmethod
+            def dumps(*args, **kwargs):
+                return '*** encoded ***'
+
+            @staticmethod
+            def loads(*args, **kwargs):
+                return '+++ decoded +++'
+
+        server.Server(json=CustomJSON)
+        pkt = packet.Packet(packet.MESSAGE, data={'foo': 'bar'})
+        self.assertEqual(pkt.encode(), b'4*** encoded ***')
+        pkt2 = packet.Packet(encoded_packet=pkt.encode())
+        self.assertEqual(pkt2.data, '+++ decoded +++')
+
+        # restore the default JSON module
+        packet.Packet.json = json
