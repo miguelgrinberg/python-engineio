@@ -242,6 +242,54 @@ class TestServer(unittest.TestCase):
         packets = payload.Payload(encoded_payload=r[0]).packets
         self.assertEqual(packets[0].data['upgrades'], [])
 
+    def test_connect_b64_with_1(self):
+        s = server.Server(allow_upgrades=False)
+        s._generate_id = mock.MagicMock(return_value='1')
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=1'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertTrue(start_response.call_args[0][0], '200 OK')
+        s.send('1', b'\x00\x01\x02', binary=True)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=1'}
+        r = s.handle_request(environ, start_response)
+        self.assertEqual(r[0], b'6:b4AAEC')
+
+    def test_connect_b64_with_true(self):
+        s = server.Server(allow_upgrades=False)
+        s._generate_id = mock.MagicMock(return_value='1')
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=true'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertTrue(start_response.call_args[0][0], '200 OK')
+        s.send('1', b'\x00\x01\x02', binary=True)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=true'}
+        r = s.handle_request(environ, start_response)
+        self.assertEqual(r[0], b'6:b4AAEC')
+
+    def test_connect_b64_with_0(self):
+        s = server.Server(allow_upgrades=False)
+        s._generate_id = mock.MagicMock(return_value='1')
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=0'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertTrue(start_response.call_args[0][0], '200 OK')
+        s.send('1', b'\x00\x01\x02', binary=True)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=0'}
+        r = s.handle_request(environ, start_response)
+        self.assertEqual(r[0], b'\x00\x04\xff\x04\x00\x01\x02')
+
+    def test_connect_b64_with_false(self):
+        s = server.Server(allow_upgrades=False)
+        s._generate_id = mock.MagicMock(return_value='1')
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=false'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertTrue(start_response.call_args[0][0], '200 OK')
+        s.send('1', b'\x00\x01\x02', binary=True)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=false'}
+        r = s.handle_request(environ, start_response)
+        self.assertEqual(r[0], b'\x00\x04\xff\x04\x00\x01\x02')
+
     def test_connect_custom_ping_times(self):
         s = server.Server(ping_timeout=123, ping_interval=456)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
