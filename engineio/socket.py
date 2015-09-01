@@ -74,9 +74,9 @@ class Socket(object):
                                                           start_response)
         try:
             packets = self.poll()
-        except IOError:
+        except IOError as e:
             self.close(wait=False)
-            raise
+            raise e
         return packets
 
     def handle_post_request(self, environ):
