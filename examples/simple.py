@@ -11,7 +11,7 @@ app.wsgi_app = engineio.Middleware(eio, app.wsgi_app)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('simple.html')
 
 
 @eio.on('connect')
