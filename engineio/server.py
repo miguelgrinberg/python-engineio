@@ -169,6 +169,16 @@ class Server(object):
                 client.close()
             self.sockets = {}
 
+    def transport(self, sid):
+        """Return the name of the transport used by the client.
+
+        The two possible values returned by this function are ``'polling'``
+        and ``'websocket'``.
+
+        :param sid: The session of the client.
+        """
+        return 'websocket' if self._get_socket(sid).upgraded else 'polling'
+
     def handle_request(self, environ, start_response):
         """Handle an HTTP request from the client.
 

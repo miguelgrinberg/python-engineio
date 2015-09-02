@@ -204,6 +204,15 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'].upgraded = True
         self.assertEqual(s._upgrades('foo'), [])
 
+    def test_transport(self):
+        s = server.Server()
+        s.sockets['foo'] = self._get_mock_socket()
+        s.sockets['foo'].upgraded = False
+        s.sockets['bar'] = self._get_mock_socket()
+        s.sockets['bar'].upgraded = True
+        self.assertEqual(s.transport('foo'), 'polling')
+        self.assertEqual(s.transport('bar'), 'websocket')
+
     def test_bad_session(self):
         s = server.Server()
         s.sockets['foo'] = 'client'
