@@ -206,7 +206,13 @@ class Server(object):
                     b64 = True
             if method == 'GET':
                 if sid is None:
-                    r = self._handle_connect(environ, b64)
+                    transport = query.get('transport', ['polling'])[0]
+                    if transport != 'polling' and transport != 'websocket':
+                        self.logger.warning('Invalid transport %s', transport)
+                        r = self._bad_request()
+                    else:
+                        r = self._handle_connect(environ, start_response,
+                                                 transport, b64)
                 else:
                     if sid not in self.sockets:
                         self.logger.warning('Invalid session %s', sid)
@@ -252,25 +258,32 @@ class Server(object):
         """Generate a unique session id."""
         return uuid.uuid4().hex
 
-    def _handle_connect(self, environ, b64=False):
+    def _handle_connect(self, environ, start_response, transport, b64=False):
         """Handle a client connection request."""
         sid = self._generate_id()
         s = socket.Socket(self, sid)
         self.sockets[sid] = s
+
         pkt = packet.Packet(
             packet.OPEN, {'sid': sid,
                           'upgrades': self._upgrades(sid),
                           'pingTimeout': int(self.ping_timeout * 1000),
                           'pingInterval': int(self.ping_interval * 1000)})
         s.send(pkt)
+
         if self._trigger_event('connect', sid, environ) is False:
             self.logger.warning('Application rejected connection')
             del self.sockets[sid]
             return self._unauthorized()
-        headers = None
-        if self.cookie:
-            headers = [('Set-Cookie', self.cookie + '=' + sid)]
-        return self._ok(s.poll(), headers=headers, b64=b64)
+
+        if transport == 'websocket':
+            s.handle_get_request(environ, start_response)
+            return self._ok()
+        else:
+            headers = None
+            if self.cookie:
+                headers = [('Set-Cookie', self.cookie + '=' + sid)]
+            return self._ok(s.poll(), headers=headers, b64=b64)
 
     def _upgrades(self, sid):
         """Return the list of possible upgrades for a client connection."""

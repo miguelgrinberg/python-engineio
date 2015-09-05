@@ -313,6 +313,26 @@ class TestServer(unittest.TestCase):
         self.assertEqual(packets[0].data['pingTimeout'], 123000)
         self.assertEqual(packets[0].data['pingInterval'], 456000)
 
+    @mock.patch('engineio.socket.Socket',
+                return_value=mock.MagicMock(connected=False, closed=False))
+    def test_connect_transport_websocket(self, Socket):
+        s = server.Server()
+        s._generate_id = mock.MagicMock(return_value='123')
+        environ = {'REQUEST_METHOD': 'GET',
+                   'QUERY_STRING': 'transport=websocket'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertEqual(s.sockets['123'].send.call_args[0][0].packet_type,
+                         packet.OPEN)
+
+    def test_connect_transport_invalid(self):
+        s = server.Server()
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '400 BAD REQUEST')
+
     def test_connect_cors_headers(self):
         s = server.Server()
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}

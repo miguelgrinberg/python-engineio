@@ -15,6 +15,7 @@ class Socket(object):
         self.queue = getattr(self.server.async['queue'],
                              self.server.async['queue_class'])()
         self.last_ping = time.time()
+        self.connected = False
         self.upgraded = False
         self.closed = False
 
@@ -72,6 +73,7 @@ class Socket(object):
                                     self.sid, transport)
             return getattr(self, '_upgrade_' + transport)(environ,
                                                           start_response)
+        self.connected = True
         try:
             packets = self.poll()
         except IOError as e:
@@ -110,25 +112,31 @@ class Socket(object):
 
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
-        pkt = ws.wait()
-        if pkt != packet.Packet(packet.PING,
-                                data=six.text_type('probe')).encode(
-                                    always_bytes=False):
-            self.server.logger.info(
-                '%s: Failed websocket upgrade, no PING packet', self.sid)
-            return
-        ws.send(packet.Packet(packet.PONG, data=six.text_type('probe')).encode(
-            always_bytes=False))
-        self.send(packet.Packet(packet.NOOP))
-        self.upgraded = True
-        self.queue.join()
+        if self.connected:
+            # the socket was already connected, so this is an upgrade
+            pkt = ws.wait()
+            if pkt != packet.Packet(packet.PING,
+                                    data=six.text_type('probe')).encode(
+                                        always_bytes=False):
+                self.server.logger.info(
+                    '%s: Failed websocket upgrade, no PING packet', self.sid)
+                return
+            ws.send(packet.Packet(
+                packet.PONG,
+                data=six.text_type('probe')).encode(always_bytes=False))
+            self.send(packet.Packet(packet.NOOP))
+            self.upgraded = True
+            self.queue.join()
 
-        pkt = ws.wait()
-        if pkt != packet.Packet(packet.UPGRADE).encode(always_bytes=False):
-            self.upgraded = False
-            self.server.logger.info(
-                '%s: Failed websocket upgrade, no UPGRADE packet', self.sid)
-            return
+            pkt = ws.wait()
+            if pkt != packet.Packet(packet.UPGRADE).encode(always_bytes=False):
+                self.upgraded = False
+                self.server.logger.info(
+                    '%s: Failed websocket upgrade, no UPGRADE packet',
+                    self.sid)
+                return
+        else:
+            self.connected = True
 
         def writer():
             while True:
