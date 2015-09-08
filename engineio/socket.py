@@ -150,8 +150,7 @@ class Socket(object):
                 except:
                     break
 
-        writer_task = getattr(self.server.async['threading'],
-                              self.server.async['thread_class'])(target=writer)
+        writer_task = self.server._start_background_task(writer)
         writer_task.start()
 
         self.server.logger.info(

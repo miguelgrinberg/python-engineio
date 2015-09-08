@@ -308,6 +308,12 @@ class Server(object):
             raise KeyError('Session is disconnected')
         return s
 
+    def _start_background_task(self, target, *args, **kwargs):
+        """Start a background task using the appropriate async model."""
+        return getattr(self.async['threading'],
+                       self.async['thread_class'])(target=target, args=args,
+                                                   kwargs=kwargs)
+
     def _ok(self, packets=None, headers=None, b64=False):
         """Generate a successful HTTP response."""
         if packets is not None:

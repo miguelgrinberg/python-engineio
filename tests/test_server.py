@@ -619,3 +619,16 @@ class TestServer(unittest.TestCase):
 
         # restore the default JSON module
         packet.Packet.json = json
+
+    def test_background_tasks(self):
+        flag = {}
+
+        def bg_task():
+            flag['task'] = True
+
+        s = server.Server()
+        task = s._start_background_task(bg_task)
+        task.start()
+        task.join()
+        self.assertIn('task', flag)
+        self.assertTrue(flag['task'])

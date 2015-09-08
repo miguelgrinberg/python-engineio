@@ -28,6 +28,11 @@ class TestSocket(unittest.TestCase):
                              'queue': queue,
                              'queue_class': 'Queue',
                              'websocket': None}
+
+        def bg_task(target, *args, **kwargs):
+            return threading.Thread(target=target, args=args, kwargs=kwargs)
+
+        mock_server._start_background_task = bg_task
         return mock_server
 
     def test_create(self):
