@@ -219,7 +219,7 @@ class TestSocket(unittest.TestCase):
         s._websocket_handler(ws)
         time.sleep(0)
         self.assertTrue(s.connected)
-        self.assertFalse(s.upgraded)
+        self.assertTrue(s.upgraded)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', 'foo'),

@@ -137,6 +137,7 @@ class Socket(object):
                 return
         else:
             self.connected = True
+            self.upgraded = True
 
         def writer():
             while True:
