@@ -2,7 +2,8 @@ from flask import Flask, render_template
 
 import engineio
 
-async_mode = 'threading'
+# set async_mode to 'threading', 'eventlet' or 'gevent' to force a mode
+async_mode = None
 
 eio = engineio.Server(async_mode=async_mode)
 app = Flask(__name__)
@@ -20,15 +21,15 @@ def message(sid, data):
 
 
 if __name__ == '__main__':
-    if async_mode == 'threading':
+    if eio.async_mode == 'threading':
         # deploy with Werkzeug
         app.run(threaded=True)
-    elif async_mode == 'eventlet':
+    elif eio.async_mode == 'eventlet':
         # deploy with eventlet
         import eventlet
         from eventlet import wsgi
         wsgi.server(eventlet.listen(('', 5000)), app)
-    elif async_mode == 'gevent':
+    elif eio.async_mode == 'gevent':
         # deploy with gevent
         from gevent import pywsgi
         try:
