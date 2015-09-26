@@ -266,7 +266,7 @@ class Server(object):
 
         pkt = packet.Packet(
             packet.OPEN, {'sid': sid,
-                          'upgrades': self._upgrades(sid),
+                          'upgrades': self._upgrades(sid, transport),
                           'pingTimeout': int(self.ping_timeout * 1000),
                           'pingInterval': int(self.ping_interval * 1000)})
         s.send(pkt)
@@ -280,15 +280,17 @@ class Server(object):
             s.handle_get_request(environ, start_response)
             return self._ok()
         else:
+            s.connected = True
             headers = None
             if self.cookie:
                 headers = [('Set-Cookie', self.cookie + '=' + sid)]
             return self._ok(s.poll(), headers=headers, b64=b64)
 
-    def _upgrades(self, sid):
+    def _upgrades(self, sid, transport):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self.async['websocket_class'] is None:
+                self.async['websocket_class'] is None or \
+                transport == 'websocket':
             return []
         return ['websocket']
 

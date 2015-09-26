@@ -73,7 +73,6 @@ class Socket(object):
                                     self.sid, transport)
             return getattr(self, '_upgrade_' + transport)(environ,
                                                           start_response)
-        self.connected = True
         try:
             packets = self.poll()
         except IOError as e:

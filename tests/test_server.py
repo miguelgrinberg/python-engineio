@@ -197,12 +197,15 @@ class TestServer(unittest.TestCase):
     def test_upgrades(self):
         s = server.Server()
         s.sockets['foo'] = self._get_mock_socket()
-        self.assertEqual(s._upgrades('foo'), ['websocket'])
+        self.assertEqual(s._upgrades('foo', 'polling'), ['websocket'])
+        self.assertEqual(s._upgrades('foo', 'websocket'), [])
         s.sockets['foo'].upgraded = True
-        self.assertEqual(s._upgrades('foo'), [])
+        self.assertEqual(s._upgrades('foo', 'polling'), [])
+        self.assertEqual(s._upgrades('foo', 'websocket'), [])
         s.allow_upgrades = False
         s.sockets['foo'].upgraded = True
-        self.assertEqual(s._upgrades('foo'), [])
+        self.assertEqual(s._upgrades('foo', 'polling'), [])
+        self.assertEqual(s._upgrades('foo', 'websocket'), [])
 
     def test_transport(self):
         s = server.Server()
