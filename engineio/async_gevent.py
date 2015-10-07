@@ -30,8 +30,11 @@ class WebSocketWSGI(object):  # pragma: no cover
         self.app = app
 
     def __call__(self, environ, start_response):
-
-        self._sock = environ["wsgi.websocket"]
+        if 'wsgi.websocket' not in environ:
+            raise RuntimeError('You need to use the gevent-websocket server. '
+                               'See the Deployment section of the '
+                               'documentation for more information.')
+        self._sock = environ['wsgi.websocket']
         self.environ = environ
         self.version = self._sock.version
         self.path = self._sock.path
