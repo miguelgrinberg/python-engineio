@@ -26,6 +26,21 @@ class Middleware(object):
         self.engineio_path = engineio_path
 
     def __call__(self, environ, start_response):
+        if 'gunicorn.socket' in environ:
+            # gunicorn saves the socket under environ['gunicorn.socket'], while
+            # eventlet saves it under environ['eventlet.input']. Eventlet also
+            # stores the socket inside a wrapper class, while gunicon writes it
+            # directly into the environment. To give eventlet's WebSocket
+            # module access to this socket when running under gunicorn, here we
+            # copy the socket to the eventlet format.
+            class Input(object):
+                def __init__(self, socket):
+                    self.socket = socket
+
+                def get_socket(self):
+                    return self.socket
+
+            environ['eventlet.input'] = Input(environ['gunicorn.socket'])
         path = environ['PATH_INFO']
         if path is not None and \
                 path.startswith('/{0}/'.format(self.engineio_path)):

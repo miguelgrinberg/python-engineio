@@ -40,3 +40,13 @@ class TestMiddleware(unittest.TestCase):
         self.assertEqual(r, ['Not Found'])
         start_response.assert_called_once_with(
             "404 Not Found", [('Content-type', 'text/plain')])
+
+    def test_gunicorn_socket(self):
+        mock_wsgi_app = None
+        mock_eio_app = mock.Mock()
+        m = middleware.Middleware(mock_eio_app, mock_wsgi_app)
+        environ = {'gunicorn.socket': 123, 'PATH_INFO': '/foo/bar'}
+        start_response = mock.MagicMock()
+        m(environ, start_response)
+        self.assertIn('eventlet.input', environ)
+        self.assertEqual(environ['eventlet.input'].get_socket(), 123)
