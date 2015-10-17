@@ -47,6 +47,8 @@ class Server(object):
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param kwargs: Reserved for future extensions, any additional parameters
+                   given as keyword arguments will be silently ignored.
     """
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
@@ -55,7 +57,7 @@ class Server(object):
                  max_http_buffer_size=100000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie='io', cors_allowed_origins=None,
-                 cors_credentials=True, logger=False, json=None):
+                 cors_credentials=True, logger=False, json=None, **kwargs):
         self.ping_timeout = ping_timeout
         self.ping_interval = ping_interval
         self.max_http_buffer_size = max_http_buffer_size

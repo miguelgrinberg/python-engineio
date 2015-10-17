@@ -64,6 +64,9 @@ class TestServer(unittest.TestCase):
         for arg in six.iterkeys(kwargs):
             self.assertEqual(getattr(s, arg), kwargs[arg])
 
+    def test_create_ignores_kwargs(self):
+        server.Server(foo='bar')  # this should not raise
+
     def test_async_mode_threading(self):
         s = server.Server(async_mode='threading')
         self.assertEqual(s.async_mode, 'threading')
