@@ -113,6 +113,8 @@ class Socket(object):
         """Engine.IO handler for websocket transport."""
         if self.connected:
             # the socket was already connected, so this is an upgrade
+            self.queue.join()  # flush the queue first
+
             pkt = ws.wait()
             if pkt != packet.Packet(packet.PING,
                                     data=six.text_type('probe')).encode(
@@ -124,8 +126,6 @@ class Socket(object):
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
             self.send(packet.Packet(packet.NOOP))
-            self.upgraded = True
-            self.queue.join()
 
             pkt = ws.wait()
             if pkt != packet.Packet(packet.UPGRADE).encode(always_bytes=False):
@@ -134,6 +134,7 @@ class Socket(object):
                     '%s: Failed websocket upgrade, no UPGRADE packet',
                     self.sid)
                 return
+            self.upgraded = True
         else:
             self.connected = True
             self.upgraded = True
