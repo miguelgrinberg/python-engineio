@@ -224,7 +224,10 @@ class Server(object):
                         try:
                             packets = socket.handle_get_request(
                                 environ, start_response)
-                            r = self._ok(packets, b64=b64)
+                            if isinstance(packets, list):
+                                r = self._ok(packets, b64=b64)
+                            else:
+                                r = packets
                         except IOError:
                             del self.sockets[sid]
                             r = self._bad_request()
@@ -242,6 +245,8 @@ class Server(object):
             else:
                 self.logger.warning('Method %s not supported', method)
                 r = self._method_not_found()
+        if not isinstance(r, dict):
+            return r
         if self.http_compression and \
                 len(r['response']) >= self.compression_threshold:
             encodings = [e.split(';')[0].strip() for e in

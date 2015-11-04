@@ -447,6 +447,15 @@ class TestServer(unittest.TestCase):
         self.assertEqual(len(packets), 1)
         self.assertEqual(packets[0].packet_type, packet.MESSAGE)
 
+    def test_get_request_custom_response(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        mock_socket.handle_get_request = mock.MagicMock(side_effect=['resp'])
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        start_response = mock.MagicMock()
+        self.assertEqual(s.handle_request(environ, start_response), 'resp')
+
     def test_get_request_error(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
