@@ -30,9 +30,11 @@ class TestSocket(unittest.TestCase):
                              'websocket': None}
 
         def bg_task(target, *args, **kwargs):
-            return threading.Thread(target=target, args=args, kwargs=kwargs)
+            th = threading.Thread(target=target, args=args, kwargs=kwargs)
+            th.start()
+            return th
 
-        mock_server._start_background_task = bg_task
+        mock_server.start_background_task = bg_task
         return mock_server
 
     def test_create(self):

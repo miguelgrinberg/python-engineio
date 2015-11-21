@@ -151,8 +151,7 @@ class Socket(object):
                 except:
                     break
 
-        writer_task = self.server._start_background_task(writer)
-        writer_task.start()
+        writer_task = self.server.start_background_task(writer)
 
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)

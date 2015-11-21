@@ -261,6 +261,27 @@ class Server(object):
         start_response(r['status'], r['headers'] + cors_headers)
         return [r['response']]
 
+    def start_background_task(self, target, *args, **kwargs):
+        """Start a background task using the appropriate async model.
+
+        This is a utility function that applications can use to start a
+        background task using the method that is compatible with the
+        selected async mode.
+
+        :param target: the target function to execute.
+        :param args: arguments to pass to the function.
+        :param kwargs: keyword arguments to pass to the function.
+
+        This function returns an object compatible with the `Thread` class in
+        the Python standard library. The `start()` method on this object is
+        already called by this function.
+        """
+        th = getattr(self.async['threading'],
+                     self.async['thread_class'])(target=target, args=args,
+                                                 kwargs=kwargs)
+        th.start()
+        return th
+
     def _generate_id(self):
         """Generate a unique session id."""
         return uuid.uuid4().hex
@@ -316,12 +337,6 @@ class Server(object):
             del self.sockets[sid]
             raise KeyError('Session is disconnected')
         return s
-
-    def _start_background_task(self, target, *args, **kwargs):
-        """Start a background task using the appropriate async model."""
-        return getattr(self.async['threading'],
-                       self.async['thread_class'])(target=target, args=args,
-                                                   kwargs=kwargs)
 
     def _ok(self, packets=None, headers=None, b64=False):
         """Generate a successful HTTP response."""

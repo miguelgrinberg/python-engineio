@@ -642,8 +642,7 @@ class TestServer(unittest.TestCase):
             flag['task'] = True
 
         s = server.Server()
-        task = s._start_background_task(bg_task)
-        task.start()
+        task = s.start_background_task(bg_task)
         task.join()
         self.assertIn('task', flag)
         self.assertTrue(flag['task'])
