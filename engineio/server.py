@@ -280,7 +280,7 @@ class Server(object):
                      self.async['thread_class'])(target=target, args=args,
                                                  kwargs=kwargs)
         th.start()
-        return th
+        return th  # pragma: no cover
 
     def _generate_id(self):
         """Generate a unique session id."""

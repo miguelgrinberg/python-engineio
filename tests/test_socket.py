@@ -175,7 +175,7 @@ class TestSocket(unittest.TestCase):
         s.receive(packet.Packet(packet.UPGRADE))
         r = s.poll()
         self.assertEqual(len(r), 1)
-        self.assertTrue(r[0].encode(), b'6')
+        self.assertEqual(r[0].encode(), packet.Packet(packet.NOOP).encode())
 
     def test_upgrade_no_probe(self):
         mock_server = self._get_mock_server()
@@ -254,6 +254,22 @@ class TestSocket(unittest.TestCase):
             mock.call('message', 'sid', 'foo'),
             mock.call('disconnect', 'sid')])
         ws.send.assert_called_with('4bar')
+
+    def test_websocket_upgrade_with_payload(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.connected = True
+        s.queue.join = mock.MagicMock(return_value=None)
+        probe = six.text_type('probe')
+        ws = mock.MagicMock()
+        ws.wait.side_effect = [
+            packet.Packet(packet.PING, data=probe).encode(
+                always_bytes=False),
+            packet.Packet(packet.UPGRADE, data=b'2').encode(
+                always_bytes=False)]
+        s._websocket_handler(ws)
+        time.sleep(0)
+        self.assertTrue(s.upgraded)
 
     def test_websocket_read_write_fail(self):
         mock_server = self._get_mock_server()

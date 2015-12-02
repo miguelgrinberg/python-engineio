@@ -128,11 +128,13 @@ class Socket(object):
             self.send(packet.Packet(packet.NOOP))
 
             pkt = ws.wait()
-            if pkt != packet.Packet(packet.UPGRADE).encode(always_bytes=False):
+            decoded_pkt = packet.Packet(encoded_packet=pkt)
+            if decoded_pkt.packet_type != packet.UPGRADE:
                 self.upgraded = False
                 self.server.logger.info(
-                    '%s: Failed websocket upgrade, no UPGRADE packet',
-                    self.sid)
+                    ('%s: Failed websocket upgrade, expected UPGRADE packet, '
+                     'received %s instead.'),
+                    self.sid, pkt)
                 return
             self.upgraded = True
         else:
