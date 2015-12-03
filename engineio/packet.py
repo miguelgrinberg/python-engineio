@@ -54,6 +54,8 @@ class Packet(object):
     def decode(self, encoded_packet):
         """Decode a transmitted package."""
         b64 = False
+        if not isinstance(encoded_packet, six.binary_type):
+            encoded_packet = encoded_packet.encode('utf-8')
         self.packet_type = six.byte2int(encoded_packet[0:1])
         if self.packet_type == 98:  # 'b' --> binary base64 encoded packet
             self.binary = True
