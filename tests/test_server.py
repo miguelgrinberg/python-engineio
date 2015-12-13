@@ -90,13 +90,13 @@ class TestServer(unittest.TestCase):
 
         from eventlet.green import threading
         from eventlet import queue
-        from eventlet import websocket
+        from engineio import async_eventlet
 
         self.assertEqual(s.async['threading'], threading)
         self.assertEqual(s.async['thread_class'], 'Thread')
         self.assertEqual(s.async['queue'], queue)
         self.assertEqual(s.async['queue_class'], 'Queue')
-        self.assertEqual(s.async['websocket'], websocket)
+        self.assertEqual(s.async['websocket'], async_eventlet)
         self.assertEqual(s.async['websocket_class'], 'WebSocketWSGI')
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
