@@ -12,7 +12,7 @@ with open('README.rst', 'r') as f:
 
 setup(
     name='python-engineio',
-    version='0.8.2',
+    version='0.8.3',
     url='http://github.com/miguelgrinberg/python-engineio/',
     license='MIT',
     author='Miguel Grinberg',
@@ -29,7 +29,6 @@ setup(
     tests_require=[
         'mock',
         'eventlet',
-        'pbr<1.7.0',   # temporary, to workaround bug in 1.7.0
     ],
     test_suite='tests',
     classifiers=[
