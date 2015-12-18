@@ -1,7 +1,5 @@
-from __future__ import absolute_import
 import time
 import six
-import socket
 
 from . import packet
 from . import payload
@@ -152,7 +150,7 @@ class Socket(object):
                 try:
                     for pkt in packets:
                         ws.send(pkt.encode(always_bytes=False))
-                except socket.error:
+                except:
                     break
 
         writer_task = self.server.start_background_task(writer)
@@ -175,5 +173,4 @@ class Socket(object):
             except ValueError:
                 pass
         self.close(wait=False, abort=True)
-        self.queue.put(packet.Packet(packet.NOOP))  # wakeup the writer
         writer_task.join()
