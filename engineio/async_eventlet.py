@@ -10,7 +10,7 @@ class WebSocketWSGI(_WebSocketWSGI):  # pragma: no cover
             raise RuntimeError('You need to use the eventlet server. '
                                'See the Deployment section of the '
                                'documentation for more information.')
-        super(WebSocketWSGI, self).__call__(environ, start_response)
+        return super(WebSocketWSGI, self).__call__(environ, start_response)
 
 
 async = {
