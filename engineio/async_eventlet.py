@@ -4,7 +4,7 @@ import sys
 from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 
 
-class WebSocketWSGI(_WebSocketWSGI):  # pragma: no cover
+class WebSocketWSGI(_WebSocketWSGI):
     def __call__(self, environ, start_response):
         if 'eventlet.input' not in environ:
             raise RuntimeError('You need to use the eventlet server. '
