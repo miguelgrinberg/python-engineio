@@ -204,6 +204,17 @@ class TestSocket(unittest.TestCase):
         self.assertEqual(s.queue.get().packet_type, packet.NOOP)
         self.assertFalse(s.upgraded)
 
+    def test_upgrade_not_supported(self):
+        mock_server = self._get_mock_server()
+        mock_server.async['websocket'] = None
+        mock_server.async['websocket_class'] = None
+        s = socket.Socket(mock_server, 'sid')
+        s.connected = True
+        environ = "foo"
+        start_response = "bar"
+        s._upgrade_websocket(environ, start_response)
+        mock_server._bad_request.assert_called_once_with()
+
     def test_websocket_read_write(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')

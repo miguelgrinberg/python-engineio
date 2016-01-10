@@ -305,8 +305,7 @@ class Server(object):
             return self._unauthorized()
 
         if transport == 'websocket':
-            s.handle_get_request(environ, start_response)
-            return self._ok()
+            return s.handle_get_request(environ, start_response)
         else:
             s.connected = True
             headers = None
