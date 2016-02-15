@@ -229,8 +229,11 @@ class Server(object):
                             else:
                                 r = packets
                         except IOError:
-                            del self.sockets[sid]
+                            if sid in self.sockets:  # pragma: no cover
+                                del self.sockets[sid]
                             r = self._bad_request()
+                        if sid in self.sockets and self.sockets[sid].closed:
+                            del self.sockets[sid]
             elif method == 'POST':
                 if sid is None or sid not in self.sockets:
                     self.logger.warning('Invalid session %s', sid)

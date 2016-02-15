@@ -26,6 +26,8 @@ class Socket(object):
             self.queue.task_done()
         except self.server.async['queue'].Empty:
             raise IOError()
+        if packets == [None]:
+            return []
         try:
             packets.append(self.queue.get(block=False))
             self.queue.task_done()
@@ -157,7 +159,7 @@ class Socket(object):
                 except:
                     break
 
-        writer_task = self.server.start_background_task(writer)
+        self.server.start_background_task(writer)
 
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
@@ -176,5 +178,5 @@ class Socket(object):
                 self.receive(pkt)
             except ValueError:
                 pass
-        self.close(wait=False, abort=True)
-        writer_task.join()
+        self.close(wait=True, abort=True)
+        self.queue.put(None)  # unlock the writer task so that it can exit

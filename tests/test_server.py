@@ -456,6 +456,21 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         self.assertEqual(s.handle_request(environ, start_response), 'resp')
 
+    def test_get_request_closes_socket(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+
+        def mock_get_request(*args, **kwargs):
+            mock_socket.closed = True
+            return 'resp'
+
+        mock_socket.handle_get_request = mock_get_request
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        start_response = mock.MagicMock()
+        self.assertEqual(s.handle_request(environ, start_response), 'resp')
+        self.assertNotIn('foo', s.sockets)
+
     def test_get_request_error(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
