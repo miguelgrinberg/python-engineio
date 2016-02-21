@@ -13,10 +13,13 @@ from engineio import socket
 
 
 class TestSocket(unittest.TestCase):
+    def setUp(self):
+        self.bg_tasks = []
+
     def _get_mock_server(self):
         mock_server = mock.Mock()
-        mock_server.ping_timeout = 0.1
-        mock_server.ping_interval = 0.1
+        mock_server.ping_timeout = 0.2
+        mock_server.ping_interval = 0.2
 
         try:
             import queue
@@ -31,11 +34,16 @@ class TestSocket(unittest.TestCase):
 
         def bg_task(target, *args, **kwargs):
             th = threading.Thread(target=target, args=args, kwargs=kwargs)
+            self.bg_tasks.append(th)
             th.start()
             return th
 
         mock_server.start_background_task = bg_task
         return mock_server
+
+    def _join_bg_tasks(self):
+        for task in self.bg_tasks:
+            task.join()
 
     def test_create(self):
         mock_server = self._get_mock_server()
@@ -230,9 +238,11 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
-        time.sleep(0)
+        self._join_bg_tasks()
         self.assertTrue(s.connected)
         self.assertTrue(s.upgraded)
+        print(mock_server._trigger_event.call_args_list)
+        print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', 'foo'),
@@ -258,8 +268,10 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
-        time.sleep(0)
+        self._join_bg_tasks()
         self.assertTrue(s.upgraded)
+        print(mock_server._trigger_event.call_args_list)
+        print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', 'foo'),
@@ -279,7 +291,7 @@ class TestSocket(unittest.TestCase):
             packet.Packet(packet.UPGRADE, data=b'2').encode(
                 always_bytes=False)]
         s._websocket_handler(ws)
-        time.sleep(0)
+        self._join_bg_tasks()
         self.assertTrue(s.upgraded)
 
     def test_websocket_read_write_fail(self):
@@ -299,7 +311,7 @@ class TestSocket(unittest.TestCase):
             RuntimeError]
         ws.send.side_effect = [None, RuntimeError]
         s._websocket_handler(ws)
-        time.sleep(0)
+        self._join_bg_tasks()
         self.assertEqual(s.closed, True)
 
     def test_websocket_ignore_invalid_packet(self):
@@ -318,8 +330,10 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False),
             None]
         s._websocket_handler(ws)
-        time.sleep(0)
+        self._join_bg_tasks()
         self.assertTrue(s.connected)
+        print(mock_server._trigger_event.call_args_list)
+        print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', foo),
