@@ -12,11 +12,12 @@ class Socket(object):
     def __init__(self, server, sid):
         self.server = server
         self.sid = sid
-        self.queue = getattr(self.server.async['queue'],
-                             self.server.async['queue_class'])()
+        self.queue = self._create_queue()
+        self.backlog = None
         self.last_ping = time.time()
         self.connected = False
         self.upgraded = False
+        self.upgrading = False
         self.closed = False
 
     def poll(self):
@@ -52,8 +53,11 @@ class Socket(object):
         else:
             raise ValueError
 
-    def send(self, pkt):
-        """Send a packet to the client."""
+    def send(self, pkt, _force=False):
+        """Send a packet to the client. The packet may temporarily end up in
+        a backlog if the connection is currently being upgraded; set
+        ``_force`` to ``True`` to force the packet to be sent even if an
+        upgrade is in progress."""
         if self.closed:
             raise IOError('Socket is closed')
         if time.time() - self.last_ping > self.server.ping_timeout:
@@ -61,7 +65,10 @@ class Socket(object):
                                     self.sid)
             self.close(wait=False, abort=True)
             return
-        self.queue.put(pkt)
+        if self.upgrading and not _force:
+            self.backlog.put(pkt)
+        else:
+            self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
                                 self.sid, packet.packet_names[pkt.packet_type],
                                 pkt.data if not isinstance(pkt.data, bytes)
@@ -105,6 +112,27 @@ class Socket(object):
         if wait:
             self.queue.join()
 
+    def _create_queue(self):
+        """Create a new queue to be used by the socket.
+
+        The queue will be used either for storing outbound packets or for
+        storing the packet backlog during an upgrade.
+        """
+        return getattr(self.server.async['queue'],
+                       self.server.async['queue_class'])()
+
+    def _flush_backlog(self):
+        """Flushes the backlog where the outbound packets were being held
+        during an upgrade by moving them to the outbound packet queue.
+        """
+        finished = False
+        while not finished:
+            try:
+                packet = self.backlog.get(block=False)
+                self.queue.put(packet)
+            except self.server.async['queue'].Empty:
+                finished = True
+
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
@@ -122,6 +150,9 @@ class Socket(object):
         """Engine.IO handler for websocket transport."""
         if self.connected:
             # the socket was already connected, so this is an upgrade
+            self.backlog = self._create_queue()
+            self.upgrading = True
+
             self.queue.join()  # flush the queue first
 
             pkt = ws.wait()
@@ -134,7 +165,7 @@ class Socket(object):
             ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
-            self.send(packet.Packet(packet.NOOP))
+            self.send(packet.Packet(packet.NOOP), _force=True)
 
             pkt = ws.wait()
             decoded_pkt = packet.Packet(encoded_packet=pkt)
@@ -144,11 +175,20 @@ class Socket(object):
                     ('%s: Failed websocket upgrade, expected UPGRADE packet, '
                      'received %s instead.'),
                     self.sid, pkt)
+            else:
+                self.upgraded = True
+
+            self._flush_backlog()
+            self.backlog = None
+            self.upgrading = False
+
+            if not self.upgraded:
                 return
-            self.upgraded = True
         else:
             self.connected = True
             self.upgraded = True
+            self.backlog = None
+            self.upgrading = False
 
         def writer():
             while True:

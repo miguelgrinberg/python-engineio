@@ -209,7 +209,7 @@ class TestSocket(unittest.TestCase):
         s._websocket_handler(ws)
         ws.send.assert_called_once_with(packet.Packet(
             packet.PONG, data=probe).encode(always_bytes=False))
-        self.assertEqual(s.queue.get().packet_type, packet.NOOP)
+        self.assertEqual(s.queue.get(block=False).packet_type, packet.NOOP)
         self.assertFalse(s.upgraded)
 
     def test_upgrade_not_supported(self):
