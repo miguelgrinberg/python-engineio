@@ -296,7 +296,7 @@ class TestServer(unittest.TestCase):
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=0'}
         r = s.handle_request(environ, start_response)
-        self.assertEqual(r[0], b'\x00\x04\xff\x04\x00\x01\x02')
+        self.assertEqual(r[0], b'\x01\x04\xff\x04\x00\x01\x02')
 
     def test_connect_b64_with_false(self):
         s = server.Server(allow_upgrades=False)
@@ -308,7 +308,7 @@ class TestServer(unittest.TestCase):
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=false'}
         r = s.handle_request(environ, start_response)
-        self.assertEqual(r[0], b'\x00\x04\xff\x04\x00\x01\x02')
+        self.assertEqual(r[0], b'\x01\x04\xff\x04\x00\x01\x02')
 
     def test_connect_custom_ping_times(self):
         s = server.Server(ping_timeout=123, ping_interval=456)

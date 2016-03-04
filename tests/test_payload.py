@@ -44,7 +44,7 @@ class TestPayload(unittest.TestCase):
 
     def test_decode_payload_xhr_binary(self):
         p = payload.Payload(encoded_payload=b'6:b4AAEC')
-        self.assertEqual(p.encode(), b'\x00\x04\xff\x04\x00\x01\x02')
+        self.assertEqual(p.encode(), b'\x01\x04\xff\x04\x00\x01\x02')
 
     def test_decode_invalid_payload(self):
         self.assertRaises(ValueError, payload.Payload,

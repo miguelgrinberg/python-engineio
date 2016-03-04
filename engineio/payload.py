@@ -24,8 +24,11 @@ class Payload(object):
                 while packet_len != 0:
                     binary_len = six.int2byte(packet_len % 10) + binary_len
                     packet_len = int(packet_len / 10)
-                encoded_payload += b'\0' + binary_len + b'\xff' + \
-                                   encoded_packet
+                if not pkt.binary:
+                    encoded_payload += b'\0'
+                else:
+                    encoded_payload += b'\1'
+                encoded_payload += binary_len + b'\xff' + encoded_packet
         return encoded_payload
 
     def decode(self, encoded_payload):
