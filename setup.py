@@ -12,7 +12,7 @@ with open('README.rst', 'r') as f:
 
 setup(
     name='python-engineio',
-    version='0.8.8',
+    version='0.9.0',
     url='http://github.com/miguelgrinberg/python-engineio/',
     license='MIT',
     author='Miguel Grinberg',
