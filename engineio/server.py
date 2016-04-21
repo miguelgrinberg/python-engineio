@@ -281,7 +281,8 @@ class Server(object):
         """
         th = getattr(self.async['threading'],
                      self.async['thread_class'])(target=target, args=args,
-                                                 kwargs=kwargs, daemon=True)
+                                                 kwargs=kwargs)
+        th.daemon = True
         th.start()
         return th  # pragma: no cover
 
