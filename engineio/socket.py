@@ -119,6 +119,21 @@ class Socket(object):
 
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
+
+        def writer():
+            while True:
+                try:
+                    packets = self.poll()
+                except IOError:
+                    break
+                try:
+                    for pkt in packets:
+                        ws.send(pkt.encode(always_bytes=False))
+                except:
+                    break
+
+        self.server.start_background_task(writer)
+
         if self.connected:
             # the socket was already connected, so this is an upgrade
             self.queue.join()  # flush the queue first
@@ -148,20 +163,6 @@ class Socket(object):
         else:
             self.connected = True
             self.upgraded = True
-
-        def writer():
-            while True:
-                try:
-                    packets = self.poll()
-                except IOError:
-                    break
-                try:
-                    for pkt in packets:
-                        ws.send(pkt.encode(always_bytes=False))
-                except:
-                    break
-
-        self.server.start_background_task(writer)
 
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
