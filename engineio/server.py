@@ -154,8 +154,13 @@ class Server(object):
                        (Python 3) are sent as text, and str (Python 2) and
                        bytes (Python 3) are sent as binary.
         """
-        self._get_socket(sid).send(packet.Packet(packet.MESSAGE, data=data,
-                                                 binary=binary))
+        try:
+            socket = self._get_socket(sid)
+        except KeyError:
+            # the socket is not available
+            self.logger.warning('Cannot send to sid %s', sid)
+            return
+        socket.send(packet.Packet(packet.MESSAGE, data=data, binary=binary))
 
     def disconnect(self, sid=None):
         """Disconnect a client.
