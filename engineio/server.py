@@ -27,6 +27,8 @@ class Server(object):
                          server to respond before disconnecting.
     :param ping_interval: The interval in seconds at which the client pings
                           the server.
+    :param ping_holdtime: The time in which the server considers the client as 
+                          timeout. (Recommended 3 times of ping_interval)
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport.
     :param allow_upgrades: Whether to allow transport upgrades or not.
@@ -57,9 +59,12 @@ class Server(object):
                  max_http_buffer_size=100000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie='io', cors_allowed_origins=None,
-                 cors_credentials=True, logger=False, json=None, **kwargs):
+                 cors_credentials=True, logger=False, json=None, 
+                 ping_holdtime=75,
+                 **kwargs):
         self.ping_timeout = ping_timeout
         self.ping_interval = ping_interval
+        self.ping_holdtime = ping_holdtime
         self.max_http_buffer_size = max_http_buffer_size
         self.allow_upgrades = allow_upgrades
         self.http_compression = http_compression

@@ -55,7 +55,7 @@ class Socket(object):
         """Send a packet to the client."""
         if self.closed:
             raise IOError('Socket is closed')
-        if time.time() - self.last_ping > self.server.ping_interval * 5 / 4:
+        if time.time() - self.last_ping > self.server.ping_holdtime:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             self.close(wait=False, abort=True)
