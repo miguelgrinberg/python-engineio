@@ -56,7 +56,7 @@ class Socket(object):
         if self.closed:
             raise IOError('Socket is closed')
         if time.time() - self.last_ping > self.server.ping_holdtime:
-            self.server.logger.info('%s: Client is gone, closing socket',
+            self.server.logger.info('%s: Client is beyond hold timer, closing socket',
                                     self.sid)
             self.close(wait=False, abort=True)
             return
