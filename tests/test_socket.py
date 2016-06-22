@@ -20,6 +20,7 @@ class TestSocket(unittest.TestCase):
         mock_server = mock.Mock()
         mock_server.ping_timeout = 0.2
         mock_server.ping_interval = 0.2
+        mock_server.ping_holdtime = 0.6
 
         try:
             import queue
