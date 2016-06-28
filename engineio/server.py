@@ -290,6 +290,16 @@ class Server(object):
         th.start()
         return th  # pragma: no cover
 
+    def sleep(self, seconds=0):
+        """Sleep for the requested amount of time using the appropriate async
+        model.
+
+        This is a utility function that applications can use to put a task to
+        sleep without having to worry about using the correct call for the
+        selected async mode.
+        """
+        return self.async['sleep'](seconds)
+
     def _generate_id(self):
         """Generate a unique session id."""
         return uuid.uuid4().hex
@@ -307,7 +317,7 @@ class Server(object):
                           'pingInterval': int(self.ping_interval * 1000)})
         s.send(pkt)
 
-        if self._trigger_event('connect', sid, environ) is False:
+        if self._trigger_event('connect', sid, environ, async=False) is False:
             self.logger.warning('Application rejected connection')
             del self.sockets[sid]
             return self._unauthorized()
@@ -329,10 +339,14 @@ class Server(object):
             return []
         return ['websocket']
 
-    def _trigger_event(self, event, *args):
+    def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
+        async = kwargs.pop('async', False)
         if event in self.handlers:
-            return self.handlers[event](*args)
+            if async:
+                return self.start_background_task(self.handlers[event], *args)
+            else:
+                return self.handlers[event](*args)
 
     def _get_socket(self, sid):
         """Return the socket object for a given session."""

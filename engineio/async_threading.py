@@ -1,4 +1,5 @@
 import importlib
+import time
 
 try:
     queue = importlib.import_module('queue')
@@ -11,5 +12,6 @@ async = {
     'queue': queue,
     'queue_class': 'Queue',
     'websocket': None,
-    'websocket_class': None
+    'websocket_class': None,
+    'sleep': time.sleep
 }

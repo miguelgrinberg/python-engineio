@@ -45,7 +45,8 @@ class Socket(object):
             self.last_ping = time.time()
             self.send(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.MESSAGE:
-            self.server._trigger_event('message', self.sid, pkt.data)
+            self.server._trigger_event('message', self.sid, pkt.data,
+                                       async=True)
         elif pkt.packet_type == packet.UPGRADE:
             self.send(packet.Packet(packet.NOOP))
         else:
@@ -55,7 +56,7 @@ class Socket(object):
         """Send a packet to the client."""
         if self.closed:
             raise IOError('Socket is closed')
-        if time.time() - self.last_ping > self.server.ping_interval * 5 / 4:
+        if time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             self.close(wait=False, abort=True)
@@ -97,7 +98,7 @@ class Socket(object):
 
     def close(self, wait=True, abort=False):
         """Close the socket connection."""
-        self.server._trigger_event('disconnect', self.sid)
+        self.server._trigger_event('disconnect', self.sid, async=False)
         if not abort:
             self.send(packet.Packet(packet.CLOSE))
         self.closed = True

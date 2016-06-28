@@ -1,6 +1,7 @@
 import importlib
 import sys
 
+from eventlet import sleep
 from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 
 
@@ -19,5 +20,6 @@ async = {
     'queue': importlib.import_module('eventlet.queue'),
     'queue_class': 'Queue',
     'websocket': sys.modules[__name__],
-    'websocket_class': 'WebSocketWSGI'
+    'websocket_class': 'WebSocketWSGI',
+    'sleep': sleep
 }

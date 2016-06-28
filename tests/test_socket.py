@@ -245,8 +245,8 @@ class TestSocket(unittest.TestCase):
         print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
-            mock.call('message', 'sid', 'foo'),
-            mock.call('disconnect', 'sid')])
+            mock.call('message', 'sid', 'foo', async=True),
+            mock.call('disconnect', 'sid', async=False)])
         ws.send.assert_called_with('4bar')
 
     def test_websocket_upgrade_read_write(self):
@@ -274,8 +274,8 @@ class TestSocket(unittest.TestCase):
         print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
-            mock.call('message', 'sid', 'foo'),
-            mock.call('disconnect', 'sid')])
+            mock.call('message', 'sid', 'foo', async=True),
+            mock.call('disconnect', 'sid', async=False)])
         ws.send.assert_called_with('4bar')
 
     def test_websocket_upgrade_with_payload(self):
@@ -336,8 +336,8 @@ class TestSocket(unittest.TestCase):
         print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
-            mock.call('message', 'sid', foo),
-            mock.call('disconnect', 'sid')])
+            mock.call('message', 'sid', foo, async=True),
+            mock.call('disconnect', 'sid', async=False)])
         ws.send.assert_called_with('4bar')
 
     def test_send_after_close(self):

@@ -3,6 +3,7 @@ import importlib
 import json
 import logging
 import sys
+import time
 import unittest
 import zlib
 
@@ -177,6 +178,27 @@ class TestServer(unittest.TestCase):
     def test_on_event_invalid(self):
         s = server.Server()
         self.assertRaises(ValueError, s.on, 'invalid')
+
+    def test_trigger_event(self):
+        s = server.Server()
+        f = {}
+
+        @s.on('connect')
+        def foo(sid, environ):
+            return sid + environ
+
+        @s.on('message')
+        def bar(sid, data):
+            f['bar'] = sid + data
+            return 'bar'
+
+        r = s._trigger_event('connect', 1, 2, async=False)
+        self.assertEqual(r, 3)
+        r = s._trigger_event('message', 3, 4, async=True)
+        r.join()
+        self.assertEqual(f['bar'], 7)
+        r = s._trigger_event('message', 5, 6)
+        self.assertEqual(r, 'bar')
 
     def test_close_one_socket(self):
         s = server.Server()
@@ -661,3 +683,9 @@ class TestServer(unittest.TestCase):
         task.join()
         self.assertIn('task', flag)
         self.assertTrue(flag['task'])
+
+    def test_sleep(self):
+        s = server.Server()
+        t = time.time()
+        s.sleep(0.1)
+        self.assertTrue(time.time() - t > 0.1)
