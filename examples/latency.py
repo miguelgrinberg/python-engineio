@@ -3,6 +3,7 @@ from flask import Flask, render_template
 import engineio
 
 # set async_mode to 'threading', 'eventlet' or 'gevent' to force a mode
+# else, the best mode is selected automatically from what's installed
 async_mode = None
 
 eio = engineio.Server(async_mode=async_mode)
