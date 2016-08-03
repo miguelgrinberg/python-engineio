@@ -24,7 +24,7 @@ setup(
     include_package_data=True,
     platforms='any',
     install_requires=[
-        'six>=1.9.0',
+        'six>=1.5.2',
     ],
     tests_require=[
         'mock',
