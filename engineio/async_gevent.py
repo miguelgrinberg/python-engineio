@@ -3,10 +3,14 @@ import sys
 
 import gevent
 try:
-    import geventwebsocket  # noqa
-    _websocket_available = True
+    import uwsgi
+    _websocket_available = "uwsgi"
 except ImportError:
-    _websocket_available = False
+    try:
+        import geventwebsocket  # noqa
+        _websocket_available = "gevent"
+    except ImportError:
+        _websocket_available = False
 
 
 class Thread(gevent.Greenlet):  # pragma: no cover
@@ -21,7 +25,7 @@ class Thread(gevent.Greenlet):  # pragma: no cover
         return self.run()
 
 
-class WebSocketWSGI(object):  # pragma: no cover
+class GeventWebSocket(object):  # pragma: no cover
     """
     This wrapper class provides a gevent WebSocket interface that is
     compatible with eventlet's implementation.
@@ -52,12 +56,71 @@ class WebSocketWSGI(object):  # pragma: no cover
         return self._sock.receive()
 
 
+class uWSGIWebSocket(object):  # pragma: no cover
+    """
+    This wrapper class provides a uWSGI WebSocket interface that is
+    compatible with eventlet's implementation.
+    """
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        if _websocket_available != "uwsgi":
+            raise RuntimeError('You need to use the uWSGI server.')
+        self.environ = environ
+        uwsgi.websocket_handshake()
+        return self.app(self) or []
+
+    def close(self):
+        uwsgi.close()
+
+    def send(self, message):
+        uwsgi.websocket_send(message)
+
+    def wait(self):
+        msg = uwsgi.websocket_recv()
+        if not msg:
+            return None
+        return msg.decode()
+
+    def send_and_wait(self, poll_func):
+        """Calls poll_func(block=False) regularly and sends the messages
+        it returns. Apart from that, it observes the websocket for incoming
+        messages. If one arrives, it returns that. After the returned message
+        was processed, this function can be called again to continue its work.
+        A return of None means that the connection was closed. Afterwards."""
+        while True:
+            # fetch packets to send and transmit them over the websocket
+            try:
+                packets = poll_func(block=False)
+            except IOError:  # no packets to send
+                pass
+            else:
+                try:
+                    for pkt in packets:
+                        self.send(pkt.encode(always_bytes=False))
+                except:
+                    break
+            # receive packets available on the websocket
+            try:
+                msg = uwsgi.websocket_recv_nb()
+            except IOError:  # connection closed
+                return None
+            else:
+                if not msg:  # no message available
+                    # We can't avoid a delay completely, so make it small
+                    # at least.
+                    gevent.sleep(0.05)
+                else:
+                    return msg.decode()
+
+
 async = {
     'threading': sys.modules[__name__],
     'thread_class': 'Thread',
     'queue': importlib.import_module('gevent.queue'),
     'queue_class': 'JoinableQueue',
     'websocket': sys.modules[__name__] if _websocket_available else None,
-    'websocket_class': 'WebSocketWSGI' if _websocket_available else None,
-    'sleep': gevent.sleep
+    'websocket_class': {'gevent':'GeventWebSocket', 'uwsgi':'uWSGIWebSocket', None:None}[_websocket_available],
+    'sleep': gevent.sleep,
 }

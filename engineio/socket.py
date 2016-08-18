@@ -19,10 +19,14 @@ class Socket(object):
         self.upgraded = False
         self.closed = False
 
-    def poll(self):
-        """Wait for packets to send to the client."""
+    def poll(self, block=True):
+        """Wait for packets to send to the client.
+        If block is False, raise IOError immediately if queue is empty"""
         try:
-            packets = [self.queue.get(timeout=self.server.ping_timeout)]
+            if block:
+                packets = [self.queue.get(timeout=self.server.ping_timeout)]
+            else:
+                packets = [self.queue.get(block=False)]
             self.queue.task_done()
         except self.server.async['queue'].Empty:
             raise IOError()
@@ -150,26 +154,32 @@ class Socket(object):
             self.connected = True
             self.upgraded = True
 
-        def writer():
-            while True:
-                try:
-                    packets = self.poll()
-                except IOError:
-                    break
-                try:
-                    for pkt in packets:
-                        ws.send(pkt.encode(always_bytes=False))
-                except:
-                    break
-
-        self.server.start_background_task(writer)
-
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
 
+        if hasattr(ws, 'send_and_wait'):
+            # socket can send and receive in one thread
+            def wait_method():
+                return ws.send_and_wait(self.poll)
+        else:
+            # start separate writer thread
+            def writer():
+                while True:
+                    try:
+                        packets = self.poll()
+                    except IOError:
+                        break
+                    try:
+                        for pkt in packets:
+                            ws.send(pkt.encode(always_bytes=False))
+                    except:
+                        break
+            self.server.start_background_task(writer)
+            wait_method = ws.wait
+
         while True:
             try:
-                p = ws.wait()
+                p = wait_method()
             except:
                 break
             if p is None:
@@ -181,5 +191,11 @@ class Socket(object):
                 self.receive(pkt)
             except ValueError:
                 pass
-        self.close(wait=True, abort=True)
-        self.queue.put(None)  # unlock the writer task so that it can exit
+
+        if wait_method == ws.wait:
+            self.close(wait=True, abort=True)
+            self.queue.put(None)  # unlock the writer task so that it can exit
+        else:
+            # there is no writer thread that will process the queue,
+            # so don't wait for it
+            self.close(wait=False, abort=True)
