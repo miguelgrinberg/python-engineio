@@ -154,9 +154,6 @@ class Socket(object):
             self.connected = True
             self.upgraded = True
 
-        self.server.logger.info(
-            '%s: Upgrade to websocket successful', self.sid)
-
         if hasattr(ws, 'send_and_wait'):
             # socket can send and receive in one thread
             def wait_method():
@@ -176,6 +173,9 @@ class Socket(object):
                         break
             self.server.start_background_task(writer)
             wait_method = ws.wait
+
+        self.server.logger.info(
+            '%s: Upgrade to websocket successful', self.sid)
 
         while True:
             try:
