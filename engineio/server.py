@@ -83,7 +83,7 @@ class Server(object):
                     self.logger.setLevel(logging.ERROR)
                 self.logger.addHandler(logging.StreamHandler())
         if async_mode is None:
-            modes = ['eventlet', 'gevent', 'threading']
+            modes = ['eventlet', 'gevent_uwsgi', 'gevent', 'threading']
         else:
             modes = [async_mode]
         self.async = None
