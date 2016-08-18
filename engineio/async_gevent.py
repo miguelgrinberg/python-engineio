@@ -125,7 +125,6 @@ async = {
     'queue_class': 'JoinableQueue',
     'websocket': sys.modules[__name__] if _websocket_available else None,
     'websocket_class': {'gevent': 'GeventWebSocket', 'uwsgi': 'uWSGIWebSocket',
-                        False: None}
-                       [_websocket_available],
+                        False: None}[_websocket_available],
     'sleep': gevent.sleep
 }
