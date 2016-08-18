@@ -26,10 +26,12 @@ Example
 The following application uses the Eventlet asynchronous server, and includes a
 small Flask application that serves the HTML/Javascript to the client:
 
-::
+
+.. code:: python
 
     import engineio
     import eventlet
+    import eventlet.wsgi
     from flask import Flask, render_template
 
     eio = engineio.Server()
