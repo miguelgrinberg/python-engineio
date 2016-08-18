@@ -4,7 +4,10 @@ import sys
 import gevent
 try:
     import uwsgi
-    _websocket_available = "uwsgi"
+    if hasattr(uwsgi, 'websocket_handshake'):
+        _websocket_available = "uwsgi"
+    else:
+        raise ImportError('uWSGI not running with websocket support')
 except ImportError:
     try:
         import geventwebsocket  # noqa
@@ -122,7 +125,7 @@ async = {
     'queue_class': 'JoinableQueue',
     'websocket': sys.modules[__name__] if _websocket_available else None,
     'websocket_class': {'gevent': 'GeventWebSocket', 'uwsgi': 'uWSGIWebSocket',
-                        False: None} \
+                        False: None}
                        [_websocket_available],
     'sleep': gevent.sleep
 }
