@@ -88,15 +88,17 @@ class uWSGIWebSocket(object):  # pragma: no cover
             import gevent.select
             self._event = gevent.event.Event()
             self._send_queue = gevent.queue.Queue()
+
             # spawn a select greenlet
             def select_greenlet_runner(fd, event):
                 """Sets event when data becomes available to read on fd."""
                 while True:
                     event.set()
                     gevent.select.select([fd], [], [])[0]
-            self._select_greenlet = gevent.spawn(select_greenlet_runner,
-                                                 uwsgi.connection_fd(),
-                                                 self._event)
+            self._select_greenlet = gevent.spawn(
+                select_greenlet_runner,
+                uwsgi.connection_fd(**self._uwsgi_api_kwargs),
+                self._event)
 
         return self.app(self)
 
@@ -104,11 +106,11 @@ class uWSGIWebSocket(object):  # pragma: no cover
         if self._event is not None:
             self._select_greenlet.kill()
             self._event.set()
-        uwsgi.close()
 
     def send(self, message):
         """Queues a message for sending. Real transmission is done in
-        wait method. Sends directly if uWSGI version is new enough."""
+        wait method.
+        Sends directly if uWSGI version is new enough."""
         if self._event is None:
             uwsgi.websocket_send(message, **self._uwsgi_api_kwargs)
         else:
@@ -120,11 +122,13 @@ class uWSGIWebSocket(object):  # pragma: no cover
         If running in compatibility mode for older uWSGI versions,
         it also sends messages that have been queued by send().
         A return value of None means that connection was closed.
-        This must be called in the main greenlet repeatedly."""
+        This must be called repeatedly. For uWSGI < 2.1.x it must
+        be called from the main greenlet."""
         while True:
             if self._event is None:
-                msg = uwsgi.websocket_recv(**self._uwsgi_api_kwargs)
-                if not msg:  # connection closed
+                try:
+                    msg = uwsgi.websocket_recv(**self._uwsgi_api_kwargs)
+                except IOError:  # connection closed
                     return None
                 return msg.decode()
             else:
