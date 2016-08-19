@@ -6,9 +6,6 @@ try:
     import uwsgi
     if hasattr(uwsgi, 'websocket_handshake'):
         _websocket_available = "uwsgi"
-        import gevent.event
-        import gevent.queue
-        import gevent.select
     else:
         raise ImportError('uWSGI not running with websocket support')
 except ImportError:
@@ -74,61 +71,82 @@ class uWSGIWebSocket(object):  # pragma: no cover
         if _websocket_available != "uwsgi":
             raise RuntimeError('You need to use the uWSGI server.')
         self.environ = environ
+
         uwsgi.websocket_handshake()
 
-        # event and queue for sending messages
-        self._event = gevent.event.Event()
-        self._send_queue = gevent.queue.Queue()
-
-        # spawn a select greenlet
-        def select_greenlet_runner(fd, event):
-            """Sets event when data becomes available to read on fd."""
-            while True:
-                event.set()
-                gevent.select.select([fd], [], [])[0]
-        self._select_greenlet = gevent.spawn(select_greenlet_runner,
-                                             uwsgi.connection_fd(),
-                                             self._event)
+        self._event = None
+        self._send_queue = None
+        self._select_greenlet = None
+        self._uwsgi_api_kwargs = {}
+        if hasattr(uwsgi, 'request_context'):
+            # new uwsgi version with support for api access across-greenlets
+            self._uwsgi_api_kwargs['request_context'] = uwsgi.request_context()
+        else:
+            # use event and queue for sending messages
+            import gevent.event
+            import gevent.queue
+            import gevent.select
+            self._event = gevent.event.Event()
+            self._send_queue = gevent.queue.Queue()
+            # spawn a select greenlet
+            def select_greenlet_runner(fd, event):
+                """Sets event when data becomes available to read on fd."""
+                while True:
+                    event.set()
+                    gevent.select.select([fd], [], [])[0]
+            self._select_greenlet = gevent.spawn(select_greenlet_runner,
+                                                 uwsgi.connection_fd(),
+                                                 self._event)
 
         return self.app(self)
 
     def close(self):
-        self._select_greenlet.kill()
-        self._event.set()
+        if self._event is not None:
+            self._select_greenlet.kill()
+            self._event.set()
         uwsgi.close()
 
     def send(self, message):
         """Queues a message for sending. Real transmission is done in
-        wait method."""
-        self._send_queue.put(message)
-        self._event.set()
+        wait method. Sends directly if uWSGI version is new enough."""
+        if self._event is None:
+            uwsgi.websocket_send(message, **self._uwsgi_api_kwargs)
+        else:
+            self._send_queue.put(message)
+            self._event.set()
 
     def wait(self):
-        """Waits and also sends queued messages.
+        """Waits and returns received messages.
+        If running in compatibility mode for older uWSGI versions,
+        it also sends messages that have been queued by send().
+        A return value of None means that connection was closed.
         This must be called in the main greenlet repeatedly."""
         while True:
-            self._event.wait()
-            self._event.clear()
-
-            # maybe there is something to send
-            msgs = []
-            while True:
-                try:
-                    msgs.append(self._send_queue.get(block=False))
-                except gevent.queue.Empty:
-                    break
-            if msgs:
-                for msg in msgs:
-                    uwsgi.websocket_send(msg)
-
-            # maybe there is something to receive
-            try:
-                msg = uwsgi.websocket_recv_nb()
-            except IOError:  # connection closed
-                self._select_greenlet.kill()
-                return None
-            if msg:  # message available
+            if self._event is None:
+                msg = uwsgi.websocket_recv(**self._uwsgi_api_kwargs)
+                if not msg:  # connection closed
+                    return None
                 return msg.decode()
+            else:
+                self._event.wait()
+                self._event.clear()
+                # maybe there is something to send
+                msgs = []
+                while True:
+                    try:
+                        msgs.append(self._send_queue.get(block=False))
+                    except gevent.queue.Empty:
+                        break
+                for msg in msgs:
+                    uwsgi.websocket_send(msg, **self._uwsgi_api_kwargs)
+                # maybe there is something to receive
+                try:
+                    msg = uwsgi.websocket_recv_nb(**self._uwsgi_api_kwargs)
+                except IOError:  # connection closed
+                    self._select_greenlet.kill()
+                    return None
+                if msg:  # message available
+                    return msg.decode()
 
 
 async = {
