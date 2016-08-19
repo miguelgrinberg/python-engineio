@@ -97,12 +97,13 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     gevent.select.select([fd], [], [])[0]
             self._select_greenlet = gevent.spawn(
                 select_greenlet_runner,
-                uwsgi.connection_fd(**self._uwsgi_api_kwargs),
+                uwsgi.connection_fd(),
                 self._event)
 
         return self.app(self)
 
     def close(self):
+        uwsgi.disconnect()
         if self._event is not None:
             self._select_greenlet.kill()
             self._event.set()
