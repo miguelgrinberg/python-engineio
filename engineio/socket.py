@@ -154,35 +154,29 @@ class Socket(object):
             self.connected = True
             self.upgraded = True
 
-        if hasattr(ws, 'send_and_wait'):
-            # socket can send and receive in one thread
-            def wait_method():
-                return ws.send_and_wait(self.poll)
-        else:
-            # start separate writer thread
-            def writer():
-                while True:
-                    try:
-                        packets = self.poll()
-                    except IOError:
-                        break
-                    try:
-                        for pkt in packets:
-                            ws.send(pkt.encode(always_bytes=False))
-                    except:
-                        break
-            self.server.start_background_task(writer)
-            wait_method = ws.wait
+        # start separate writer thread
+        def writer():
+            while True:
+                try:
+                    packets = self.poll()
+                except IOError:
+                    break
+                try:
+                    for pkt in packets:
+                        ws.send(pkt.encode(always_bytes=False))
+                except:
+                    break
+        self.server.start_background_task(writer)
 
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
 
         while True:
             try:
-                p = wait_method()
+                p = ws.wait()
             except:
                 break
-            if p is None:
+            if p is None:  # connection closed by client
                 break
             if isinstance(p, six.text_type):  # pragma: no cover
                 p = p.encode('utf-8')
@@ -192,10 +186,5 @@ class Socket(object):
             except ValueError:
                 pass
 
-        if wait_method == ws.wait:
-            self.close(wait=True, abort=True)
-            self.queue.put(None)  # unlock the writer task so that it can exit
-        else:
-            # there is no writer thread that will process the queue,
-            # so don't wait for it
-            self.close(wait=False, abort=True)
+        self.close(wait=True, abort=True)
+        self.queue.put(None)  # unlock the writer task so that it can exit

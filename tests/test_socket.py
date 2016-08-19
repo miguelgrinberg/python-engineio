@@ -233,7 +233,6 @@ class TestSocket(unittest.TestCase):
         s.poll = mock.MagicMock(side_effect=[
             [packet.Packet(packet.MESSAGE, data=bar)], IOError])
         ws = mock.MagicMock()
-        del ws.send_and_wait
         ws.wait.side_effect = [
             packet.Packet(packet.MESSAGE, data=foo).encode(
                 always_bytes=False),
@@ -261,7 +260,6 @@ class TestSocket(unittest.TestCase):
         s.poll = mock.MagicMock(side_effect=[
             [packet.Packet(packet.MESSAGE, data=bar)], IOError])
         ws = mock.MagicMock()
-        del ws.send_and_wait
         ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(
                 always_bytes=False),
@@ -287,7 +285,6 @@ class TestSocket(unittest.TestCase):
         s.queue.join = mock.MagicMock(return_value=None)
         probe = six.text_type('probe')
         ws = mock.MagicMock()
-        del ws.send_and_wait
         ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(
                 always_bytes=False),
@@ -308,7 +305,6 @@ class TestSocket(unittest.TestCase):
             [packet.Packet(packet.MESSAGE, data=bar)],
             [packet.Packet(packet.MESSAGE, data=bar)], IOError])
         ws = mock.MagicMock()
-        del ws.send_and_wait
         ws.wait.side_effect = [
             packet.Packet(packet.MESSAGE, data=foo).encode(
                 always_bytes=False),
@@ -328,7 +324,6 @@ class TestSocket(unittest.TestCase):
         s.poll = mock.MagicMock(side_effect=[
             [packet.Packet(packet.MESSAGE, data=bar)], IOError])
         ws = mock.MagicMock()
-        del ws.send_and_wait
         ws.wait.side_effect = [
             packet.Packet(packet.OPEN).encode(always_bytes=False),
             packet.Packet(packet.MESSAGE, data=foo).encode(

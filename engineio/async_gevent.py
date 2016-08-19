@@ -6,6 +6,9 @@ try:
     import uwsgi
     if hasattr(uwsgi, 'websocket_handshake'):
         _websocket_available = "uwsgi"
+        import gevent.event
+        import gevent.queue
+        import gevent.select
     else:
         raise ImportError('uWSGI not running with websocket support')
 except ImportError:
@@ -72,50 +75,57 @@ class uWSGIWebSocket(object):  # pragma: no cover
             raise RuntimeError('You need to use the uWSGI server.')
         self.environ = environ
         uwsgi.websocket_handshake()
+
+        # event and queue for sending messages
+        self._event = gevent.event.Event()
+        self._send_queue = gevent.queue.Queue()
+
+        # spawn a select greenlet
+        def select_greenlet_runner(fd, event):
+            """Sets event when data becomes available to read on fd."""
+            while True:
+                event.set()
+                gevent.select.select([fd], [], [])[0]
+        self._select_greenlet = gevent.spawn(select_greenlet_runner,
+                                             uwsgi.connection_fd(), self._event)
+
         return self.app(self) or []
 
     def close(self):
+        self._select_greenlet.kill()
+        self._event.set()
         uwsgi.close()
 
     def send(self, message):
-        uwsgi.websocket_send(message)
+        """Queues a message for sending. Real transmission is done in wait()."""
+        self._send_queue.put(message)
+        self._event.set()
 
     def wait(self):
-        msg = uwsgi.websocket_recv()
-        if not msg:
-            return None
-        return msg.decode()
-
-    def send_and_wait(self, poll_func):
-        """Calls poll_func(block=False) regularly and sends the messages
-        it returns. Apart from that, it observes the websocket for incoming
-        messages. If one arrives, it returns that. After the returned message
-        was processed, this function can be called again to continue its work.
-        A return of None means that the connection was closed. Afterwards."""
+        """Waits and also sends queued messages.
+        This must be called in the main greenlet repeatedly."""
         while True:
-            # fetch packets to send and transmit them over the websocket
-            try:
-                packets = poll_func(block=False)
-            except IOError:  # no packets to send
-                pass
-            else:
+            self._event.wait()
+            self._event.clear()
+
+            # maybe there is something to send
+            msgs = []
+            while True:
                 try:
-                    for pkt in packets:
-                        self.send(pkt.encode(always_bytes=False))
-                except:
+                    msgs.append(self._send_queue.get(block=False))
+                except gevent.queue.Empty:
                     break
-            # receive packets available on the websocket
+            if msgs:
+                for msg in msgs:
+                    uwsgi.websocket_send(msg)
+
+            # maybe there is something to receive
             try:
                 msg = uwsgi.websocket_recv_nb()
             except IOError:  # connection closed
                 return None
-            else:
-                if not msg:  # no message available
-                    # We can't avoid a delay completely, so make it small
-                    # at least.
-                    gevent.sleep(0.05)
-                else:
-                    return msg.decode()
+            if msg:  # message available
+                return msg.decode()
 
 
 async = {
