@@ -87,7 +87,8 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 event.set()
                 gevent.select.select([fd], [], [])[0]
         self._select_greenlet = gevent.spawn(select_greenlet_runner,
-                                             uwsgi.connection_fd(), self._event)
+                                             uwsgi.connection_fd(),
+                                             self._event)
 
         return self.app(self) or []
 
@@ -97,7 +98,8 @@ class uWSGIWebSocket(object):  # pragma: no cover
         uwsgi.close()
 
     def send(self, message):
-        """Queues a message for sending. Real transmission is done in wait()."""
+        """Queues a message for sending. Real transmission is done in
+        wait method."""
         self._send_queue.put(message)
         self._event.set()
 
