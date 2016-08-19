@@ -134,7 +134,7 @@ class Socket(object):
                                         always_bytes=False):
                 self.server.logger.info(
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
-                return
+                return []
             ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
@@ -148,7 +148,7 @@ class Socket(object):
                     ('%s: Failed websocket upgrade, expected UPGRADE packet, '
                      'received %s instead.'),
                     self.sid, pkt)
-                return
+                return []
             self.upgraded = True
         else:
             self.connected = True
@@ -160,6 +160,9 @@ class Socket(object):
                 try:
                     packets = self.poll()
                 except IOError:
+                    break
+                if not packets:
+                    # empty packet list returned -> connection closed
                     break
                 try:
                     for pkt in packets:
@@ -188,3 +191,5 @@ class Socket(object):
 
         self.close(wait=True, abort=True)
         self.queue.put(None)  # unlock the writer task so that it can exit
+
+        return []  # response must be an iterable by wsgi specification

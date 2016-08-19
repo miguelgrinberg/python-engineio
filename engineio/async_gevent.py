@@ -90,7 +90,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                                              uwsgi.connection_fd(),
                                              self._event)
 
-        return self.app(self) or []
+        return self.app(self)
 
     def close(self):
         self._select_greenlet.kill()
@@ -125,6 +125,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
             try:
                 msg = uwsgi.websocket_recv_nb()
             except IOError:  # connection closed
+                self._select_greenlet.kill()
                 return None
             if msg:  # message available
                 return msg.decode()
