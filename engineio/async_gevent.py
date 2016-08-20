@@ -1,5 +1,6 @@
 import importlib
 import sys
+import six
 
 import gevent
 try:
@@ -107,14 +108,37 @@ class uWSGIWebSocket(object):  # pragma: no cover
             self._select_greenlet.kill()
             self._event.set()
 
-    def send(self, message):
+    def _send(self, msg):
+        """Transmits message either in binary or UTF-8 text mode,
+        depending on its type."""
+        kwargs = {}
+        if self._req_ctx is not None:
+            kwargs['request_context'] = self._req_ctx
+        if isinstance(msg, six.binary_type):
+            uwsgi.websocket_send_binary(msg, **kwargs)
+        else:
+            uwsgi.websocket_send(msg, **kwargs)
+
+    def _decode_received(self, msg):
+        """Returns either bytes or str, depending on message type."""
+        if not isinstance(msg, six.binary_type):
+            # already decoded - do nothing
+            return msg
+        # only decode from utf-8 if message is not binary data
+        type = six.byte2int(msg[0:1])
+        if type >= 48:  # no binary
+            return msg.decode('utf-8')
+        # binary message, don't try to decode
+        return msg
+
+    def send(self, msg):
         """Queues a message for sending. Real transmission is done in
         wait method.
         Sends directly if uWSGI version is new enough."""
         if self._req_ctx is not None:
-            uwsgi.websocket_send(message, request_context=self._req_ctx)
+            self._send(msg)
         else:
-            self._send_queue.put(message)
+            self._send_queue.put(msg)
             self._event.set()
 
     def wait(self):
@@ -130,7 +154,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     msg = uwsgi.websocket_recv(request_context=self._req_ctx)
                 except IOError:  # connection closed
                     return None
-                return msg.decode()
+                return self._decode_received(msg)
             else:
                 self._event.wait()
                 self._event.clear()
@@ -142,7 +166,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     except gevent.queue.Empty:
                         break
                 for msg in msgs:
-                    uwsgi.websocket_send(msg)
+                    self._send(msg)
                 # maybe there is something to receive
                 try:
                     msg = uwsgi.websocket_recv_nb()
@@ -150,7 +174,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     self._select_greenlet.kill()
                     return None
                 if msg:  # message available
-                    return msg.decode()
+                    return self._decode_received(msg)
 
 
 async = {
