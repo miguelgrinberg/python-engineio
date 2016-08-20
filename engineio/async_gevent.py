@@ -74,13 +74,10 @@ class uWSGIWebSocket(object):  # pragma: no cover
 
         uwsgi.websocket_handshake()
 
-        self._event = None
-        self._send_queue = None
-        self._select_greenlet = None
-        self._uwsgi_api_kwargs = {}
+        self._req_ctx = None
         if hasattr(uwsgi, 'request_context'):
-            # new uwsgi version with support for api access across-greenlets
-            self._uwsgi_api_kwargs['request_context'] = uwsgi.request_context()
+            # uWSGI >= 2.1.x with support for api access across-greenlets
+            self._req_ctx = uwsgi.request_context()
         else:
             # use event and queue for sending messages
             import gevent.event
@@ -103,8 +100,10 @@ class uWSGIWebSocket(object):  # pragma: no cover
         return self.app(self)
 
     def close(self):
+        """Disconnects uWSGI from the client."""
         uwsgi.disconnect()
-        if self._event is not None:
+        if self._req_ctx is None:
+            # better kill it here in case wait() is not called again
             self._select_greenlet.kill()
             self._event.set()
 
@@ -112,8 +111,8 @@ class uWSGIWebSocket(object):  # pragma: no cover
         """Queues a message for sending. Real transmission is done in
         wait method.
         Sends directly if uWSGI version is new enough."""
-        if self._event is None:
-            uwsgi.websocket_send(message, **self._uwsgi_api_kwargs)
+        if self._req_ctx is not None:
+            uwsgi.websocket_send(message, request_context=self._req_ctx)
         else:
             self._send_queue.put(message)
             self._event.set()
@@ -126,9 +125,9 @@ class uWSGIWebSocket(object):  # pragma: no cover
         This must be called repeatedly. For uWSGI < 2.1.x it must
         be called from the main greenlet."""
         while True:
-            if self._event is None:
+            if self._req_ctx is not None:
                 try:
-                    msg = uwsgi.websocket_recv(**self._uwsgi_api_kwargs)
+                    msg = uwsgi.websocket_recv(request_context=self._req_ctx)
                 except IOError:  # connection closed
                     return None
                 return msg.decode()
@@ -143,10 +142,10 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     except gevent.queue.Empty:
                         break
                 for msg in msgs:
-                    uwsgi.websocket_send(msg, **self._uwsgi_api_kwargs)
+                    uwsgi.websocket_send(msg)
                 # maybe there is something to receive
                 try:
-                    msg = uwsgi.websocket_recv_nb(**self._uwsgi_api_kwargs)
+                    msg = uwsgi.websocket_recv_nb()
                 except IOError:  # connection closed
                     self._select_greenlet.kill()
                     return None
