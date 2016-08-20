@@ -111,13 +111,14 @@ class uWSGIWebSocket(object):  # pragma: no cover
     def _send(self, msg):
         """Transmits message either in binary or UTF-8 text mode,
         depending on its type."""
-        kwargs = {}
-        if self._req_ctx is not None:
-            kwargs['request_context'] = self._req_ctx
         if isinstance(msg, six.binary_type):
-            uwsgi.websocket_send_binary(msg, **kwargs)
+           method = uwsgi.websocket_send_binary
         else:
-            uwsgi.websocket_send(msg, **kwargs)
+           method = uwsgi.websocket_send
+        if self._req_ctx is not None:
+            method(msg, request_context=self._req_ctx)
+        else:
+            method(msg)
 
     def _decode_received(self, msg):
         """Returns either bytes or str, depending on message type."""
@@ -156,18 +157,22 @@ class uWSGIWebSocket(object):  # pragma: no cover
                     return None
                 return self._decode_received(msg)
             else:
-                self._event.wait()
-                self._event.clear()
-                # maybe there is something to send
-                msgs = []
-                while True:
-                    try:
-                        msgs.append(self._send_queue.get(block=False))
-                    except gevent.queue.Empty:
-                        break
-                for msg in msgs:
-                    self._send(msg)
-                # maybe there is something to receive
+                # we wake up at least every 3 seconds to let uWSGI
+                # do its ping/ponging
+                event_set = self._event.wait(timeout=3)
+                if event_set:
+                    self._event.clear()
+                    # maybe there is something to send
+                    msgs = []
+                    while True:
+                        try:
+                            msgs.append(self._send_queue.get(block=False))
+                        except gevent.queue.Empty:
+                            break
+                    for msg in msgs:
+                        self._send(msg)
+                # maybe there is something to receive, if not, at least
+                # ensure uWSGI does its ping/ponging
                 try:
                     msg = uwsgi.websocket_recv_nb()
                 except IOError:  # connection closed
