@@ -114,7 +114,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(s.async['queue'], 'gevent.queue')
         self.assertEqual(s.async['queue_class'], 'JoinableQueue')
         self.assertEqual(s.async['websocket'], async_gevent)
-        self.assertEqual(s.async['websocket_class'], 'WebSocketWSGI')
+        self.assertEqual(s.async['websocket_class'], 'GeventWebSocket')
         del sys.modules['gevent']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_gevent']
