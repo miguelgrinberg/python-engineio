@@ -112,9 +112,9 @@ class uWSGIWebSocket(object):  # pragma: no cover
         """Transmits message either in binary or UTF-8 text mode,
         depending on its type."""
         if isinstance(msg, six.binary_type):
-           method = uwsgi.websocket_send_binary
+            method = uwsgi.websocket_send_binary
         else:
-           method = uwsgi.websocket_send
+            method = uwsgi.websocket_send
         if self._req_ctx is not None:
             method(msg, request_context=self._req_ctx)
         else:
