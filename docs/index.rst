@@ -161,13 +161,16 @@ Gevent
 coroutines, very similar to eventlet. An Engine.IO server deployed with
 gevent has access to the long-polling transport. If project
 `gevent-websocket <https://bitbucket.org/Jeffrey/gevent-websocket/>`_ is
-installed, the WebSocket transport is also available.
+installed, the WebSocket transport is also available. Note that when using the
+uWSGI server, the native WebSocket implementation of uWSGI can be used instead
+of gevent-websocket (see next section for details on this).
 
 Instances of class ``engineio.Server`` will automatically use gevent for
 asynchronous operations if the library is installed and eventlet is not
 installed. To request gevent to be selected explicitly, the ``async_mode``
 option can be given in the constructor::
 
+    # gevent alone or with gevent-websocket
     eio = engineio.Server(async_mode='gevent')
 
 A server configured for gevent is deployed as a regular WSGI application,
@@ -205,6 +208,29 @@ Note: Gevent provides a ``monkey_patch()`` function that replaces all the
 blocking functions in the standard library with equivalent asynchronous
 versions. While python-engineio does not require monkey patching, other
 libraries such as database drivers are likely to require it.
+
+Gevent with uWSGI
+~~~~~~~~~~~~~~~~~
+
+When using the uWSGI server in combination with gevent, the Engine.IO server
+can take advantage of uWSGI's native WebSocket support.
+
+Instances of class ``engineio.Server`` will automatically use this option for
+asynchronous operations if both gevent and uWSGI are installed and eventlet is
+not installed. uWSGI must be compiled with WebSocket and SSL support for the
+WebSocket transport to be available. To request this asynchoronous mode
+explicitly, the  ``async_mode`` option can be given in the constructor::
+
+    # gevent alone or with gevent-websocket
+    eio = engineio.Server(async_mode='gevent_uwsgi')
+
+A complete explanation of the configuration and usage of the uWSGI server is
+beyond the scope of this documentation. The uWSGI server is a fairly complex
+package that provides a large and comprehensive set of options. As way of an
+introduction, the following command starts a uWSGI server for the
+``latency.py`` example on port 5000::
+
+    $ uwsgi --http :5000 --gevent 1000 --http-websockets --master --wsgi-file latency.py --callable app
 
 Standard Threading Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
