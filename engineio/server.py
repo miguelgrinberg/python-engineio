@@ -47,6 +47,9 @@ class Server(object):
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param async_handlers: If set to ``True``, run message event handlers in
+                           non-blocking threads. To run handlers synchronously,
+                           set to ``False``. The default is ``True``.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -57,7 +60,8 @@ class Server(object):
                  max_http_buffer_size=100000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie='io', cors_allowed_origins=None,
-                 cors_credentials=True, logger=False, json=None, **kwargs):
+                 cors_credentials=True, logger=False, json=None,
+                 async_handlers=True, **kwargs):
         self.ping_timeout = ping_timeout
         self.ping_interval = ping_interval
         self.max_http_buffer_size = max_http_buffer_size
@@ -67,6 +71,7 @@ class Server(object):
         self.cookie = cookie
         self.cors_allowed_origins = cors_allowed_origins
         self.cors_credentials = cors_credentials
+        self.async_handlers = async_handlers
         self.sockets = {}
         self.handlers = {}
         if json is not None:

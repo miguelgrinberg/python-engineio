@@ -20,6 +20,7 @@ class TestSocket(unittest.TestCase):
         mock_server = mock.Mock()
         mock_server.ping_timeout = 0.2
         mock_server.ping_interval = 0.2
+        mock_server.async_handlers = True
 
         try:
             import queue
@@ -78,6 +79,21 @@ class TestSocket(unittest.TestCase):
         r = s.poll()
         self.assertEqual(len(r), 1)
         self.assertTrue(r[0].encode(), b'3abc')
+
+    def test_message_async_handler(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.receive(packet.Packet(packet.MESSAGE, data='foo'))
+        mock_server._trigger_event.assert_called_once_with('message', 'sid',
+                                                           'foo', async=True)
+
+    def test_message_sync_handler(self):
+        mock_server = self._get_mock_server()
+        mock_server.async_handlers = False
+        s = socket.Socket(mock_server, 'sid')
+        s.receive(packet.Packet(packet.MESSAGE, data='foo'))
+        mock_server._trigger_event.assert_called_once_with('message', 'sid',
+                                                           'foo', async=False)
 
     def test_invalid_packet(self):
         mock_server = self._get_mock_server()
@@ -241,8 +257,6 @@ class TestSocket(unittest.TestCase):
         self._join_bg_tasks()
         self.assertTrue(s.connected)
         self.assertTrue(s.upgraded)
-        print(mock_server._trigger_event.call_args_list)
-        print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', 'foo', async=True),
@@ -270,8 +284,6 @@ class TestSocket(unittest.TestCase):
         s._websocket_handler(ws)
         self._join_bg_tasks()
         self.assertTrue(s.upgraded)
-        print(mock_server._trigger_event.call_args_list)
-        print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', 'foo', async=True),
@@ -332,8 +344,6 @@ class TestSocket(unittest.TestCase):
         s._websocket_handler(ws)
         self._join_bg_tasks()
         self.assertTrue(s.connected)
-        print(mock_server._trigger_event.call_args_list)
-        print(ws.send.call_args_list)
         self.assertEqual(mock_server._trigger_event.call_count, 2)
         mock_server._trigger_event.assert_has_calls([
             mock.call('message', 'sid', foo, async=True),

@@ -60,7 +60,8 @@ class TestServer(unittest.TestCase):
             'compression_threshold': 4,
             'cookie': 'foo',
             'cors_allowed_origins': ['foo', 'bar', 'baz'],
-            'cors_credentials': False}
+            'cors_credentials': False,
+            'async_handlers': False}
         s = server.Server(**kwargs)
         for arg in six.iterkeys(kwargs):
             self.assertEqual(getattr(s, arg), kwargs[arg])
