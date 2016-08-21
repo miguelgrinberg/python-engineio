@@ -35,7 +35,7 @@ class Socket(object):
             pass
         return packets
 
-    def receive(self, pkt):
+    def receive(self, pkt, environ=None):
         """Receive packet from the client."""
         self.server.logger.info('%s: Received packet %s data %s',
                                 self.sid, packet.packet_names[pkt.packet_type],
@@ -45,8 +45,13 @@ class Socket(object):
             self.last_ping = time.time()
             self.send(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.MESSAGE:
-            self.server._trigger_event('message', self.sid, pkt.data,
-                                       async=self.server.async_handlers)
+            if self.server.pass_environ:
+                self.server._trigger_event('message', self.sid, environ,
+                                           pkt.data,
+                                           async=self.server.async_handlers)
+            else:
+                self.server._trigger_event('message', self.sid, pkt.data,
+                                           async=self.server.async_handlers)
         elif pkt.packet_type == packet.UPGRADE:
             self.send(packet.Packet(packet.NOOP))
         else:
@@ -94,7 +99,7 @@ class Socket(object):
             body = environ['wsgi.input'].read(length)
             p = payload.Payload(encoded_payload=body)
             for pkt in p.packets:
-                self.receive(pkt)
+                self.receive(pkt, environ=environ)
 
     def close(self, wait=True, abort=False):
         """Close the socket connection."""
@@ -182,7 +187,7 @@ class Socket(object):
                 p = p.encode('utf-8')
             pkt = packet.Packet(encoded_packet=p)
             try:
-                self.receive(pkt)
+                self.receive(pkt, environ=ws.environ)
             except ValueError:
                 pass
 

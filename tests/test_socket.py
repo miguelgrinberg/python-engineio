@@ -21,6 +21,7 @@ class TestSocket(unittest.TestCase):
         mock_server.ping_timeout = 0.2
         mock_server.ping_interval = 0.2
         mock_server.async_handlers = True
+        mock_server.pass_environ = False
 
         try:
             import queue
