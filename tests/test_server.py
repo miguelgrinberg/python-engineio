@@ -519,6 +519,11 @@ class TestServer(unittest.TestCase):
                          packet.MESSAGE)
         self.assertEqual(mock_socket.send.call_args[0][0].data, 'hello')
 
+    def test_send_unknown_socket(self):
+        s = server.Server()
+        # just ensure no exceptions are raised
+        s.send('foo', 'hello')
+
     def test_get_request(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
