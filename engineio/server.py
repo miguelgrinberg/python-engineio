@@ -230,6 +230,8 @@ class Server(object):
                         self.logger.warning('Invalid session %s', sid)
                         r = self._bad_request()
                     else:
+                        self._trigger_event('connect_update', sid, environ,
+                                            async=False)
                         socket = self._get_socket(sid)
                         try:
                             packets = socket.handle_get_request(
