@@ -18,6 +18,7 @@ class Socket(object):
         self.connected = False
         self.upgraded = False
         self.closed = False
+        self.writeable = True
 
     def poll(self):
         """Wait for packets to send to the client."""
@@ -54,7 +55,7 @@ class Socket(object):
 
     def send(self, pkt):
         """Send a packet to the client."""
-        if self.closed:
+        if self.closed or not self.writeable:
             raise IOError('Socket is closed')
         if time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
@@ -101,9 +102,10 @@ class Socket(object):
         self.server._trigger_event('disconnect', self.sid, async=False)
         if not abort:
             self.send(packet.Packet(packet.CLOSE))
-        self.closed = True
+        self.writeable = False
         if wait:
             self.queue.join()
+        self.closed = True
 
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
