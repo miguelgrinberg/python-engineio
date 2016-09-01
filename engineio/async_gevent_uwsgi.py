@@ -3,11 +3,8 @@ import sys
 import six
 
 import gevent
-try:
-    import uwsgi
-    _websocket_available = hasattr(uwsgi, 'websocket_handshake')
-except ImportError:
-    _websocket_available = False
+import uwsgi
+_websocket_available = hasattr(uwsgi, 'websocket_handshake')
 
 
 class Thread(gevent.Greenlet):  # pragma: no cover
