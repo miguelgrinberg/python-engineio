@@ -356,6 +356,17 @@ class TestSocket(unittest.TestCase):
         s.close(wait=False)
         self.assertRaises(IOError, s.send, packet.Packet(packet.NOOP))
 
+    def test_close_after_close(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.close(wait=False)
+        self.assertTrue(s.closed)
+        self.assertEqual(mock_server._trigger_event.call_count, 1)
+        mock_server._trigger_event.assert_called_once_with('disconnect', 'sid',
+                                                           async=False)
+        s.close()
+        self.assertEqual(mock_server._trigger_event.call_count, 1)
+
     def test_close_and_wait(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')

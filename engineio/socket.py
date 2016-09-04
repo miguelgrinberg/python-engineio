@@ -98,12 +98,13 @@ class Socket(object):
 
     def close(self, wait=True, abort=False):
         """Close the socket connection."""
-        self.server._trigger_event('disconnect', self.sid, async=False)
-        if not abort:
-            self.send(packet.Packet(packet.CLOSE))
-        self.closed = True
-        if wait:
-            self.queue.join()
+        if not self.closed:
+            self.server._trigger_event('disconnect', self.sid, async=False)
+            if not abort:
+                self.send(packet.Packet(packet.CLOSE))
+            self.closed = True
+            if wait:
+                self.queue.join()
 
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
