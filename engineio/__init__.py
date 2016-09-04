@@ -1,4 +1,6 @@
 from .middleware import Middleware
 from .server import Server
 
-__all__ = [Middleware, Server]
+__version__ = '1.0.1'
+
+__all__ = [__version__, Middleware, Server]

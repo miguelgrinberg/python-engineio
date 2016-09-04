@@ -4,15 +4,20 @@ python-engineio
 
 Engine.IO server.
 """
+import re
 from setuptools import setup
 
+
+with open('engineio/__init__.py', 'r') as f:
+    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+                        f.read(), re.MULTILINE).group(1)
 
 with open('README.rst', 'r') as f:
     long_description = f.read()
 
 setup(
     name='python-engineio',
-    version='1.0.1',
+    version=version,
     url='http://github.com/miguelgrinberg/python-engineio/',
     license='MIT',
     author='Miguel Grinberg',
