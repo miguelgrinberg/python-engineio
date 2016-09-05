@@ -33,6 +33,7 @@ class Payload(object):
 
     def decode(self, encoded_payload):
         """Decode a transmitted payload."""
+        fixed_double_encode = False
         self.packets = []
         while encoded_payload:
             if six.byte2int(encoded_payload[0:1]) <= 1:
@@ -49,6 +50,29 @@ class Payload(object):
                 if i == -1:
                     raise ValueError('invalid payload')
                 packet_len = int(encoded_payload[0:i])
+                if not fixed_double_encode:
+                    # the engine.io javascript client sends text payloads with
+                    # a double UTF-8 encoding. Here we try to fix that mess and
+                    # restore the original packet
+                    try:
+                        # first we remove one UTF-8 encoding layer
+                        fixed_payload = encoded_payload.decode(
+                            'utf-8').encode('raw_unicode_escape')
+
+                        # then we make sure the result can be decoded a second
+                        # time (this will raise an exception if not)
+                        fixed_payload.decode('utf-8')
+
+                        # if a second utf-8 decode worked, then this appears to
+                        # be a double encoded packet, so here we keep the
+                        # packet after a single decode, since the packet class
+                        # will perform a decode as well
+                        encoded_payload = fixed_payload
+                    except:
+                        # if we couldn't apply a double utf-8 decode then
+                        # the packet must have been correct, so keep going
+                        pass
+                    fixed_double_encode = True
                 pkt = encoded_payload[i + 1: i + 1 + packet_len]
                 self.packets.append(packet.Packet(encoded_packet=pkt))
             encoded_payload = encoded_payload[i + 1 + packet_len:]
