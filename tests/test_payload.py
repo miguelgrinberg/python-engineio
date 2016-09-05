@@ -53,15 +53,15 @@ class TestPayload(unittest.TestCase):
     def test_decode_double_encoded_utf8_payload(self):
         p = payload.Payload(encoded_payload=b'3:4\xc3\x83\xc2\xa9')
         self.assertEqual(len(p.packets), 1)
-        self.assertEqual(p.packets[0].data, 'é')
+        self.assertEqual(p.packets[0].data.encode('utf-8'), b'\xc3\xa9')
 
     def test_decode_double_encoded_utf8_multi_payload(self):
         p = payload.Payload(encoded_payload=b'3:4\xc3\x83\xc2\xa94:4abc')
         self.assertEqual(len(p.packets), 2)
-        self.assertEqual(p.packets[0].data, 'é')
+        self.assertEqual(p.packets[0].data.encode('utf-8'), b'\xc3\xa9')
         self.assertEqual(p.packets[1].data, 'abc')
 
     def test_decode_single_encoded_utf8_payload(self):
         p = payload.Payload(encoded_payload=b'3:4\xc3\xa9')
         self.assertEqual(len(p.packets), 1)
-        self.assertEqual(p.packets[0].data, 'é')
+        self.assertEqual(p.packets[0].data.encode('utf-8'), b'\xc3\xa9')
