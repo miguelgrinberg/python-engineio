@@ -11,6 +11,8 @@ from . import packet
 from . import payload
 from . import socket
 
+default_logger = logging.getLogger('engineio')
+
 
 class Server(object):
     """An Engine.IO server.
@@ -82,7 +84,7 @@ class Server(object):
         if not isinstance(logger, bool):
             self.logger = logger
         else:
-            self.logger = logging.getLogger('engineio')
+            self.logger = default_logger
             if not logging.root.handlers and \
                     self.logger.level == logging.NOTSET:
                 if logger:
