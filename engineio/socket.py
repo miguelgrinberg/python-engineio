@@ -17,6 +17,7 @@ class Socket(object):
         self.last_ping = time.time()
         self.connected = False
         self.upgraded = False
+        self.closing = False
         self.closed = False
 
     def poll(self):
@@ -98,7 +99,8 @@ class Socket(object):
 
     def close(self, wait=True, abort=False):
         """Close the socket connection."""
-        if not self.closed:
+        if not self.closed and not self.closing:
+            self.closing = True
             self.server._trigger_event('disconnect', self.sid, async=False)
             if not abort:
                 self.send(packet.Packet(packet.CLOSE))
