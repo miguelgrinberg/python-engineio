@@ -37,6 +37,14 @@ class TestPacket(unittest.TestCase):
         self.assertTrue(pkt.binary)
         self.assertEqual(pkt.encode(), b'\x04\x01\x02\x03')
 
+    def test_encode_binary_bytearray_packet(self):
+        pkt = packet.Packet(packet.MESSAGE, data=bytearray(b'\x01\x02\x03'),
+                            binary=True)
+        self.assertEqual(pkt.packet_type, packet.MESSAGE)
+        self.assertEqual(pkt.data, b'\x01\x02\x03')
+        self.assertTrue(pkt.binary)
+        self.assertEqual(pkt.encode(), b'\x04\x01\x02\x03')
+
     def test_encode_binary_b64_packet(self):
         pkt = packet.Packet(packet.MESSAGE, data=b'\x01\x02\x03\x04',
                             binary=True)
@@ -54,6 +62,10 @@ class TestPacket(unittest.TestCase):
 
     def test_decode_binary_packet(self):
         pkt = packet.Packet(encoded_packet=b'\x04\x01\x02\x03')
+        self.assertTrue(pkt.encode(), b'\x04\x01\x02\x03')
+
+    def test_decode_binary_bytearray_packet(self):
+        pkt = packet.Packet(encoded_packet=bytearray(b'\x04\x01\x02\x03'))
         self.assertTrue(pkt.encode(), b'\x04\x01\x02\x03')
 
     def test_decode_binary_b64_packet(self):

@@ -6,6 +6,8 @@ import six
 (OPEN, CLOSE, PING, PONG, MESSAGE, UPGRADE, NOOP) = (0, 1, 2, 3, 4, 5, 6)
 packet_names = ['OPEN', 'CLOSE', 'PING', 'PONG', 'MESSAGE', 'UPGRADE', 'NOOP']
 
+binary_types = (six.binary_type, bytearray)
+
 
 class Packet(object):
     """Engine.IO packet."""
@@ -20,7 +22,7 @@ class Packet(object):
             self.binary = binary
         elif isinstance(data, six.text_type):
             self.binary = False
-        elif isinstance(data, six.binary_type):
+        elif isinstance(data, binary_types):
             self.binary = True
         else:
             self.binary = False
@@ -47,14 +49,14 @@ class Packet(object):
                                               separators=(',', ':'))
         elif self.data is not None:
             encoded_packet += str(self.data)
-        if always_bytes and not isinstance(encoded_packet, six.binary_type):
+        if always_bytes and not isinstance(encoded_packet, binary_types):
             encoded_packet = encoded_packet.encode('utf-8')
         return encoded_packet
 
     def decode(self, encoded_packet):
         """Decode a transmitted package."""
         b64 = False
-        if not isinstance(encoded_packet, six.binary_type):
+        if not isinstance(encoded_packet, binary_types):
             encoded_packet = encoded_packet.encode('utf-8')
         self.packet_type = six.byte2int(encoded_packet[0:1])
         if self.packet_type == 98:  # 'b' --> binary base64 encoded packet
