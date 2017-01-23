@@ -325,6 +325,8 @@ class TestServer(unittest.TestCase):
         self.assertEqual(len(s.sockets), 1)
         self.assertEqual(start_response.call_count, 1)
         self.assertEqual(start_response.call_args[0][0], '200 OK')
+        self.assertIn(('Content-Type', 'application/octet-stream'),
+                      start_response.call_args[0][1])
         self.assertEqual(len(r), 1)
         packets = payload.Payload(encoded_payload=r[0]).packets
         self.assertEqual(len(packets), 1)
@@ -348,6 +350,8 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         self.assertTrue(start_response.call_args[0][0], '200 OK')
+        self.assertIn(('Content-Type', 'text/plain; charset=UTF-8'),
+                      start_response.call_args[0][1])
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=1'}
         r = s.handle_request(environ, start_response)
@@ -360,6 +364,8 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         self.assertTrue(start_response.call_args[0][0], '200 OK')
+        self.assertIn(('Content-Type', 'text/plain; charset=UTF-8'),
+                      start_response.call_args[0][1])
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=true'}
         r = s.handle_request(environ, start_response)
@@ -372,6 +378,8 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         self.assertTrue(start_response.call_args[0][0], '200 OK')
+        self.assertIn(('Content-Type', 'application/octet-stream'),
+                      start_response.call_args[0][1])
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=0'}
         r = s.handle_request(environ, start_response)
@@ -384,6 +392,8 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         self.assertTrue(start_response.call_args[0][0], '200 OK')
+        self.assertIn(('Content-Type', 'application/octet-stream'),
+                      start_response.call_args[0][1])
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=false'}
         r = s.handle_request(environ, start_response)

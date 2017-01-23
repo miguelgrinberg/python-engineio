@@ -374,7 +374,10 @@ class Server(object):
         if packets is not None:
             if headers is None:
                 headers = []
-            headers += [('Content-Type', 'application/octet-stream')]
+            if b64:
+                headers += [('Content-Type', 'text/plain; charset=UTF-8')]
+            else:
+                headers += [('Content-Type', 'application/octet-stream')]
             return {'status': '200 OK',
                     'headers': headers,
                     'response': payload.Payload(packets=packets).encode(b64)}
