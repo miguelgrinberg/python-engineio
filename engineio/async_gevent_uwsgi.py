@@ -55,7 +55,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 uwsgi.connection_fd(),
                 self._event)
 
-        return self.app(self)
+        self.app(self)
 
     def close(self):
         """Disconnects uWSGI from the client."""
@@ -131,7 +131,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 # maybe there is something to receive, if not, at least
                 # ensure uWSGI does its ping/ponging
                 try:
-                    msg = uwsgi.websocket_recv_nb()
+                    msg = uwsgi.websocket_recv()
                 except IOError:  # connection closed
                     self._select_greenlet.kill()
                     return None
