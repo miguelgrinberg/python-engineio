@@ -27,11 +27,11 @@ class TestSocket(unittest.TestCase):
         except ImportError:
             import Queue as queue
         import threading
-        mock_server.async = {'threading': threading,
-                             'thread_class': 'Thread',
-                             'queue': queue,
-                             'queue_class': 'Queue',
-                             'websocket': None}
+        mock_server._async = {'threading': threading,
+                              'thread_class': 'Thread',
+                              'queue': queue,
+                              'queue_class': 'Queue',
+                              'websocket': None}
 
         def bg_task(target, *args, **kwargs):
             th = threading.Thread(target=target, args=args, kwargs=kwargs)
@@ -167,23 +167,23 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade(self):
         mock_server = self._get_mock_server()
-        mock_server.async['websocket'] = mock.MagicMock()
-        mock_server.async['websocket_class'] = 'WebSocket'
+        mock_server._async['websocket'] = mock.MagicMock()
+        mock_server._async['websocket_class'] = 'WebSocket'
         mock_ws = mock.MagicMock()
-        mock_server.async['websocket'].WebSocket.configure_mock(
+        mock_server._async['websocket'].WebSocket.configure_mock(
             return_value=mock_ws)
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         environ = "foo"
         start_response = "bar"
         s._upgrade_websocket(environ, start_response)
-        mock_server.async['websocket'].WebSocket.assert_called_once_with(
+        mock_server._async['websocket'].WebSocket.assert_called_once_with(
             s._websocket_handler)
         mock_ws.assert_called_once_with(environ, start_response)
 
     def test_upgrade_twice(self):
         mock_server = self._get_mock_server()
-        mock_server.async['websocket'] = mock.MagicMock()
+        mock_server._async['websocket'] = mock.MagicMock()
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         s.upgraded = True
@@ -230,8 +230,8 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()
-        mock_server.async['websocket'] = None
-        mock_server.async['websocket_class'] = None
+        mock_server._async['websocket'] = None
+        mock_server._async['websocket_class'] = None
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         environ = "foo"

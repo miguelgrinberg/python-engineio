@@ -29,7 +29,7 @@ def _mock_import(module, pkg=None):
 
 class TestServer(unittest.TestCase):
     _mock_async = mock.MagicMock()
-    _mock_async.async = {
+    _mock_async._async = {
         'threading': 't',
         'thread_class': 'tc',
         'queue': 'q',
@@ -79,12 +79,12 @@ class TestServer(unittest.TestCase):
         except ImportError:
             import Queue as queue
 
-        self.assertEqual(s.async['threading'], threading)
-        self.assertEqual(s.async['thread_class'], 'Thread')
-        self.assertEqual(s.async['queue'], queue)
-        self.assertEqual(s.async['queue_class'], 'Queue')
-        self.assertEqual(s.async['websocket'], None)
-        self.assertEqual(s.async['websocket_class'], None)
+        self.assertEqual(s._async['threading'], threading)
+        self.assertEqual(s._async['thread_class'], 'Thread')
+        self.assertEqual(s._async['queue'], queue)
+        self.assertEqual(s._async['queue_class'], 'Queue')
+        self.assertEqual(s._async['websocket'], None)
+        self.assertEqual(s._async['websocket_class'], None)
 
     def test_async_mode_eventlet(self):
         s = server.Server(async_mode='eventlet')
@@ -94,12 +94,12 @@ class TestServer(unittest.TestCase):
         from eventlet import queue
         from engineio import async_eventlet
 
-        self.assertEqual(s.async['threading'], threading)
-        self.assertEqual(s.async['thread_class'], 'Thread')
-        self.assertEqual(s.async['queue'], queue)
-        self.assertEqual(s.async['queue_class'], 'Queue')
-        self.assertEqual(s.async['websocket'], async_eventlet)
-        self.assertEqual(s.async['websocket_class'], 'WebSocketWSGI')
+        self.assertEqual(s._async['threading'], threading)
+        self.assertEqual(s._async['thread_class'], 'Thread')
+        self.assertEqual(s._async['queue'], queue)
+        self.assertEqual(s._async['queue_class'], 'Queue')
+        self.assertEqual(s._async['websocket'], async_eventlet)
+        self.assertEqual(s._async['websocket_class'], 'WebSocketWSGI')
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi(self, import_module):
@@ -110,12 +110,12 @@ class TestServer(unittest.TestCase):
 
         from engineio import async_gevent_uwsgi
 
-        self.assertEqual(s.async['threading'], async_gevent_uwsgi)
-        self.assertEqual(s.async['thread_class'], 'Thread')
-        self.assertEqual(s.async['queue'], 'gevent.queue')
-        self.assertEqual(s.async['queue_class'], 'JoinableQueue')
-        self.assertEqual(s.async['websocket'], async_gevent_uwsgi)
-        self.assertEqual(s.async['websocket_class'], 'uWSGIWebSocket')
+        self.assertEqual(s._async['threading'], async_gevent_uwsgi)
+        self.assertEqual(s._async['thread_class'], 'Thread')
+        self.assertEqual(s._async['queue'], 'gevent.queue')
+        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
+        self.assertEqual(s._async['websocket'], async_gevent_uwsgi)
+        self.assertEqual(s._async['websocket_class'], 'uWSGIWebSocket')
         del sys.modules['gevent']
         del sys.modules['uwsgi']
         del sys.modules['engineio.async_gevent_uwsgi']
@@ -139,12 +139,12 @@ class TestServer(unittest.TestCase):
 
         from engineio import async_gevent_uwsgi
 
-        self.assertEqual(s.async['threading'], async_gevent_uwsgi)
-        self.assertEqual(s.async['thread_class'], 'Thread')
-        self.assertEqual(s.async['queue'], 'gevent.queue')
-        self.assertEqual(s.async['queue_class'], 'JoinableQueue')
-        self.assertEqual(s.async['websocket'], None)
-        self.assertEqual(s.async['websocket_class'], None)
+        self.assertEqual(s._async['threading'], async_gevent_uwsgi)
+        self.assertEqual(s._async['thread_class'], 'Thread')
+        self.assertEqual(s._async['queue'], 'gevent.queue')
+        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
+        self.assertEqual(s._async['websocket'], None)
+        self.assertEqual(s._async['websocket_class'], None)
         del sys.modules['gevent']
         del sys.modules['uwsgi']
         del sys.modules['engineio.async_gevent_uwsgi']
@@ -158,12 +158,12 @@ class TestServer(unittest.TestCase):
 
         from engineio import async_gevent
 
-        self.assertEqual(s.async['threading'], async_gevent)
-        self.assertEqual(s.async['thread_class'], 'Thread')
-        self.assertEqual(s.async['queue'], 'gevent.queue')
-        self.assertEqual(s.async['queue_class'], 'JoinableQueue')
-        self.assertEqual(s.async['websocket'], async_gevent)
-        self.assertEqual(s.async['websocket_class'], 'WebSocketWSGI')
+        self.assertEqual(s._async['threading'], async_gevent)
+        self.assertEqual(s._async['thread_class'], 'Thread')
+        self.assertEqual(s._async['queue'], 'gevent.queue')
+        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
+        self.assertEqual(s._async['websocket'], async_gevent)
+        self.assertEqual(s._async['websocket_class'], 'WebSocketWSGI')
         del sys.modules['gevent']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_gevent']
@@ -177,12 +177,12 @@ class TestServer(unittest.TestCase):
 
         from engineio import async_gevent
 
-        self.assertEqual(s.async['threading'], async_gevent)
-        self.assertEqual(s.async['thread_class'], 'Thread')
-        self.assertEqual(s.async['queue'], 'gevent.queue')
-        self.assertEqual(s.async['queue_class'], 'JoinableQueue')
-        self.assertEqual(s.async['websocket'], None)
-        self.assertEqual(s.async['websocket_class'], None)
+        self.assertEqual(s._async['threading'], async_gevent)
+        self.assertEqual(s._async['thread_class'], 'Thread')
+        self.assertEqual(s._async['queue'], 'gevent.queue')
+        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
+        self.assertEqual(s._async['websocket'], None)
+        self.assertEqual(s._async['websocket_class'], None)
         del sys.modules['gevent']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_gevent']

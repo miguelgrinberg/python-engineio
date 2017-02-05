@@ -3084,7 +3084,7 @@ exports.encodePacket = function (packet, supportsBinary, utf8encode, callback) {
     encoded += utf8encode ? utf8.encode(String(packet.data)) : String(packet.data);
   }
 
-  console.log(utf8encode, packet.data)
+  //console.log(utf8encode, packet.data)
   return callback('' + encoded);
 
 };

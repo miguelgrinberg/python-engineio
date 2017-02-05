@@ -93,22 +93,40 @@ class Server(object):
                     self.logger.setLevel(logging.ERROR)
                 self.logger.addHandler(logging.StreamHandler())
         if async_mode is None:
-            modes = ['eventlet', 'gevent_uwsgi', 'gevent', 'threading']
+            modes = self.async_modes()
         else:
             modes = [async_mode]
-        self.async = None
+        self._async = None
         self.async_mode = None
         for mode in modes:
             try:
-                self.async = importlib.import_module(
+                self._async = importlib.import_module(
                     'engineio.async_' + mode).async
+                asyncio_based = self._async['asyncio'] \
+                    if 'asyncio' in self._async else False
+                if asyncio_based != self.is_asyncio_based():
+                    continue
                 self.async_mode = mode
                 break
             except ImportError:
                 pass
         if self.async_mode is None:
             raise ValueError('Invalid async_mode specified')
+        if self.is_asyncio_based() and \
+                ('asyncio' not in self._async or not self._async['asyncio']):
+            raise ValueError('The selected async_mode is not asyncio '
+                             'compatible')
+        if not self.is_asyncio_based() and 'asyncio' in self._async and \
+                self._async['asyncio']:
+            raise ValueError('The selected async_mode requires asyncio and '
+                             'must use the AsyncServer class')
         self.logger.info('Server initialized for %s.', self.async_mode)
+
+    def is_asyncio_based(self):
+        return False
+
+    def async_modes(self):
+        return ['eventlet', 'gevent_uwsgi', 'gevent', 'threading']
 
     def on(self, event, handler=None):
         """Register an event handler.
@@ -294,9 +312,9 @@ class Server(object):
         the Python standard library. The `start()` method on this object is
         already called by this function.
         """
-        th = getattr(self.async['threading'],
-                     self.async['thread_class'])(target=target, args=args,
-                                                 kwargs=kwargs)
+        th = getattr(self._async['threading'],
+                     self._async['thread_class'])(target=target, args=args,
+                                                  kwargs=kwargs)
         th.start()
         return th  # pragma: no cover
 
@@ -308,7 +326,7 @@ class Server(object):
         sleep without having to worry about using the correct call for the
         selected async mode.
         """
-        return self.async['sleep'](seconds)
+        return self._async['sleep'](seconds)
 
     def _generate_id(self):
         """Generate a unique session id."""
@@ -344,7 +362,7 @@ class Server(object):
     def _upgrades(self, sid, transport):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self.async['websocket_class'] is None or \
+                self._async['websocket_class'] is None or \
                 transport == 'websocket':
             return []
         return ['websocket']
