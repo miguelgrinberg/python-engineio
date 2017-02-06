@@ -29,13 +29,14 @@ def _mock_import(module, pkg=None):
 
 class TestServer(unittest.TestCase):
     _mock_async = mock.MagicMock()
-    _mock_async._async = {
+    _mock_async.async = {
         'threading': 't',
         'thread_class': 'tc',
         'queue': 'q',
         'queue_class': 'qc',
         'websocket': 'w',
-        'websocket_class': 'wc'}
+        'websocket_class': 'wc'
+    }
 
     def _get_mock_socket(self):
         mock_socket = mock.MagicMock()
@@ -49,6 +50,15 @@ class TestServer(unittest.TestCase):
     def tearDown(self):
         # restore JSON encoder, in case a test changed it
         packet.Packet.json = json
+
+    def test_is_asyncio_based(self):
+        s = server.Server()
+        self.assertEqual(s.is_asyncio_based(), False)
+
+    def test_async_modes(self):
+        s = server.Server()
+        self.assertEqual(s.async_modes(), ['eventlet', 'gevent_uwsgi',
+                                           'gevent', 'threading'])
 
     def test_create(self):
         kwargs = {
@@ -186,6 +196,12 @@ class TestServer(unittest.TestCase):
         del sys.modules['gevent']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_gevent']
+
+    @unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
+    @mock.patch('importlib.import_module', side_effect=_mock_import)
+    def test_async_mode_aiohttp(self, import_module):
+        sys.modules['aiohttp'] = mock.MagicMock()
+        self.assertRaises(ValueError, server.Server, async_mode='aiohttp')
 
     @mock.patch('importlib.import_module', side_effect=[ImportError])
     def test_async_mode_invalid(self, import_module):
