@@ -8,7 +8,7 @@ eio.attach(app)
 
 
 async def index(request):
-    with open('templates/simple_aiohttp.html') as f:
+    with open('simple.html') as f:
         return web.Response(text=f.read(), content_type='text/html')
 
 

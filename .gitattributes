@@ -1,1 +1,2 @@
-example/static/engine.io.js linguist-vendored
+example/wsgi/static/engine.io.js linguist-vendored
+example/aiohttp/static/engine.io.js linguist-vendored
