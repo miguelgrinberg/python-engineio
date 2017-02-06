@@ -17,9 +17,10 @@ features:
   versions 1.5.0 and up.
 - Compatible with Python 2.7 and Python 3.3+.
 - Supports large number of clients even on modest hardware when used with
-  an asynchronous server based on `eventlet <http://eventlet.net/>`_ or
-  `gevent <http://gevent.org>`_. For development and testing, any WSGI
-  compliant multi-threaded server can be used.
+  an asynchronous server based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_, 
+  `eventlet <http://eventlet.net/>`_ or `gevent <http://gevent.org>`_. For
+  development and testing, any WSGI compliant multi-threaded server can also
+  be used.
 - Includes a WSGI middleware that integrates Engine.IO traffic with standard
   WSGI applications.
 - Uses an event-based architecture implemented with decorators that hides the
@@ -87,6 +88,40 @@ HTML/Javascript to the client::
         # deploy as an eventlet WSGI server
         eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
 
+Below is a similar application, coded for asyncio (Python 3.5+ only) with the
+aiohttp framework::
+
+    from aiohttp import web
+    import engineio
+
+    eio = engineio.Server()
+    app = web.Application()
+    eio.attach(app)
+
+    async def index():
+        """Serve the client-side application."""
+        with open('index.html') as f:
+            return web.Response(text=f.read(), content_type='text/html')
+
+    @eio.on('connect')
+    def connect(sid, environ):
+        print("connect ", sid)
+
+    @eio.on('message')
+    async def message(sid, data):
+        print("message ", data)
+        await eio.send(sid, 'reply')
+
+    @eio.on('disconnect')
+    def disconnect(sid):
+        print('disconnect ', sid)
+
+    app.router.add_static('/static', 'static')
+    app.router.add_get('/', index)
+
+    if __name__ == '__main__':
+        web.run_app(app)
+
 The client-side application must include the
 `engine.io-client <https://github.com/Automattic/engine.io-client>`_ library
 (version 1.5.0 or newer recommended).
@@ -113,6 +148,32 @@ Deployment
 
 The following sections describe a variety of deployment strategies for
 Engine.IO servers.
+
+Aiohttp
+~~~~~~~
+
+`Aiohttp <http://aiohttp.readthedocs.io/>`_ provides a framework with support
+for HTTP and WebSocket, based on asyncio.
+
+Instances of class ``engineio.AsyncServer`` will automatically use aiohttp
+for asynchronous operations if the library is installed. To request its use
+explicitly, the ``async_mode`` option can be given in the constructor::
+
+    eio = engineio.AsyncServer(async_mode='aiohttp')
+
+A server configured for aiohttp must be attached to an existing application::
+
+    app = web.Application()
+    eio.attach(app)
+
+The aiohttp application can define regular routes that will coexist with the
+Engine.IO server. A typical pattern is to add routes that serve a client
+application and any associated static files.
+
+The aiohttp application is then executed in the usual manner::
+
+    if __name__ == '__main__':
+        web.run_app(app)
 
 Eventlet
 ~~~~~~~~
@@ -297,3 +358,7 @@ API Reference
 
 .. autoclass:: Server
    :members:
+
+.. autoclass:: AsyncServer
+   :members:
+   :inherited-members:

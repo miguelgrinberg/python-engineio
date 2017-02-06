@@ -9,6 +9,44 @@ from . import asyncio_socket
 
 
 class AsyncServer(server.Server):
+    """An Engine.IO server for asyncio.
+
+    This class implements a fully compliant Engine.IO web server with support
+    for websocket and long-polling transports, compatible with the asyncio
+    framework on Python 3.5 or newer.
+
+    :param async_mode: The asynchronous model to use. See the Deployment
+                       section in the documentation for a description of the
+                       available options. Valid async modes are "aiohttp". If
+                       this argument is not given, an async mode is chosen
+                       based on the installed packages.
+    :param ping_timeout: The time in seconds that the client waits for the
+                         server to respond before disconnecting.
+    :param ping_interval: The interval in seconds at which the client pings
+                          the server.
+    :param max_http_buffer_size: The maximum size of a message when using the
+                                 polling transport.
+    :param allow_upgrades: Whether to allow transport upgrades or not.
+    :param http_compression: Whether to compress packages when using the
+                             polling transport.
+    :param compression_threshold: Only compress messages when their byte size
+                                  is greater than this value.
+    :param cookie: Name of the HTTP cookie that contains the client session
+                   id. If set to ``None``, a cookie is not sent to the client.
+    :param cors_allowed_origins: List of origins that are allowed to connect
+                                 to this server. All origins are allowed by
+                                 default.
+    :param cors_credentials: Whether credentials (cookies, authentication) are
+                             allowed in requests to this server.
+    :param logger: To enable logging set to ``True`` or pass a logger object to
+                   use. To disable logging set to ``False``.
+    :param json: An alternative json module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions.
+    :param kwargs: Reserved for future extensions, any additional parameters
+                   given as keyword arguments will be silently ignored.
+    """
     def is_asyncio_based(self):
         return True
 
