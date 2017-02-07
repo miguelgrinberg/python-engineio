@@ -208,7 +208,7 @@ class AsyncServer(server.Server):
             if asyncio.iscoroutinefunction(self.handlers[event]):
                 try:
                     ret = await self.handlers[event](*args)
-                except asyncio.CancelledError:
+                except asyncio.CancelledError:  # pragma: no cover
                     pass
             else:
                 ret = self.handlers[event](*args)

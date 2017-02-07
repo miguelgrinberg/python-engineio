@@ -679,7 +679,7 @@ class TestServer(unittest.TestCase):
         self.assertRaises(IOError, self._gzip_decompress, r[0])
 
     def test_compression_unknown(self):
-        s = server.Server(http_compression=False, compression_threshold=0)
+        s = server.Server(compression_threshold=0)
         mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(return_value=[
             packet.Packet(packet.MESSAGE, data='hello')])
