@@ -203,8 +203,13 @@ class AsyncServer(server.Server):
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
+        ret = None
         if event in self.handlers:
             if asyncio.iscoroutinefunction(self.handlers[event]):
-                await self.handlers[event](*args)
+                try:
+                    ret = await self.handlers[event](*args)
+                except asyncio.CancelledError:
+                    pass
             else:
-                self.handlers[event](*args)
+                ret = self.handlers[event](*args)
+        return ret
