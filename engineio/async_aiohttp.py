@@ -77,7 +77,7 @@ def make_response(status, headers, payload):
                                 headers=headers)
 
 
-class WebSocket(object):
+class WebSocket(object):  # pragma: no cover
     """
     This wrapper class provides a aiohttp WebSocket interface that is
     somewhat compatible with eventlet's implementation.

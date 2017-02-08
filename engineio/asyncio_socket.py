@@ -145,6 +145,7 @@ class AsyncSocket(socket.Socket):
         # start separate writer thread
         async def writer():
             while True:
+                packets = None
                 try:
                     packets = await self.poll()
                 except IOError:

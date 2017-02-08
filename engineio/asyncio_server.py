@@ -84,11 +84,11 @@ class AsyncServer(server.Server):
                     is not given, then all clients are closed.
         """
         if sid is not None:
-            self._get_socket(sid).close()
+            await self._get_socket(sid).close()
             del self.sockets[sid]
         else:
             for client in six.itervalues(self.sockets):
-                client.close()
+                await client.close()
             self.sockets = {}
 
     async def handle_request(self, *args, **kwargs):

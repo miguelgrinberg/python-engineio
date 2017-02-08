@@ -4,7 +4,7 @@ from .middleware import Middleware
 from .server import Server
 if sys.version_info >= (3, 5):  # pragma: no cover
     from .asyncio_server import AsyncServer
-else:
+else:  # pragma: no cover
     AsyncServer = None
 
 __version__ = '1.1.2'

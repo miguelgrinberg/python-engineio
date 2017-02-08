@@ -21,9 +21,9 @@ from engineio import server
 original_import_module = importlib.import_module
 
 
-def _mock_import(module, pkg=None):
+def _mock_import(module, *args, **kwargs):
     if module.startswith('engineio.'):
-        return original_import_module(module, pkg)
+        return original_import_module(module, *args, **kwargs)
     return module
 
 

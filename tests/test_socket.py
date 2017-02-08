@@ -170,8 +170,7 @@ class TestSocket(unittest.TestCase):
         mock_server._async['websocket'] = mock.MagicMock()
         mock_server._async['websocket_class'] = 'WebSocket'
         mock_ws = mock.MagicMock()
-        mock_server._async['websocket'].WebSocket.configure_mock(
-            return_value=mock_ws)
+        mock_server._async['websocket'].WebSocket.return_value = mock_ws
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         environ = "foo"

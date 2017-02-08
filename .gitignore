@@ -39,6 +39,8 @@ docs/_build
 venv*
 .eggs
 .ropeproject
+tags
 .idea
+.vscode
 htmlcov
 *.swp
