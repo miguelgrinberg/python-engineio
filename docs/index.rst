@@ -93,13 +93,13 @@ aiohttp framework::
     from aiohttp import web
     import engineio
 
-    eio = engineio.Server()
+    eio = engineio.AsyncServer()
     app = web.Application()
 
     # attach the Engine.IO server to the application
     eio.attach(app)
 
-    async def index():
+    async def index(request):
         """Serve the client-side application."""
         with open('index.html') as f:
             return web.Response(text=f.read(), content_type='text/html')

@@ -72,11 +72,11 @@ And below is a similar example, coded for asyncio (Python 3.5+ only) with the
     from aiohttp import web
     import engineio
 
-    eio = engineio.Server()
+    eio = engineio.AsyncServer()
     app = web.Application()
     eio.attach(app)
 
-    async def index():
+    async def index(request):
         """Serve the client-side application."""
         with open('index.html') as f:
             return web.Response(text=f.read(), content_type='text/html')
