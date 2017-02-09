@@ -7,7 +7,7 @@ if sys.version_info >= (3, 5):  # pragma: no cover
 else:  # pragma: no cover
     AsyncServer = None
 
-__version__ = '1.1.2'
+__version__ = '1.2.0'
 
 __all__ = [__version__, Middleware, Server]
 if AsyncServer is not None:  # pragma: no cover
