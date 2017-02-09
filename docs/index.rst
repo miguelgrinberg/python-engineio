@@ -13,8 +13,7 @@ integrated with a Python WSGI application. The following are some of its
 features:
 
 - Fully compatible with the Javascript
-  `engine.io-client <https://github.com/Automattic/engine.io-client>`_ library,
-  versions 1.5.0 and up.
+  `engine.io-client <https://github.com/Automattic/engine.io-client>`_ library..
 - Compatible with Python 2.7 and Python 3.3+.
 - Supports large number of clients even on modest hardware when used with
   an asynchronous server based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_, 
@@ -96,6 +95,8 @@ aiohttp framework::
 
     eio = engineio.Server()
     app = web.Application()
+
+    # attach the Engine.IO server to the application
     eio.attach(app)
 
     async def index():
@@ -120,6 +121,7 @@ aiohttp framework::
     app.router.add_get('/', index)
 
     if __name__ == '__main__':
+        # run the aiohttp application
         web.run_app(app)
 
 The client-side application must include the
@@ -153,7 +155,8 @@ Aiohttp
 ~~~~~~~
 
 `Aiohttp <http://aiohttp.readthedocs.io/>`_ provides a framework with support
-for HTTP and WebSocket, based on asyncio.
+for HTTP and WebSocket, based on asyncio. Support for this framework is limited
+to Python 3.5 and newer.
 
 Instances of class ``engineio.AsyncServer`` will automatically use aiohttp
 for asynchronous operations if the library is installed. To request its use
