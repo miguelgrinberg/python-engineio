@@ -232,7 +232,7 @@ class AsyncServer(server.Server):
         """Invoke an event handler."""
         ret = None
         if event in self.handlers:
-            if asyncio.iscoroutinefunction(self.handlers[event]):
+            if asyncio.iscoroutinefunction(self.handlers[event]) is True:
                 try:
                     ret = await self.handlers[event](*args)
                 except asyncio.CancelledError:  # pragma: no cover
