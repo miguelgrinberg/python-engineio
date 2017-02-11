@@ -27,8 +27,8 @@ asynchronous modes supported by the Engine.IO server.
 Running the Examples
 --------------------
 
-To run these examples using the default ``'threading'`` mode, create a virtual
-environment, install the requirements and then run::
+To run these examples, create a virtual environment, install the requirements
+and then run::
 
     $ python simple.py
 
