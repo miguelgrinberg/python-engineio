@@ -669,12 +669,21 @@ class TestAsyncServer(unittest.TestCase):
         packet.Packet.json = json
 
     def test_background_tasks(self):
+        r = []
+
+        @coroutine
+        def foo(arg):
+            r.append(arg)
+
         s = asyncio_server.AsyncServer()
-        self.assertRaises(RuntimeError, s.start_background_task, 'foo')
+        s.start_background_task(foo, 'bar')
+        pending = asyncio.Task.all_tasks()
+        asyncio.get_event_loop().run_until_complete(asyncio.wait(pending))
+        self.assertEqual(r, ['bar'])
 
     def test_sleep(self):
         s = asyncio_server.AsyncServer()
-        self.assertRaises(RuntimeError, s.sleep)
+        _run(s.sleep(0))
 
     def test_trigger_event_function(self):
         result = []

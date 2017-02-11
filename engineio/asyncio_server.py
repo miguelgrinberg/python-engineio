@@ -54,6 +54,7 @@ class AsyncServer(server.Server):
         return ['aiohttp']
 
     def attach(self, app, engineio_path='engine.io'):
+        """Attach the Engine.IO server to an application."""
         self._async['create_route'](app, self, '/{}/'.format(engineio_path))
 
     async def send(self, sid, data, binary=None):
@@ -67,6 +68,8 @@ class AsyncServer(server.Server):
                        as text. If not given, unicode (Python 2) and str
                        (Python 3) are sent as text, and str (Python 2) and
                        bytes (Python 3) are sent as binary.
+
+        Note: this method is a coroutine.
         """
         try:
             socket = self._get_socket(sid)
@@ -82,21 +85,24 @@ class AsyncServer(server.Server):
 
         :param sid: The session id of the client to close. If this parameter
                     is not given, then all clients are closed.
+
+        Note: this method is a coroutine.
         """
         if sid is not None:
             await self._get_socket(sid).close()
             del self.sockets[sid]
         else:
-            for client in six.itervalues(self.sockets):
-                await client.close()
+            await asyncio.wait([client.close()
+                                for client in six.itervalues(self.sockets)])
             self.sockets = {}
 
     async def handle_request(self, *args, **kwargs):
         """Handle an HTTP request from the client.
 
-        This is the entry point of the Engine.IO application.
+        This is the entry point of the Engine.IO application. This function
+        returns the HTTP response to deliver to the client.
 
-        This function returns the HTTP response to deliver to the client.
+        Note: this method is a coroutine.
         """
         environ = self._async['translate_request'](*args, **kwargs)
         method = environ['REQUEST_METHOD']
@@ -169,10 +175,31 @@ class AsyncServer(server.Server):
                                             r['response'])
 
     def start_background_task(self, target, *args, **kwargs):
-        raise RuntimeError('Not implemented, use asyncio.')
+        """Start a background task using the appropriate async model.
 
-    def sleep(self, seconds=0):
-        raise RuntimeError('Not implemented, use asyncio.')
+        This is a utility function that applications can use to start a
+        background task using the method that is compatible with the
+        selected async mode.
+
+        :param target: the target function to execute.
+        :param args: arguments to pass to the function.
+        :param kwargs: keyword arguments to pass to the function.
+
+        The return value is a ``asyncio.Task`` object.
+        """
+        return asyncio.ensure_future(target(*args, **kwargs))
+
+    async def sleep(self, seconds=0):
+        """Sleep for the requested amount of time using the appropriate async
+        model.
+
+        This is a utility function that applications can use to put a task to
+        sleep without having to worry about using the correct call for the
+        selected async mode.
+
+        Note: this method is a coroutine.
+        """
+        return await asyncio.sleep(seconds)
 
     async def _handle_connect(self, environ, transport, b64=False):
         """Handle a client connection request."""
