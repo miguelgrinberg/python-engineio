@@ -6,8 +6,6 @@
 engineio documentation
 ======================
 
-:ref:`genindex` | :ref:`modindex` | :ref:`search`
-
 This project implements an Engine.IO server that can run standalone or
 integrated with a Python WSGI application. The following are some of its
 features:
