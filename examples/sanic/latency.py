@@ -1,5 +1,5 @@
 from sanic import Sanic
-from sanic.response import HTTPResponse
+from sanic.response import html
 
 import engineio
 
@@ -11,7 +11,7 @@ eio.attach(app)
 @app.route('/')
 async def index(request):
     with open('latency.html') as f:
-        return HTTPResponse(body=f.read(), content_type='text/html')
+        return html(f.read())
 
 
 @eio.on('message')

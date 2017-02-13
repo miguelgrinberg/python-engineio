@@ -1,6 +1,6 @@
 aiofiles==0.3.0
 httptools==0.0.9
--e git+git@github.com:miguelgrinberg/python-engineio@b2da2283451d558298cae888b9ef148186830a7e#egg=python_engineio
+python_engineio
 sanic==0.3.1
 six==1.10.0
 ujson==1.35
