@@ -227,6 +227,12 @@ class TestSocket(unittest.TestCase):
         self.assertEqual(s.queue.get().packet_type, packet.NOOP)
         self.assertFalse(s.upgraded)
 
+    def test_invalid_packet_type(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        pkt = packet.Packet(packet_type=99)
+        self.assertRaises(ValueError, lambda: s.receive(pkt))
+
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = None
