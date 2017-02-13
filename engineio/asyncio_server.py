@@ -51,7 +51,7 @@ class AsyncServer(server.Server):
         return True
 
     def async_modes(self):
-        return ['aiohttp']
+        return ['aiohttp', 'sanic']
 
     def attach(self, app, engineio_path='engine.io'):
         """Attach the Engine.IO server to an application."""
