@@ -41,8 +41,10 @@ class Socket(object):
 
     def receive(self, pkt):
         """Receive packet from the client."""
+        packet_name = packet.packet_names[pkt.packet_type] \
+            if pkt.packet_type < len(packet.packet_names) else 'UNKNOWN'
         self.server.logger.info('%s: Received packet %s data %s',
-                                self.sid, packet.packet_names[pkt.packet_type],
+                                self.sid, packet_name,
                                 pkt.data if not isinstance(pkt.data, bytes)
                                 else '<binary>')
         if pkt.packet_type == packet.PING:
