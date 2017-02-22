@@ -516,7 +516,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_gzip_compression(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'sid=foo',
-                                 'ACCEPT_ENCODING': 'gzip,deflate'})
+                                 'HTTP_ACCEPT_ENCODING': 'gzip,deflate'})
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -531,7 +531,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_deflate_compression(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'sid=foo',
-                                 'ACCEPT_ENCODING': 'deflate;q=1,gzip'})
+                                 'HTTP_ACCEPT_ENCODING': 'deflate;q=1,gzip'})
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -546,7 +546,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_gzip_compression_threshold(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'sid=foo',
-                                 'ACCEPT_ENCODING': 'gzip'})
+                                 'HTTP_ACCEPT_ENCODING': 'gzip'})
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=1000)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -563,7 +563,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_compression_disabled(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'sid=foo',
-                                 'ACCEPT_ENCODING': 'gzip'})
+                                 'HTTP_ACCEPT_ENCODING': 'gzip'})
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(http_compression=False,
                                        compression_threshold=0)
@@ -581,7 +581,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_compression_unknown(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'sid=foo',
-                                 'ACCEPT_ENCODING': 'rar'})
+                                 'HTTP_ACCEPT_ENCODING': 'rar'})
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -598,7 +598,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_compression_no_encoding(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'sid=foo',
-                                 'ACCEPT_ENCODING': ''})
+                                 'HTTP_ACCEPT_ENCODING': ''})
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()

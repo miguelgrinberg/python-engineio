@@ -162,7 +162,7 @@ class AsyncServer(server.Server):
         if self.http_compression and \
                 len(r['response']) >= self.compression_threshold:
             encodings = [e.split(';')[0].strip() for e in
-                         environ.get('ACCEPT_ENCODING', '').split(',')]
+                         environ.get('HTTP_ACCEPT_ENCODING', '').split(',')]
             for encoding in encodings:
                 if encoding in self.compression_methods:
                     r['response'] = \

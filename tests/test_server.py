@@ -629,7 +629,7 @@ class TestServer(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data='hello')])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
-                   'ACCEPT_ENCODING': 'gzip,deflate'}
+                   'HTTP_ACCEPT_ENCODING': 'gzip,deflate'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         self.assertIn(('Content-Encoding', 'gzip'),
@@ -643,7 +643,7 @@ class TestServer(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data='hello')])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
-                   'ACCEPT_ENCODING': 'deflate;q=1,gzip'}
+                   'HTTP_ACCEPT_ENCODING': 'deflate;q=1,gzip'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         self.assertIn(('Content-Encoding', 'deflate'),
@@ -657,7 +657,7 @@ class TestServer(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data='hello')])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
-                   'ACCEPT_ENCODING': 'gzip'}
+                   'HTTP_ACCEPT_ENCODING': 'gzip'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         for header, value in start_response.call_args[0][1]:
@@ -671,7 +671,7 @@ class TestServer(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data='hello')])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
-                   'ACCEPT_ENCODING': 'gzip'}
+                   'HTTP_ACCEPT_ENCODING': 'gzip'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         for header, value in start_response.call_args[0][1]:
@@ -685,7 +685,7 @@ class TestServer(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data='hello')])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
-                   'ACCEPT_ENCODING': 'rar'}
+                   'HTTP_ACCEPT_ENCODING': 'rar'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         for header, value in start_response.call_args[0][1]:
@@ -699,7 +699,7 @@ class TestServer(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data='hello')])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo',
-                   'ACCEPT_ENCODING': ''}
+                   'HTTP_ACCEPT_ENCODING': ''}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         for header, value in start_response.call_args[0][1]:
