@@ -49,7 +49,10 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 """Sets event when data becomes available to read on fd."""
                 while True:
                     event.set()
-                    select([fd], [], [])[0]
+                    try:
+                        select([fd], [], [])[0]
+                    except ValueError:
+                        break
             self._select_greenlet = gevent.spawn(
                 select_greenlet_runner,
                 uwsgi.connection_fd(),
