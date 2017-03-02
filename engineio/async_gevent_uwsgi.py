@@ -134,7 +134,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 # maybe there is something to receive, if not, at least
                 # ensure uWSGI does its ping/ponging
                 try:
-                    msg = uwsgi.websocket_recv()
+                    msg = uwsgi.websocket_recv_nb()
                 except IOError:  # connection closed
                     self._select_greenlet.kill()
                     return None
