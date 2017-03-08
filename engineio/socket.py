@@ -55,6 +55,8 @@ class Socket(object):
                                        async=self.server.async_handlers)
         elif pkt.packet_type == packet.UPGRADE:
             self.send(packet.Packet(packet.NOOP))
+        elif pkt.packet_type == packet.CLOSE:
+            self.close(wait=False, abort=True)
         else:
             raise ValueError
 

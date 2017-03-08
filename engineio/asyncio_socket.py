@@ -41,6 +41,8 @@ class AsyncSocket(socket.Socket):
             await self.server._trigger_event('message', self.sid, pkt.data)
         elif pkt.packet_type == packet.UPGRADE:
             await self.send(packet.Packet(packet.NOOP))
+        elif pkt.packet_type == packet.CLOSE:
+            await self.close(wait=False, abort=True)
         else:
             raise ValueError
 

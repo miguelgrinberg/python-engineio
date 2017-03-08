@@ -227,6 +227,14 @@ class TestSocket(unittest.TestCase):
         self.assertEqual(s.queue.get().packet_type, packet.NOOP)
         self.assertFalse(s.upgraded)
 
+    def test_close_packet(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.connected = True
+        s.close = mock.MagicMock()
+        s.receive(packet.Packet(packet.CLOSE))
+        s.close.assert_called_once_with(wait=False, abort=True)
+
     def test_invalid_packet_type(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')

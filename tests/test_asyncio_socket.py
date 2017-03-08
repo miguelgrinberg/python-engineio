@@ -250,6 +250,14 @@ class TestSocket(unittest.TestCase):
         _run(s._upgrade_websocket(environ))
         mock_server._bad_request.assert_called_once_with()
 
+    def test_close_packet(self):
+        mock_server = self._get_mock_server()
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s.connected = True
+        s.close = AsyncMock()
+        _run(s.receive(packet.Packet(packet.CLOSE)))
+        s.close.mock.assert_called_once_with(wait=False, abort=True)
+
     def test_websocket_read_write(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
