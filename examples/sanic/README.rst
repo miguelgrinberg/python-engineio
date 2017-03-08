@@ -5,9 +5,6 @@ This directory contains example Engine.IO applications that are compatible
 with asyncio and the sanic framework. These applications require Python 3.5
 or later.
 
-Note that because sanic currently does not support the WebSocket protocol,
-the only available transport is long-polling at this time.
-
 simple.py
 ---------
 

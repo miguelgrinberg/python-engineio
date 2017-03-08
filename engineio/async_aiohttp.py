@@ -84,6 +84,7 @@ class WebSocket(object):  # pragma: no cover
     """
     def __init__(self, handler):
         self.handler = handler
+        self._sock = None
 
     async def __call__(self, environ):
         request = environ['aiohttp.request']

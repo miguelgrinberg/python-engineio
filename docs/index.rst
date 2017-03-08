@@ -13,11 +13,12 @@ features:
 - Fully compatible with the Javascript
   `engine.io-client <https://github.com/Automattic/engine.io-client>`_ library..
 - Compatible with Python 2.7 and Python 3.3+.
-- Supports large number of clients even on modest hardware when used with
-  an asynchronous server based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_, 
+- Supports large number of clients even on modest hardware when used with an
+  asynchronous server based on `asyncio <https://docs.python.org/3/library/asyncio.html>`_
+  (`sanic <http://sanic.readthedocs.io/>`_ and `aiohttp <http://aiohttp.readthedocs.io/>`_),
   `eventlet <http://eventlet.net/>`_ or `gevent <http://gevent.org>`_. For
-  development and testing, any WSGI compliant multi-threaded server can also
-  be used.
+  development and testing, any WSGI compliant multi-threaded server can also be
+  used.
 - Includes a WSGI middleware that integrates Engine.IO traffic with standard
   WSGI applications.
 - Uses an event-based architecture implemented with decorators that hides the
@@ -149,10 +150,36 @@ Deployment
 The following sections describe a variety of deployment strategies for
 Engine.IO servers.
 
-Aiohttp
+Sanic
+~~~~~
+
+`Sanic <http://sanic.readthedocs.io/>`_ is a very efficient asynchronous web
+server for Python 3.5 and newer.
+
+Instances of class ``engineio.AsyncServer`` will automatically use Sanic for
+asynchronous operations if the framework is installed. To request its use
+explicitly, the ``async_mode`` option can be given in the constructor::
+
+    eio = engineio.AsyncServer(async_mode='sanic')
+
+A server configured for aiohttp must be attached to an existing application::
+
+    app = web.Application()
+    eio.attach(app)
+
+The Sanic application can define regular routes that will coexist with the
+Engine.IO server. A typical pattern is to add routes that serve a client
+application and any associated static files.
+
+The Sanic application is then executed in the usual manner::
+
+    if __name__ == '__main__':
+        app.run()
+
+aiohttp
 ~~~~~~~
 
-`Aiohttp <http://aiohttp.readthedocs.io/>`_ provides a framework with support
+`aiohttp <http://aiohttp.readthedocs.io/>`_ provides a framework with support
 for HTTP and WebSocket, based on asyncio. Support for this framework is limited
 to Python 3.5 and newer.
 

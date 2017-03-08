@@ -2,6 +2,12 @@ import sys
 from urllib.parse import urlsplit
 
 from sanic.response import HTTPResponse
+try:
+    from sanic.websocket import WebSocketProtocol
+except ImportError:
+    # the installed version of sanic does not have websocket support
+    WebSocketProtocol = None
+import six
 
 
 def create_route(app, engineio_server, engineio_endpoint):
@@ -13,6 +19,11 @@ def create_route(app, engineio_server, engineio_endpoint):
     """
     app.add_route(engineio_server.handle_request, engineio_endpoint,
                   methods=['GET', 'POST'])
+    try:
+        app.enable_websocket()
+    except AttributeError:
+        # ignore, this version does not support websocket
+        pass
 
 
 def translate_request(request):
@@ -95,12 +106,42 @@ def make_response(status, headers, payload):
                         status=int(status.split()[0]), headers=headers_dict)
 
 
+class WebSocket(object):  # pragma: no cover
+    """
+    This wrapper class provides a sanic WebSocket interface that is
+    somewhat compatible with eventlet's implementation.
+    """
+    def __init__(self, handler):
+        self.handler = handler
+        self._sock = None
+
+    async def __call__(self, environ):
+        request = environ['sanic.request']
+        protocol = request.transport.get_protocol()
+        self._sock = await protocol.websocket_handshake(request)
+
+        self.environ = environ
+        await self.handler(self)
+
+    async def close(self):
+        await self._sock.close()
+
+    async def send(self, message):
+        await self._sock.send(message)
+
+    async def wait(self):
+        data = await self._sock.recv()
+        if not isinstance(data, six.binary_type) and \
+                not isinstance(data, six.text_type):
+            raise IOError()
+        return data
+
+
 async = {
     'asyncio': True,
     'create_route': create_route,
     'translate_request': translate_request,
     'make_response': make_response,
-    # sanic does not have a websocket implementation yet :(
-    'websocket': None,
-    'websocket_class': None
+    'websocket': sys.modules[__name__] if WebSocketProtocol else None,
+    'websocket_class': 'WebSocket' if WebSocketProtocol else None
 }
