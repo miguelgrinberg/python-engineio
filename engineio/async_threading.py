@@ -6,7 +6,7 @@ try:
 except ImportError:  # pragma: no cover
     queue = importlib.import_module('Queue')  # pragma: no cover
 
-async = {
+_async = {
     'threading': importlib.import_module('threading'),
     'thread_class': 'Thread',
     'queue': queue,

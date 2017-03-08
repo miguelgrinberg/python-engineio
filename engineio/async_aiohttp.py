@@ -112,7 +112,7 @@ class WebSocket(object):  # pragma: no cover
         return msg.data
 
 
-async = {
+_async = {
     'asyncio': True,
     'create_route': create_route,
     'translate_request': translate_request,

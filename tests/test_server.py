@@ -29,7 +29,7 @@ def _mock_import(module, *args, **kwargs):
 
 class TestServer(unittest.TestCase):
     _mock_async = mock.MagicMock()
-    _mock_async.async = {
+    _mock_async._async = {
         'threading': 't',
         'thread_class': 'tc',
         'queue': 'q',

@@ -52,7 +52,7 @@ class WebSocketWSGI(object):  # pragma: no cover
         return self._sock.receive()
 
 
-async = {
+_async = {
     'threading': sys.modules[__name__],
     'thread_class': 'Thread',
     'queue': importlib.import_module('gevent.queue'),

@@ -14,7 +14,7 @@ class WebSocketWSGI(_WebSocketWSGI):
         return super(WebSocketWSGI, self).__call__(environ, start_response)
 
 
-async = {
+_async = {
     'threading': importlib.import_module('eventlet.green.threading'),
     'thread_class': 'Thread',
     'queue': importlib.import_module('eventlet.queue'),
