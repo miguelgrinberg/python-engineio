@@ -432,9 +432,27 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET',
                    'QUERY_STRING': 'transport=websocket'}
         start_response = mock.MagicMock()
+        # force socket to stay open, so that we can check it later
+        Socket().closed = False
         s.handle_request(environ, start_response)
         self.assertEqual(s.sockets['123'].send.call_args[0][0].packet_type,
                          packet.OPEN)
+
+    @mock.patch('engineio.socket.Socket',
+                return_value=mock.MagicMock(connected=False, closed=False))
+    def test_connect_transport_websocket_closed(self, Socket):
+        s = server.Server()
+        s._generate_id = mock.MagicMock(return_value='123')
+        environ = {'REQUEST_METHOD': 'GET',
+                   'QUERY_STRING': 'transport=websocket'}
+        start_response = mock.MagicMock()
+
+        def mock_handle(environ, start_response):
+            s.sockets['123'].closed = True
+
+        Socket().handle_get_request = mock_handle
+        s.handle_request(environ, start_response)
+        self.assertNotIn('123', s.sockets)
 
     def test_connect_transport_invalid(self):
         s = server.Server()

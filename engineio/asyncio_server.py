@@ -220,7 +220,11 @@ class AsyncServer(server.Server):
             return self._unauthorized()
 
         if transport == 'websocket':
-            return await s.handle_get_request(environ)
+            ret = await s.handle_get_request(environ)
+            if s.closed:
+                # websocket connection ended, so we are done
+                del self.sockets[sid]
+            return ret
         else:
             s.connected = True
             headers = None

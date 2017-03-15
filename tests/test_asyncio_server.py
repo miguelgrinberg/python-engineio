@@ -278,10 +278,33 @@ class TestAsyncServer(unittest.TestCase):
         AsyncSocket.return_value = self._get_mock_socket()
         s = asyncio_server.AsyncServer()
         s._generate_id = mock.MagicMock(return_value='123')
+        # force socket to stay open, so that we can check it later
+        AsyncSocket().closed = False
         _run(s.handle_request('request'))
         self.assertEqual(
             s.sockets['123'].send.mock.call_args[0][0].packet_type,
             packet.OPEN)
+
+    @mock.patch('engineio.asyncio_socket.AsyncSocket')
+    @mock.patch('importlib.import_module')
+    def test_connect_transport_websocket_closed(self, import_module,
+                                                AsyncSocket):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
+                                 'QUERY_STRING': 'transport=websocket'})
+        import_module.side_effect = [a]
+        AsyncSocket.return_value = self._get_mock_socket()
+        s = asyncio_server.AsyncServer()
+        s._generate_id = mock.MagicMock(return_value='123')
+
+        # this mock handler just closes the socket, as it would happen on a
+        # real websocket exchange
+        @asyncio.coroutine
+        def mock_handle(environ):
+            s.sockets['123'].closed = True
+
+        AsyncSocket().handle_get_request = mock_handle
+        _run(s.handle_request('request'))
+        self.assertNotIn('123', s.sockets)  # socket should close on its own
 
     @mock.patch('importlib.import_module')
     def test_connect_transport_invalid(self, import_module):

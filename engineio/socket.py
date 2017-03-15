@@ -175,7 +175,7 @@ class Socket(object):
                         ws.send(pkt.encode(always_bytes=False))
                 except:
                     break
-        self.server.start_background_task(writer)
+        writer_task = self.server.start_background_task(writer)
 
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
@@ -197,7 +197,8 @@ class Socket(object):
             except ValueError:
                 pass
 
-        self.close(wait=True, abort=True)
         self.queue.put(None)  # unlock the writer task so that it can exit
+        writer_task.join()
+        self.close(wait=True, abort=True)
 
         return []

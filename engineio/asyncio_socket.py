@@ -160,7 +160,7 @@ class AsyncSocket(socket.Socket):
                         await ws.send(pkt.encode(always_bytes=False))
                 except:
                     break
-        asyncio.ensure_future(writer())
+        writer_task = asyncio.ensure_future(writer())
 
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
@@ -182,5 +182,6 @@ class AsyncSocket(socket.Socket):
             except ValueError:
                 pass
 
-        await self.close(wait=True, abort=True)
         await self.queue.put(None)  # unlock the writer task so it can exit
+        await asyncio.wait_for(writer_task, timeout=None)
+        await self.close(wait=True, abort=True)

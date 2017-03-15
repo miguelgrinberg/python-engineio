@@ -352,7 +352,11 @@ class Server(object):
             return self._unauthorized()
 
         if transport == 'websocket':
-            return s.handle_get_request(environ, start_response)
+            ret = s.handle_get_request(environ, start_response)
+            if s.closed:
+                # websocket connection ended, so we are done
+                del self.sockets[sid]
+            return ret
         else:
             s.connected = True
             headers = None
