@@ -32,7 +32,7 @@ def translate_request(request):
         'wsgi.multithread': False,
         'wsgi.multiprocess': False,
         'wsgi.run_once': False,
-        'SERVER_SOFTWARE': aiohttp.HttpMessage.SERVER_SOFTWARE,
+        'SERVER_SOFTWARE': 'aiohttp',
         'REQUEST_METHOD': message.method,
         'QUERY_STRING': uri_parts.query or '',
         'RAW_URI': message.path,
