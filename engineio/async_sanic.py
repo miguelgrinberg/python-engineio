@@ -43,9 +43,7 @@ def translate_request(request):
                 self.payload = self.payload[length:]
             return r
 
-    url = request.url + ('?' + request.query_string
-                         if request.query_string else '')
-    uri_parts = urlsplit(url)
+    uri_parts = urlsplit(request.url)
     environ = {
         'wsgi.input': AwaitablePayload(request.body),
         'wsgi.errors': sys.stderr,
@@ -57,7 +55,7 @@ def translate_request(request):
         'SERVER_SOFTWARE': 'sanic',
         'REQUEST_METHOD': request.method,
         'QUERY_STRING': uri_parts.query or '',
-        'RAW_URI': url,
+        'RAW_URI': request.url,
         'SERVER_PROTOCOL': 'HTTP/' + request.version,
         'REMOTE_ADDR': '127.0.0.1',
         'REMOTE_PORT': '0',
