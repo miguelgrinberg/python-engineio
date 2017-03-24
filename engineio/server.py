@@ -55,6 +55,9 @@ class Server(object):
     :param async_handlers: If set to ``True``, run message event handlers in
                            non-blocking threads. To run handlers synchronously,
                            set to ``False``. The default is ``True``.
+    :param pass_environ: If set to ``True``, the current ``environ`` is passed
+                         to the ``"message"`` event handler as second argument
+                         (right after ``sid``). (default is ``False``)
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -66,7 +69,7 @@ class Server(object):
                  http_compression=True, compression_threshold=1024,
                  cookie='io', cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,
-                 async_handlers=True, **kwargs):
+                 async_handlers=True, pass_environ=False, **kwargs):
         self.ping_timeout = ping_timeout
         self.ping_interval = ping_interval
         self.max_http_buffer_size = max_http_buffer_size
@@ -77,6 +80,7 @@ class Server(object):
         self.cors_allowed_origins = cors_allowed_origins
         self.cors_credentials = cors_credentials
         self.async_handlers = async_handlers
+        self.pass_environ = pass_environ
         self.sockets = {}
         self.handlers = {}
         if json is not None:
