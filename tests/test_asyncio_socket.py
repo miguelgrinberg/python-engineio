@@ -8,6 +8,7 @@ if six.PY3:
 else:
     import mock
 
+from engineio import exceptions
 from engineio import packet
 from engineio import payload
 if sys.version_info >= (3, 5):
@@ -111,7 +112,7 @@ class TestSocket(unittest.TestCase):
     def test_invalid_packet(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
-        self.assertRaises(ValueError, _run,
+        self.assertRaises(exceptions.UnknownPacketError, _run,
                           s.receive(packet.Packet(packet.OPEN)))
 
     def test_timeout(self):
@@ -165,7 +166,7 @@ class TestSocket(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo',
                    'CONTENT_LENGTH': len(p),
                    'wsgi.input': self._get_read_mock_coro(p)}
-        self.assertRaises(ValueError, _run,
+        self.assertRaises(exceptions.ContentTooLongError, _run,
                           s.handle_post_request(environ))
 
     def test_upgrade_handshake(self):

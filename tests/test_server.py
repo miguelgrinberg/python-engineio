@@ -13,6 +13,7 @@ if six.PY3:
 else:
     import mock
 
+from engineio import exceptions
 from engineio import packet
 from engineio import payload
 from engineio import server
@@ -626,7 +627,7 @@ class TestServer(unittest.TestCase):
         s = server.Server()
         mock_socket = self._get_mock_socket()
         mock_socket.handle_post_request = mock.MagicMock(
-            side_effect=[ValueError])
+            side_effect=[exceptions.EngineIOError])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()

@@ -11,6 +11,7 @@ if six.PY3:
 else:
     import mock
 
+from engineio import exceptions
 from engineio import packet
 from engineio import payload
 if sys.version_info >= (3, 5):
@@ -522,7 +523,7 @@ class TestAsyncServer(unittest.TestCase):
 
         @asyncio.coroutine
         def mock_post_request(*args, **kwargs):
-            raise ValueError()
+            raise exceptions.ContentTooLongError()
 
         mock_socket.handle_post_request.mock.return_value = mock_post_request()
         _run(s.handle_request('request'))

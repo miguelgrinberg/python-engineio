@@ -7,6 +7,7 @@ import zlib
 import six
 from six.moves import urllib
 
+from .exceptions import EngineIOError
 from . import packet
 from . import payload
 from . import socket
@@ -277,7 +278,7 @@ class Server(object):
                     try:
                         socket.handle_post_request(environ)
                         r = self._ok()
-                    except ValueError:
+                    except EngineIOError:
                         r = self._bad_request()
             else:
                 self.logger.warning('Method %s not supported', method)

@@ -1,0 +1,10 @@
+class EngineIOError(Exception):
+    pass
+
+
+class ContentTooLongError(EngineIOError):
+    pass
+
+
+class UnknownPacketError(EngineIOError):
+    pass

@@ -1,6 +1,7 @@
 import time
 import six
 
+from . import exceptions
 from . import packet
 from . import payload
 
@@ -58,7 +59,7 @@ class Socket(object):
         elif pkt.packet_type == packet.CLOSE:
             self.close(wait=False, abort=True)
         else:
-            raise ValueError
+            raise exceptions.UnknownPacketError()
 
     def send(self, pkt):
         """Send a packet to the client."""
@@ -97,7 +98,7 @@ class Socket(object):
         """Handle a long-polling POST request from the client."""
         length = int(environ.get('CONTENT_LENGTH', '0'))
         if length > self.server.max_http_buffer_size:
-            raise ValueError()
+            raise exceptions.ContentTooLongError()
         else:
             body = environ['wsgi.input'].read(length)
             p = payload.Payload(encoded_payload=body)
@@ -194,7 +195,7 @@ class Socket(object):
             pkt = packet.Packet(encoded_packet=p)
             try:
                 self.receive(pkt)
-            except ValueError:
+            except exceptions.UnknownPacketError:
                 pass
 
         self.queue.put(None)  # unlock the writer task so that it can exit

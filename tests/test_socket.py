@@ -7,6 +7,7 @@ if six.PY3:
 else:
     import mock
 
+from engineio import exceptions
 from engineio import packet
 from engineio import payload
 from engineio import socket
@@ -98,7 +99,8 @@ class TestSocket(unittest.TestCase):
     def test_invalid_packet(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
-        self.assertRaises(ValueError, s.receive, packet.Packet(packet.OPEN))
+        self.assertRaises(exceptions.UnknownPacketError, s.receive,
+                          packet.Packet(packet.OPEN))
 
     def test_timeout(self):
         mock_server = self._get_mock_server()
@@ -152,7 +154,8 @@ class TestSocket(unittest.TestCase):
         s.receive = mock.MagicMock()
         environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo',
                    'CONTENT_LENGTH': len(p), 'wsgi.input': six.BytesIO(p)}
-        self.assertRaises(ValueError, s.handle_post_request, environ)
+        self.assertRaises(exceptions.ContentTooLongError,
+                          s.handle_post_request, environ)
 
     def test_upgrade_handshake(self):
         mock_server = self._get_mock_server()
@@ -239,7 +242,7 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
         pkt = packet.Packet(packet_type=99)
-        self.assertRaises(ValueError, lambda: s.receive(pkt))
+        self.assertRaises(exceptions.UnknownPacketError, s.receive, pkt)
 
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()

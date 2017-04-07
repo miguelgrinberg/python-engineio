@@ -3,6 +3,7 @@ import asyncio
 import six
 from six.moves import urllib
 
+from .exceptions import EngineIOError
 from . import packet
 from . import server
 from . import asyncio_socket
@@ -152,7 +153,7 @@ class AsyncServer(server.Server):
                     try:
                         await socket.handle_post_request(environ)
                         r = self._ok()
-                    except ValueError:
+                    except EngineIOError:
                         r = self._bad_request()
             else:
                 self.logger.warning('Method %s not supported', method)
