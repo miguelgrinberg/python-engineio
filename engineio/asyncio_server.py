@@ -56,6 +56,7 @@ class AsyncServer(server.Server):
 
     def attach(self, app, engineio_path='engine.io'):
         """Attach the Engine.IO server to an application."""
+        engineio_path = engineio_path.strip('/')
         self._async['create_route'](app, self, '/{}/'.format(engineio_path))
 
     async def send(self, sid, data, binary=None):

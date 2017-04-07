@@ -23,7 +23,7 @@ class Middleware(object):
     def __init__(self, engineio_app, wsgi_app=None, engineio_path='engine.io'):
         self.engineio_app = engineio_app
         self.wsgi_app = wsgi_app
-        self.engineio_path = engineio_path
+        self.engineio_path = engineio_path.strip('/')
 
     def __call__(self, environ, start_response):
         if 'gunicorn.socket' in environ:

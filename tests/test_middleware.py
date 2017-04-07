@@ -41,6 +41,60 @@ class TestMiddleware(unittest.TestCase):
         start_response.assert_called_once_with(
             "404 Not Found", [('Content-type', 'text/plain')])
 
+    def test_custom_eio_path(self):
+        mock_wsgi_app = None
+        mock_eio_app = mock.Mock()
+        mock_eio_app.handle_request = mock.MagicMock()
+        m = middleware.Middleware(mock_eio_app, mock_wsgi_app,
+                                  engineio_path='foo')
+        environ = {'PATH_INFO': '/engine.io/'}
+        start_response = mock.MagicMock()
+        r = m(environ, start_response)
+        self.assertEqual(r, ['Not Found'])
+        start_response.assert_called_once_with(
+            "404 Not Found", [('Content-type', 'text/plain')])
+
+        environ = {'PATH_INFO': '/foo/'}
+        m(environ, start_response)
+        mock_eio_app.handle_request.assert_called_once_with(environ,
+                                                            start_response)
+
+    def test_custom_eio_path_slashes(self):
+        mock_wsgi_app = None
+        mock_eio_app = mock.Mock()
+        mock_eio_app.handle_request = mock.MagicMock()
+        m = middleware.Middleware(mock_eio_app, mock_wsgi_app,
+                                  engineio_path='/foo/')
+        environ = {'PATH_INFO': '/foo/'}
+        start_response = mock.MagicMock()
+        m(environ, start_response)
+        mock_eio_app.handle_request.assert_called_once_with(environ,
+                                                            start_response)
+
+    def test_custom_eio_path_leading_slash(self):
+        mock_wsgi_app = None
+        mock_eio_app = mock.Mock()
+        mock_eio_app.handle_request = mock.MagicMock()
+        m = middleware.Middleware(mock_eio_app, mock_wsgi_app,
+                                  engineio_path='/foo')
+        environ = {'PATH_INFO': '/foo/'}
+        start_response = mock.MagicMock()
+        m(environ, start_response)
+        mock_eio_app.handle_request.assert_called_once_with(environ,
+                                                            start_response)
+
+    def test_custom_eio_path_trailing_slash(self):
+        mock_wsgi_app = None
+        mock_eio_app = mock.Mock()
+        mock_eio_app.handle_request = mock.MagicMock()
+        m = middleware.Middleware(mock_eio_app, mock_wsgi_app,
+                                  engineio_path='foo/')
+        environ = {'PATH_INFO': '/foo/'}
+        start_response = mock.MagicMock()
+        m(environ, start_response)
+        mock_eio_app.handle_request.assert_called_once_with(environ,
+                                                            start_response)
+
     def test_gunicorn_socket(self):
         mock_wsgi_app = None
         mock_eio_app = mock.Mock()

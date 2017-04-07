@@ -118,8 +118,14 @@ class TestAsyncServer(unittest.TestCase):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
-        s.attach('app', engineio_path='path')
-        a._async['create_route'].assert_called_with('app', s, '/path/')
+        s.attach('app', engineio_path='abc')
+        a._async['create_route'].assert_called_with('app', s, '/abc/')
+        s.attach('app', engineio_path='/def/')
+        a._async['create_route'].assert_called_with('app', s, '/def/')
+        s.attach('app', engineio_path='/ghi')
+        a._async['create_route'].assert_called_with('app', s, '/ghi/')
+        s.attach('app', engineio_path='jkl/')
+        a._async['create_route'].assert_called_with('app', s, '/jkl/')
 
     def test_disconnect(self):
         s = asyncio_server.AsyncServer()
