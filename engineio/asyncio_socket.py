@@ -151,7 +151,7 @@ class AsyncSocket(socket.Socket):
                 packets = None
                 try:
                     packets = await self.poll()
-                except IOError:
+                except exceptions.QueueEmpty:
                     break
                 if not packets:
                     # empty packet list returned -> connection closed
@@ -166,6 +166,7 @@ class AsyncSocket(socket.Socket):
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
 
+        reraise_exc = None
         while True:
             p = None
             try:
@@ -182,7 +183,15 @@ class AsyncSocket(socket.Socket):
                 await self.receive(pkt)
             except exceptions.UnknownPacketError:
                 pass
+            except Exception as e:
+                # if we get an unexpected exception (such as something in an
+                # application event handler) we close the connection properly
+                # and then reraise the exception
+                reraise_exc = e
+                break
 
         await self.queue.put(None)  # unlock the writer task so it can exit
         await asyncio.wait_for(writer_task, timeout=None)
         await self.close(wait=True, abort=True)
+        if reraise_exc:
+            raise reraise_exc

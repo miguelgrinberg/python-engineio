@@ -166,7 +166,7 @@ class Socket(object):
             while True:
                 try:
                     packets = self.poll()
-                except IOError:
+                except exceptions.QueueEmpty:
                     break
                 if not packets:
                     # empty packet list returned -> connection closed
@@ -181,6 +181,7 @@ class Socket(object):
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
 
+        reraise_exc = None
         while True:
             p = None
             try:
@@ -197,9 +198,17 @@ class Socket(object):
                 self.receive(pkt)
             except exceptions.UnknownPacketError:
                 pass
+            except Exception as e:
+                # if we get an unexpected exception (such as something in an
+                # application event handler) we close the connection properly
+                # and then reraise the exception
+                reraise_exc = e
+                break
 
         self.queue.put(None)  # unlock the writer task so that it can exit
         writer_task.join()
         self.close(wait=True, abort=True)
+        if reraise_exc:
+            raise reraise_exc
 
         return []

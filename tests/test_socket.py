@@ -263,7 +263,7 @@ class TestSocket(unittest.TestCase):
         foo = six.text_type('foo')
         bar = six.text_type('bar')
         s.poll = mock.MagicMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data=bar)], IOError])
+            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
         ws = mock.MagicMock()
         ws.wait.side_effect = [
             packet.Packet(packet.MESSAGE, data=foo).encode(
@@ -288,7 +288,7 @@ class TestSocket(unittest.TestCase):
         bar = six.text_type('bar')
         probe = six.text_type('probe')
         s.poll = mock.MagicMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data=bar)], IOError])
+            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
         ws = mock.MagicMock()
         ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(
@@ -322,7 +322,7 @@ class TestSocket(unittest.TestCase):
         self._join_bg_tasks()
         self.assertTrue(s.upgraded)
 
-    def test_websocket_read_write_fail(self):
+    def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
         s.connected = False
@@ -331,7 +331,7 @@ class TestSocket(unittest.TestCase):
         bar = six.text_type('bar')
         s.poll = mock.MagicMock(side_effect=[
             [packet.Packet(packet.MESSAGE, data=bar)],
-            [packet.Packet(packet.MESSAGE, data=bar)], IOError])
+            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
         ws = mock.MagicMock()
         ws.wait.side_effect = [
             packet.Packet(packet.MESSAGE, data=foo).encode(
@@ -339,6 +339,29 @@ class TestSocket(unittest.TestCase):
             RuntimeError]
         ws.send.side_effect = [None, RuntimeError]
         s._websocket_handler(ws)
+        self._join_bg_tasks()
+        self.assertEqual(s.closed, True)
+
+    def test_websocket_read_write_receive_fail(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.connected = False
+        s.queue.join = mock.MagicMock(return_value=None)
+        foo = six.text_type('foo')
+        bar = six.text_type('bar')
+        s.poll = mock.MagicMock(side_effect=[
+            [packet.Packet(packet.MESSAGE, data=bar)],
+            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
+        ws = mock.MagicMock()
+        ws.wait.side_effect = [
+            packet.Packet(packet.MESSAGE, data=foo).encode(
+                always_bytes=False),
+            packet.Packet(packet.MESSAGE, data=bar).encode(
+                always_bytes=False)]
+        ws.send.side_effect = [None, None]
+        s.receive = mock.MagicMock(side_effect=[
+            None, ZeroDivisionError])
+        self.assertRaises(ZeroDivisionError, s._websocket_handler, ws)
         self._join_bg_tasks()
         self.assertEqual(s.closed, True)
 
@@ -350,7 +373,7 @@ class TestSocket(unittest.TestCase):
         foo = six.text_type('foo')
         bar = six.text_type('bar')
         s.poll = mock.MagicMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data=bar)], IOError])
+            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
         ws = mock.MagicMock()
         ws.wait.side_effect = [
             packet.Packet(packet.OPEN).encode(always_bytes=False),

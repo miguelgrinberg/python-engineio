@@ -19,7 +19,6 @@ class AiohttpTests(unittest.TestCase):
         app = web.Application()
         mock_server = mock.MagicMock()
         async_aiohttp.create_route(app, mock_server, '/foo')
-        print(add_route.call_args_list)
         add_route.assert_any_call('GET', '/foo', mock_server.handle_request,
                                   name=None)
         add_route.assert_any_call('POST', '/foo', mock_server.handle_request)
