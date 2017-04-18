@@ -30,7 +30,7 @@ class Socket(object):
             packets = [self.queue.get(timeout=self.server.ping_timeout)]
             self.queue.task_done()
         except self.server._async['queue'].Empty:
-            raise IOError()
+            raise exceptions.QueueEmpty()
         if packets == [None]:
             return []
         try:
@@ -89,7 +89,7 @@ class Socket(object):
                                                           start_response)
         try:
             packets = self.poll()
-        except IOError as e:
+        except exceptions.QueueEmpty as e:
             self.close(wait=False)
             raise e
         return packets

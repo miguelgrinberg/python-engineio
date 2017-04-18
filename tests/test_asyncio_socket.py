@@ -77,7 +77,7 @@ class TestSocket(unittest.TestCase):
     def test_empty_poll(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
-        self.assertRaises(IOError, _run, s.poll())
+        self.assertRaises(exceptions.QueueEmpty, _run, s.poll())
 
     def test_poll(self):
         mock_server = self._get_mock_server()
@@ -139,7 +139,8 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'foo')
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
-        self.assertRaises(IOError, _run, s.handle_get_request(environ))
+        self.assertRaises(exceptions.QueueEmpty, _run,
+                          s.handle_get_request(environ))
 
     def test_polling_write(self):
         mock_server = self._get_mock_server()

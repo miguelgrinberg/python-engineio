@@ -63,6 +63,7 @@ class TestAsyncServer(unittest.TestCase):
         mock_socket = mock.MagicMock()
         mock_socket.connected = False
         mock_socket.closed = False
+        mock_socket.closing = False
         mock_socket.upgraded = False
         mock_socket.send = AsyncMock()
         mock_socket.handle_get_request = AsyncMock()
@@ -501,7 +502,7 @@ class TestAsyncServer(unittest.TestCase):
 
         @asyncio.coroutine
         def mock_get_request(*args, **kwargs):
-            raise IOError()
+            raise exceptions.QueueEmpty()
 
         mock_socket.handle_get_request.mock.return_value = mock_get_request()
         _run(s.handle_request('request'))
@@ -535,6 +536,22 @@ class TestAsyncServer(unittest.TestCase):
         _run(s.handle_request('request'))
         self.assertEqual(a._async['make_response'].call_args[0][0],
                          '400 BAD REQUEST')
+
+    @mock.patch('importlib.import_module')
+    def test_post_request_application_error(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'POST',
+                                 'QUERY_STRING': 'sid=foo'})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        s.sockets['foo'] = mock_socket = self._get_mock_socket()
+
+        @asyncio.coroutine
+        def mock_get_request(*args, **kwargs):
+            raise ZeroDivisionError()
+
+        mock_socket.handle_post_request.mock.return_value = mock_get_request()
+        self.assertRaises(ZeroDivisionError, _run, s.handle_request('request'))
+        self.assertEqual(len(s.sockets), 0)
 
     @staticmethod
     def _gzip_decompress(b):

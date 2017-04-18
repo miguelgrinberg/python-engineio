@@ -139,9 +139,9 @@ class AsyncServer(server.Server):
                                 r = self._ok(packets, b64=b64)
                             else:
                                 r = packets
-                        except IOError:
+                        except EngineIOError:
                             if sid in self.sockets:  # pragma: no cover
-                                del self.sockets[sid]
+                                await self.disconnect(sid)
                             r = self._bad_request()
                         if sid in self.sockets and self.sockets[sid].closed:
                             del self.sockets[sid]
@@ -155,7 +155,16 @@ class AsyncServer(server.Server):
                         await socket.handle_post_request(environ)
                         r = self._ok()
                     except EngineIOError:
+                        if sid in self.sockets:  # pragma: no cover
+                            await self.disconnect(sid)
                         r = self._bad_request()
+                    except Exception as e:
+                        # for any other unexpected errors, we disconnect
+                        # the cient and reraise
+                        print('yo')
+                        if sid in self.sockets:  # pragma: no cover
+                            await self.disconnect(sid)
+                        raise e
             else:
                 self.logger.warning('Method %s not supported', method)
                 r = self._method_not_found()

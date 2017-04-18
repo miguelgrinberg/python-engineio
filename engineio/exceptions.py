@@ -8,3 +8,7 @@ class ContentTooLongError(EngineIOError):
 
 class UnknownPacketError(EngineIOError):
     pass
+
+
+class QueueEmpty(EngineIOError):
+    pass

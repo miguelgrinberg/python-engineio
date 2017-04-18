@@ -42,6 +42,7 @@ class TestServer(unittest.TestCase):
     def _get_mock_socket(self):
         mock_socket = mock.MagicMock()
         mock_socket.closed = False
+        mock_socket.closing = False
         mock_socket.upgraded = False
         return mock_socket
 
@@ -603,7 +604,8 @@ class TestServer(unittest.TestCase):
     def test_get_request_error(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request = mock.MagicMock(side_effect=[IOError])
+        mock_socket.handle_get_request = mock.MagicMock(
+            side_effect=[exceptions.QueueEmpty])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()
@@ -634,6 +636,19 @@ class TestServer(unittest.TestCase):
         s.handle_request(environ, start_response)
         self.assertEqual(start_response.call_args[0][0],
                          '400 BAD REQUEST')
+        self.assertNotIn('foo', s.sockets)
+
+    def test_post_request_application_error(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        mock_socket.handle_post_request = mock.MagicMock(
+            side_effect=[ZeroDivisionError])
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
+        start_response = mock.MagicMock()
+        self.assertRaises(ZeroDivisionError, s.handle_request, environ,
+                          start_response)
+        self.assertNotIn('foo', s.sockets)
 
     @staticmethod
     def _gzip_decompress(b):

@@ -19,7 +19,7 @@ class AsyncSocket(socket.Socket):
                                               self.server.ping_timeout)]
             self.queue.task_done()
         except (asyncio.TimeoutError, asyncio.CancelledError):
-            raise IOError()
+            raise exceptions.QueueEmpty()
         if packets == [None]:
             return []
         try:
@@ -73,7 +73,7 @@ class AsyncSocket(socket.Socket):
             return await getattr(self, '_upgrade_' + transport)(environ)
         try:
             packets = await self.poll()
-        except IOError as e:
+        except exceptions.QueueEmpty as e:
             await self.close(wait=False)
             raise e
         return packets

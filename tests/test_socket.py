@@ -62,7 +62,7 @@ class TestSocket(unittest.TestCase):
     def test_empty_poll(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
-        self.assertRaises(IOError, s.poll)
+        self.assertRaises(exceptions.QueueEmpty, s.poll)
 
     def test_poll(self):
         mock_server = self._get_mock_server()
@@ -128,7 +128,7 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'foo')
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
         start_response = mock.MagicMock()
-        self.assertRaises(IOError, s.handle_get_request, environ,
+        self.assertRaises(exceptions.QueueEmpty, s.handle_get_request, environ,
                           start_response)
 
     def test_polling_write(self):
