@@ -435,3 +435,13 @@ class TestSocket(unittest.TestCase):
         s.queue.join = AsyncMock()
         _run(s.close(wait=False))
         self.assertEqual(s.queue.join.mock.call_count, 0)
+
+    def test_close_disconnect_error(self):
+        mock_server = self._get_mock_server()
+        mock_server._trigger_event.mock.side_effect = ZeroDivisionError
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        self.assertRaises(ZeroDivisionError, _run, s.close(wait=False))
+        self.assertTrue(s.closed)
+        self.assertEqual(mock_server._trigger_event.mock.call_count, 1)
+        mock_server._trigger_event.mock.assert_called_once_with('disconnect',
+                                                                'sid')

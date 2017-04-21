@@ -522,6 +522,17 @@ class TestServer(unittest.TestCase):
         self.assertEqual(len(s.sockets), 0)
         self.assertEqual(start_response.call_args[0][0], '401 UNAUTHORIZED')
 
+    def test_connect_event_error(self):
+        s = server.Server()
+        s._generate_id = mock.MagicMock(return_value='123')
+        mock_event = mock.MagicMock(side_effect=ZeroDivisionError)
+        s.on('connect')(mock_event)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
+        start_response = mock.MagicMock()
+        self.assertRaises(ZeroDivisionError, s.handle_request, environ,
+                          start_response)
+        self.assertEqual(len(s.sockets), 0)
+
     def test_method_not_found(self):
         s = server.Server()
         environ = {'REQUEST_METHOD': 'PUT', 'QUERY_STRING': ''}

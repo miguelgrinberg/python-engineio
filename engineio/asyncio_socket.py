@@ -93,12 +93,18 @@ class AsyncSocket(socket.Socket):
         """Close the socket connection."""
         if not self.closed and not self.closing:
             self.closing = True
-            await self.server._trigger_event('disconnect', self.sid)
+            reraise_exc = None
+            try:
+                await self.server._trigger_event('disconnect', self.sid)
+            except Exception as e:
+                reraise_exc = e
             if not abort:
                 await self.send(packet.Packet(packet.CLOSE))
             self.closed = True
             if wait:
                 await self.queue.join()
+            if reraise_exc:
+                raise reraise_exc
 
     async def _upgrade_websocket(self, environ):
         """Upgrade the connection from polling to websocket."""

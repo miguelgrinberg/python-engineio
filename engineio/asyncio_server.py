@@ -225,9 +225,19 @@ class AsyncServer(server.Server):
                           'pingInterval': int(self.ping_interval * 1000)})
         await s.send(pkt)
 
-        if await self._trigger_event('connect', sid, environ) is False:
-            self.logger.warning('Application rejected connection')
+        reraise_exc = None
+        try:
+            ret = await self._trigger_event('connect', sid, environ)
+        except Exception as e:
+            ret = False
+            reraise_exc = e
+        if ret is False:
             del self.sockets[sid]
+            if reraise_exc is None:
+                self.logger.warning('Application rejected connection')
+            else:
+                self.logger.error('Connect handler raised an exception')
+                raise reraise_exc
             return self._unauthorized()
 
         if transport == 'websocket':

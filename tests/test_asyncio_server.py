@@ -396,6 +396,20 @@ class TestAsyncServer(unittest.TestCase):
                          '401 UNAUTHORIZED')
 
     @mock.patch('importlib.import_module')
+    def test_connect_event_error(self, import_module):
+        a = self.get_async_mock()
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        s._generate_id = mock.MagicMock(return_value='123')
+
+        def mock_connect(sid, environ):
+            return 1 / 0
+
+        s.on('connect')(mock_connect)
+        self.assertRaises(ZeroDivisionError, _run, s.handle_request('request'))
+        self.assertEqual(len(s.sockets), 0)
+
+    @mock.patch('importlib.import_module')
     def test_method_not_found(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'PUT', 'QUERY_STRING': ''})
         import_module.side_effect = [a]
