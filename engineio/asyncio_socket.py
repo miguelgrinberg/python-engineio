@@ -176,7 +176,7 @@ class AsyncSocket(socket.Socket):
         while True:
             p = None
             try:
-                p = await ws.wait()
+                p = await asyncio.wait_for(ws.wait(), self.server.ping_timeout)
             except:
                 break
             if p is None:

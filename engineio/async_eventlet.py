@@ -7,6 +7,7 @@ from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 
 class WebSocketWSGI(_WebSocketWSGI):
     def __init__(self, *args, **kwargs):
+        super(WebSocketWSGI, self).__init__(*args, **kwargs)
         self._sock = None
 
     def __call__(self, environ, start_response):

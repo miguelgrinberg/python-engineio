@@ -180,15 +180,11 @@ class Socket(object):
                     break
                 if not packets:
                     # empty packet list returned -> connection closed
-                    if not self.closed:  # pragma: no cover
-                        self.close(wait=True, abort=True)
                     break
                 try:
                     for pkt in packets:
                         ws.send(pkt.encode(always_bytes=False))
                 except:
-                    if not self.closed:  # pragma: no cover
-                        self.close(wait=True, abort=True)
                     break
         writer_task = self.server.start_background_task(writer)
 
@@ -203,7 +199,7 @@ class Socket(object):
             except Exception as e:
                 # if the socket is already closed, we can assume this is a
                 # downstream error of that
-                if not self.closed:
+                if not self.closed:  # pragma: no cover
                     self.server.logger.info(
                         '%s: Unexpected error "%s", closing connection',
                         self.sid, str(e))
@@ -227,8 +223,7 @@ class Socket(object):
 
         self.queue.put(None)  # unlock the writer task so that it can exit
         writer_task.join()
-        if not self.closed:
-            self.close(wait=True, abort=True)
+        self.close(wait=True, abort=True)
         if reraise_exc:
             raise reraise_exc
 
