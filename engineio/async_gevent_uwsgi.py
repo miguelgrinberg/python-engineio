@@ -26,8 +26,10 @@ class uWSGIWebSocket(object):  # pragma: no cover
     """
     def __init__(self, app):
         self.app = app
+        self._sock = None
 
     def __call__(self, environ, start_response):
+        self._sock = uwsgi.connection_fd()
         self.environ = environ
 
         uwsgi.websocket_handshake()
@@ -55,7 +57,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                         break
             self._select_greenlet = gevent.spawn(
                 select_greenlet_runner,
-                uwsgi.connection_fd(),
+                self._sock,
                 self._event)
 
         self.app(self)

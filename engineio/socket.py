@@ -137,6 +137,9 @@ class Socket(object):
 
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
+        if hasattr(ws, '_sock') and ws._sock is not None:  # pragma: no cover
+            ws._sock.settimeout(self.server.ping_interval)
+
         if self.connected:
             # the socket was already connected, so this is an upgrade
             self.queue.join()  # flush the queue first
@@ -170,17 +173,22 @@ class Socket(object):
         # start separate writer thread
         def writer():
             while True:
+                packets = None
                 try:
                     packets = self.poll()
                 except exceptions.QueueEmpty:
                     break
                 if not packets:
                     # empty packet list returned -> connection closed
+                    if not self.closed:  # pragma: no cover
+                        self.close(wait=True, abort=True)
                     break
                 try:
                     for pkt in packets:
                         ws.send(pkt.encode(always_bytes=False))
                 except:
+                    if not self.closed:  # pragma: no cover
+                        self.close(wait=True, abort=True)
                     break
         writer_task = self.server.start_background_task(writer)
 
@@ -192,7 +200,13 @@ class Socket(object):
             p = None
             try:
                 p = ws.wait()
-            except:
+            except Exception as e:
+                # if the socket is already closed, we can assume this is a
+                # downstream error of that
+                if not self.closed:
+                    self.server.logger.info(
+                        '%s: Unexpected error "%s", closing connection',
+                        self.sid, str(e))
                 break
             if p is None:
                 # connection closed by client
@@ -213,7 +227,8 @@ class Socket(object):
 
         self.queue.put(None)  # unlock the writer task so that it can exit
         writer_task.join()
-        self.close(wait=True, abort=True)
+        if not self.closed:
+            self.close(wait=True, abort=True)
         if reraise_exc:
             raise reraise_exc
 
