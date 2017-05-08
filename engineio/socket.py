@@ -137,8 +137,10 @@ class Socket(object):
 
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
-        if hasattr(ws, '_sock') and ws._sock is not None:  # pragma: no cover
-            ws._sock.settimeout(self.server.ping_interval)
+        # try to set a socket timeout matching the configured ping interval
+        for attr in ['_sock', 'socket']:  # pragma: no cover
+            if hasattr(ws, attr) and hasattr(ws.attr, 'settimeout'):
+                getattr(ws, attr).settimeout(self.server.ping_interval)
 
         if self.connected:
             # the socket was already connected, so this is an upgrade
