@@ -139,7 +139,7 @@ class Socket(object):
         """Engine.IO handler for websocket transport."""
         # try to set a socket timeout matching the configured ping interval
         for attr in ['_sock', 'socket']:  # pragma: no cover
-            if hasattr(ws, attr) and hasattr(ws.attr, 'settimeout'):
+            if hasattr(ws, attr) and hasattr(getattr(ws, attr), 'settimeout'):
                 getattr(ws, attr).settimeout(self.server.ping_interval)
 
         if self.connected:
