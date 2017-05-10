@@ -407,8 +407,8 @@ class Server(object):
         except KeyError:
             raise KeyError('Session not found')
         if s.closed:
-            del self.sockets[sid]
-            raise KeyError('Session is disconnected')
+            if sid in self.sockets:
+                del self.sockets[sid]
         return s
 
     def _ok(self, packets=None, headers=None, b64=False):
