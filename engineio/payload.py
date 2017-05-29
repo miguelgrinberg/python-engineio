@@ -49,6 +49,9 @@ class Payload(object):
                 i = encoded_payload.find(b':')
                 if i == -1:
                     raise ValueError('invalid payload')
+                # the packet_len below is given in utf-8 characters, but we
+                # receive the payload as bytes, so down below this length is
+                # adjusted to reflect byte length
                 packet_len = int(encoded_payload[0:i])
                 if not fixed_double_encode:
                     # the engine.io javascript client sends text payloads with
@@ -66,12 +69,15 @@ class Payload(object):
                         # if a second utf-8 decode worked, then this appears to
                         # be a double encoded packet, so here we keep the
                         # packet after a single decode, since the packet class
-                        # will perform a decode as well
+                        # will perform a decode as well, and in this case it is
+                        # not necessary to adjust the packet length
                         encoded_payload = fixed_payload
                     except:
                         # if we couldn't apply a double utf-8 decode then
-                        # the packet must have been correct, so keep going
-                        pass
+                        # the packet must have been correct, so we just adjust
+                        # the packet length to be in bytes and not utf-8
+                        # characters and keep going
+                        packet_len += len(encoded_payload) - len(fixed_payload)
                     fixed_double_encode = True
                 pkt = encoded_payload[i + 1: i + 1 + packet_len]
                 self.packets.append(packet.Packet(encoded_packet=pkt))
