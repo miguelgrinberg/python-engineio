@@ -175,8 +175,17 @@ class AsyncSocket(socket.Socket):
         reraise_exc = None
         while True:
             p = None
+            wait_task = asyncio.ensure_future(ws.wait())
             try:
-                p = await asyncio.wait_for(ws.wait(), self.server.ping_timeout)
+                p = await asyncio.wait_for(wait_task, self.server.ping_timeout)
+            except asyncio.CancelledError:  # pragma: no cover
+                # there is a bug (https://bugs.python.org/issue30508) in
+                # asyncio that causes a "Task exception never retrieved" error
+                # to appear when wait_task raises an exception before it gets
+                # cancelled. Calling wait_tas.exception() prevents the error
+                # from being issued.
+                wait_task.exception()
+                break
             except:
                 break
             if p is None:
