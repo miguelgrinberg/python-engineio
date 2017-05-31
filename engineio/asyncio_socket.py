@@ -1,6 +1,7 @@
 import asyncio
-import time
 import six
+import sys
+import time
 
 from . import exceptions
 from . import packet
@@ -96,15 +97,15 @@ class AsyncSocket(socket.Socket):
             reraise_exc = None
             try:
                 await self.server._trigger_event('disconnect', self.sid)
-            except Exception as e:
-                reraise_exc = e
+            except:
+                reraise_exc = sys.exc_info()
             if not abort:
                 await self.send(packet.Packet(packet.CLOSE))
             self.closed = True
             if wait:
                 await self.queue.join()
             if reraise_exc:
-                raise reraise_exc
+                six.reraise(*reraise_exc)
 
     async def _upgrade_websocket(self, environ):
         """Upgrade the connection from polling to websocket."""
@@ -198,15 +199,15 @@ class AsyncSocket(socket.Socket):
                 await self.receive(pkt)
             except exceptions.UnknownPacketError:
                 pass
-            except Exception as e:
+            except:
                 # if we get an unexpected exception (such as something in an
                 # application event handler) we close the connection properly
                 # and then reraise the exception
-                reraise_exc = e
+                reraise_exc = sys.exc_info()
                 break
 
         await self.queue.put(None)  # unlock the writer task so it can exit
         await asyncio.wait_for(writer_task, timeout=None)
         await self.close(wait=True, abort=True)
         if reraise_exc:
-            raise reraise_exc
+            six.reraise(*reraise_exc)
