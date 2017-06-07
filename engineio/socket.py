@@ -120,6 +120,11 @@ class Socket(object):
             self.closed = True
             if wait:
                 self.queue.join()
+            else:
+                # release the items in queue
+                while not self.queue.empty():
+                    self.queue.get()
+                    self.queue.task_done()
             if reraise_exc:
                 six.reraise(*reraise_exc)
 
