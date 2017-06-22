@@ -342,29 +342,6 @@ class TestSocket(unittest.TestCase):
         self._join_bg_tasks()
         self.assertEqual(s.closed, True)
 
-    def test_websocket_read_write_receive_fail(self):
-        mock_server = self._get_mock_server()
-        s = socket.Socket(mock_server, 'sid')
-        s.connected = False
-        s.queue.join = mock.MagicMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
-        s.poll = mock.MagicMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data=bar)],
-            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
-        ws = mock.MagicMock()
-        ws.wait.side_effect = [
-            packet.Packet(packet.MESSAGE, data=foo).encode(
-                always_bytes=False),
-            packet.Packet(packet.MESSAGE, data=bar).encode(
-                always_bytes=False)]
-        ws.send.side_effect = [None, None]
-        s.receive = mock.MagicMock(side_effect=[
-            None, ZeroDivisionError])
-        self.assertRaises(ZeroDivisionError, s._websocket_handler, ws)
-        self._join_bg_tasks()
-        self.assertEqual(s.closed, True)
-
     def test_websocket_ignore_invalid_packet(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
@@ -419,13 +396,3 @@ class TestSocket(unittest.TestCase):
         s.queue = mock.MagicMock()
         s.close(wait=False)
         self.assertEqual(s.queue.join.call_count, 0)
-
-    def test_close_disconnect_error(self):
-        mock_server = self._get_mock_server()
-        mock_server._trigger_event.side_effect = ZeroDivisionError
-        s = socket.Socket(mock_server, 'sid')
-        self.assertRaises(ZeroDivisionError, s.close, wait=False)
-        self.assertTrue(s.closed)
-        self.assertEqual(mock_server._trigger_event.call_count, 1)
-        mock_server._trigger_event.assert_called_once_with('disconnect', 'sid',
-                                                           async=False)

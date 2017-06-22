@@ -275,6 +275,22 @@ class TestServer(unittest.TestCase):
         r = s._trigger_event('message', 5, 6)
         self.assertEqual(r, 'bar')
 
+    def test_trigger_event_error(self):
+        s = server.Server()
+
+        @s.on('connect')
+        def foo(sid, environ):
+            return 1 / 0
+
+        @s.on('message')
+        def bar(sid, data):
+            return 1 / 0
+
+        r = s._trigger_event('connect', 1, 2, async=False)
+        self.assertEqual(r, False)
+        r = s._trigger_event('message', 3, 4, async=False)
+        self.assertEqual(r, None)
+
     def test_close_one_socket(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
@@ -522,17 +538,6 @@ class TestServer(unittest.TestCase):
         self.assertEqual(len(s.sockets), 0)
         self.assertEqual(start_response.call_args[0][0], '401 UNAUTHORIZED')
 
-    def test_connect_event_error(self):
-        s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
-        mock_event = mock.MagicMock(side_effect=ZeroDivisionError)
-        s.on('connect')(mock_event)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
-        start_response = mock.MagicMock()
-        self.assertRaises(ZeroDivisionError, s.handle_request, environ,
-                          start_response)
-        self.assertEqual(len(s.sockets), 0)
-
     def test_method_not_found(self):
         s = server.Server()
         environ = {'REQUEST_METHOD': 'PUT', 'QUERY_STRING': ''}
@@ -647,18 +652,6 @@ class TestServer(unittest.TestCase):
         s.handle_request(environ, start_response)
         self.assertEqual(start_response.call_args[0][0],
                          '400 BAD REQUEST')
-        self.assertNotIn('foo', s.sockets)
-
-    def test_post_request_application_error(self):
-        s = server.Server()
-        mock_socket = self._get_mock_socket()
-        mock_socket.handle_post_request = mock.MagicMock(
-            side_effect=[ZeroDivisionError])
-        s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
-        start_response = mock.MagicMock()
-        self.assertRaises(ZeroDivisionError, s.handle_request, environ,
-                          start_response)
         self.assertNotIn('foo', s.sockets)
 
     @staticmethod

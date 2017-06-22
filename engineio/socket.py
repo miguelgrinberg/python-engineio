@@ -1,5 +1,4 @@
 import six
-import sys
 import time
 
 from . import exceptions
@@ -90,9 +89,9 @@ class Socket(object):
                                                           start_response)
         try:
             packets = self.poll()
-        except exceptions.QueueEmpty as e:
+        except exceptions.QueueEmpty:
             self.close(wait=False)
-            raise e
+            raise
         return packets
 
     def handle_post_request(self, environ):
@@ -110,18 +109,12 @@ class Socket(object):
         """Close the socket connection."""
         if not self.closed and not self.closing:
             self.closing = True
-            reraise_exc = None
-            try:
-                self.server._trigger_event('disconnect', self.sid, async=False)
-            except:
-                reraise_exc = sys.exc_info()
+            self.server._trigger_event('disconnect', self.sid, async=False)
             if not abort:
                 self.send(packet.Packet(packet.CLOSE))
             self.closed = True
             if wait:
                 self.queue.join()
-            if reraise_exc:
-                six.reraise(*reraise_exc)
 
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
@@ -194,7 +187,6 @@ class Socket(object):
         self.server.logger.info(
             '%s: Upgrade to websocket successful', self.sid)
 
-        reraise_exc = None
         while True:
             p = None
             try:
@@ -217,17 +209,14 @@ class Socket(object):
                 self.receive(pkt)
             except exceptions.UnknownPacketError:
                 pass
-            except:
-                # if we get an unexpected exception (such as something in an
-                # application event handler) we close the connection properly
-                # and then reraise the exception
-                reraise_exc = sys.exc_info()
+            except:  # pragma: no cover
+                # if we get an unexpected exception we log the error and exit
+                # the connection properly
+                self.server.logger.exception('Receive error')
                 break
 
         self.queue.put(None)  # unlock the writer task so that it can exit
         writer_task.join()
         self.close(wait=True, abort=True)
-        if reraise_exc:
-            six.reraise(*reraise_exc)
 
         return []

@@ -282,12 +282,11 @@ class Server(object):
                         if sid in self.sockets:  # pragma: no cover
                             self.disconnect(sid)
                         r = self._bad_request()
-                    except Exception as e:
-                        # for any other unexpected errors, we disconnect
-                        # the cient and reraise
-                        if sid in self.sockets:  # pragma: no cover
-                            self.disconnect(sid)
-                        raise e
+                    except:  # pragma: no cover
+                        # for any other unexpected errors, we log the error
+                        # and keep going
+                        self.logger.exception('post request handler error')
+                        r = self._ok()
             else:
                 self.logger.warning('Method %s not supported', method)
                 r = self._method_not_found()
@@ -355,19 +354,10 @@ class Server(object):
                           'pingInterval': int(self.ping_interval * 1000)})
         s.send(pkt)
 
-        reraise_exc = None
-        try:
-            ret = self._trigger_event('connect', sid, environ, async=False)
-        except Exception as e:
-            ret = False
-            reraise_exc = e
+        ret = self._trigger_event('connect', sid, environ, async=False)
         if ret is False:
             del self.sockets[sid]
-            if reraise_exc is None:
-                self.logger.warning('Application rejected connection')
-            else:
-                self.logger.error('Connect handler raised an exception')
-                raise reraise_exc
+            self.logger.warning('Application rejected connection')
             return self._unauthorized()
 
         if transport == 'websocket':
@@ -398,7 +388,14 @@ class Server(object):
             if async:
                 return self.start_background_task(self.handlers[event], *args)
             else:
-                return self.handlers[event](*args)
+                try:
+                    return self.handlers[event](*args)
+                except:
+                    self.logger.exception(event + ' handler error')
+                    if event == 'connect':
+                        # if connect handler raised error we reject the
+                        # connection
+                        return False
 
     def _get_socket(self, sid):
         """Return the socket object for a given session."""

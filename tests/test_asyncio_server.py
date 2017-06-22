@@ -396,20 +396,6 @@ class TestAsyncServer(unittest.TestCase):
                          '401 UNAUTHORIZED')
 
     @mock.patch('importlib.import_module')
-    def test_connect_event_error(self, import_module):
-        a = self.get_async_mock()
-        import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
-
-        def mock_connect(sid, environ):
-            return 1 / 0
-
-        s.on('connect')(mock_connect)
-        self.assertRaises(ZeroDivisionError, _run, s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
-
-    @mock.patch('importlib.import_module')
     def test_method_not_found(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'PUT', 'QUERY_STRING': ''})
         import_module.side_effect = [a]
@@ -550,22 +536,6 @@ class TestAsyncServer(unittest.TestCase):
         _run(s.handle_request('request'))
         self.assertEqual(a._async['make_response'].call_args[0][0],
                          '400 BAD REQUEST')
-
-    @mock.patch('importlib.import_module')
-    def test_post_request_application_error(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'POST',
-                                 'QUERY_STRING': 'sid=foo'})
-        import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer()
-        s.sockets['foo'] = mock_socket = self._get_mock_socket()
-
-        @asyncio.coroutine
-        def mock_get_request(*args, **kwargs):
-            raise ZeroDivisionError()
-
-        mock_socket.handle_post_request.mock.return_value = mock_get_request()
-        self.assertRaises(ZeroDivisionError, _run, s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
 
     @staticmethod
     def _gzip_decompress(b):
@@ -770,3 +740,31 @@ class TestAsyncServer(unittest.TestCase):
         s.on('message', handler=foo_handler)
         _run(s._trigger_event('message', 'bar'))
         self.assertEqual(result, ['ok', 'bar'])
+
+    def test_trigger_event_function_error(self):
+        def connect_handler(arg):
+            return 1 / 0
+
+        def foo_handler(arg):
+            return 1 / 0
+
+        s = asyncio_server.AsyncServer()
+        s.on('connect', handler=connect_handler)
+        s.on('message', handler=foo_handler)
+        self.assertFalse(_run(s._trigger_event('connect', '123')))
+        self.assertIsNone(_run(s._trigger_event('message', 'bar')))
+
+    def test_trigger_event_coroutine_error(self):
+        @asyncio.coroutine
+        def connect_handler(arg):
+            return 1 / 0
+
+        @asyncio.coroutine
+        def foo_handler(arg):
+            return 1 / 0
+
+        s = asyncio_server.AsyncServer()
+        s.on('connect', handler=connect_handler)
+        s.on('message', handler=foo_handler)
+        self.assertFalse(_run(s._trigger_event('connect', '123')))
+        self.assertIsNone(_run(s._trigger_event('message', 'bar')))

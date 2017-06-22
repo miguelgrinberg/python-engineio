@@ -351,30 +351,6 @@ class TestSocket(unittest.TestCase):
         _run(s._websocket_handler(ws))
         self.assertEqual(s.closed, True)
 
-    def test_websocket_read_write_receive_fail(self):
-        mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
-        s.connected = False
-        s.queue.join = AsyncMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
-        s.poll = AsyncMock(side_effect=[
-            [packet.Packet(packet.MESSAGE, data=bar)],
-            [packet.Packet(packet.MESSAGE, data=bar)], exceptions.QueueEmpty])
-        ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
-            packet.Packet(packet.MESSAGE, data=foo).encode(
-                always_bytes=False),
-            packet.Packet(packet.MESSAGE, data=bar).encode(
-                always_bytes=False)]
-        ws.send.mock.side_effect = [None, None]
-        s.receive = AsyncMock()
-        s.receive.mock.side_effect = [None, ZeroDivisionError]
-        self.assertRaises(ZeroDivisionError, _run, s._websocket_handler(ws))
-        self.assertEqual(s.closed, True)
-
     def test_websocket_ignore_invalid_packet(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
@@ -435,13 +411,3 @@ class TestSocket(unittest.TestCase):
         s.queue.join = AsyncMock()
         _run(s.close(wait=False))
         self.assertEqual(s.queue.join.mock.call_count, 0)
-
-    def test_close_disconnect_error(self):
-        mock_server = self._get_mock_server()
-        mock_server._trigger_event.mock.side_effect = ZeroDivisionError
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
-        self.assertRaises(ZeroDivisionError, _run, s.close(wait=False))
-        self.assertTrue(s.closed)
-        self.assertEqual(mock_server._trigger_event.mock.call_count, 1)
-        mock_server._trigger_event.mock.assert_called_once_with('disconnect',
-                                                                'sid')
