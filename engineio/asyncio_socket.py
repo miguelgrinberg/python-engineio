@@ -175,9 +175,14 @@ class AsyncSocket(socket.Socket):
                 # there is a bug (https://bugs.python.org/issue30508) in
                 # asyncio that causes a "Task exception never retrieved" error
                 # to appear when wait_task raises an exception before it gets
-                # cancelled. Calling wait_tas.exception() prevents the error
-                # from being issued.
-                wait_task.exception()
+                # cancelled. Calling wait_task.exception() prevents the error
+                # from being issued in Python 3.6, but causes other errors in
+                # other versions, so we run it with all errors suppressed and
+                # hope for the best.
+                try:
+                    wait_task.exception()
+                except:
+                    pass
                 break
             except:
                 break
