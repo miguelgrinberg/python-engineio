@@ -768,3 +768,61 @@ class TestAsyncServer(unittest.TestCase):
         s.on('message', handler=foo_handler)
         self.assertFalse(_run(s._trigger_event('connect', '123')))
         self.assertIsNone(_run(s._trigger_event('message', 'bar')))
+
+    def test_trigger_event_function_async(self):
+        result = []
+
+        def foo_handler(arg):
+            result.append('ok')
+            result.append(arg)
+
+        s = asyncio_server.AsyncServer()
+        s.on('message', handler=foo_handler)
+        fut = _run(s._trigger_event('message', 'bar', run_async=True))
+        asyncio.get_event_loop().run_until_complete(fut)
+        self.assertEqual(result, ['ok', 'bar'])
+
+    def test_trigger_event_coroutine_async(self):
+        result = []
+
+        @asyncio.coroutine
+        def foo_handler(arg):
+            result.append('ok')
+            result.append(arg)
+
+        s = asyncio_server.AsyncServer()
+        s.on('message', handler=foo_handler)
+        fut = _run(s._trigger_event('message', 'bar', run_async=True))
+        asyncio.get_event_loop().run_until_complete(fut)
+        self.assertEqual(result, ['ok', 'bar'])
+
+    def test_trigger_event_function_async_error(self):
+        result = []
+
+        def foo_handler(arg):
+            result.append(arg)
+            return 1 / 0
+
+        s = asyncio_server.AsyncServer()
+        s.on('message', handler=foo_handler)
+        fut = _run(s._trigger_event('message', 'bar', run_async=True))
+        self.assertRaises(
+            ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
+            fut)
+        self.assertEqual(result, ['bar'])
+
+    def test_trigger_event_coroutine_async_error(self):
+        result = []
+
+        @asyncio.coroutine
+        def foo_handler(arg):
+            result.append(arg)
+            return 1 / 0
+
+        s = asyncio_server.AsyncServer()
+        s.on('message', handler=foo_handler)
+        fut = _run(s._trigger_event('message', 'bar', run_async=True))
+        self.assertRaises(
+            ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
+            fut)
+        self.assertEqual(result, ['bar'])

@@ -267,9 +267,9 @@ class TestServer(unittest.TestCase):
             f['bar'] = sid + data
             return 'bar'
 
-        r = s._trigger_event('connect', 1, 2, async=False)
+        r = s._trigger_event('connect', 1, 2, run_async=False)
         self.assertEqual(r, 3)
-        r = s._trigger_event('message', 3, 4, async=True)
+        r = s._trigger_event('message', 3, 4, run_async=True)
         r.join()
         self.assertEqual(f['bar'], 7)
         r = s._trigger_event('message', 5, 6)
@@ -286,9 +286,9 @@ class TestServer(unittest.TestCase):
         def bar(sid, data):
             return 1 / 0
 
-        r = s._trigger_event('connect', 1, 2, async=False)
+        r = s._trigger_event('connect', 1, 2, run_async=False)
         self.assertEqual(r, False)
-        r = s._trigger_event('message', 3, 4, async=False)
+        r = s._trigger_event('message', 3, 4, run_async=False)
         self.assertEqual(r, None)
 
     def test_close_one_socket(self):

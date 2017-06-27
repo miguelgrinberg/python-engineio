@@ -45,6 +45,9 @@ class AsyncServer(server.Server):
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param async_handlers: If set to ``True``, run message event handlers in
+                           non-blocking threads. To run handlers synchronously,
+                           set to ``False``. The default is ``True``.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -223,7 +226,8 @@ class AsyncServer(server.Server):
                           'pingInterval': int(self.ping_interval * 1000)})
         await s.send(pkt)
 
-        ret = await self._trigger_event('connect', sid, environ)
+        ret = await self._trigger_event('connect', sid, environ,
+                                        run_async=False)
         if ret is False:
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
@@ -244,26 +248,37 @@ class AsyncServer(server.Server):
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
+        run_async = kwargs.pop('run_async', False)
         ret = None
         if event in self.handlers:
             if asyncio.iscoroutinefunction(self.handlers[event]) is True:
-                try:
-                    ret = await self.handlers[event](*args)
-                except asyncio.CancelledError:  # pragma: no cover
-                    pass
-                except:
-                    self.logger.exception(event + ' async handler error')
-                    if event == 'connect':
-                        # if connect handler raised error we reject the
-                        # connection
-                        return False
+                if run_async:
+                    return self.start_background_task(self.handlers[event],
+                                                      *args)
+                else:
+                    try:
+                        ret = await self.handlers[event](*args)
+                    except asyncio.CancelledError:  # pragma: no cover
+                        pass
+                    except:
+                        self.logger.exception(event + ' async handler error')
+                        if event == 'connect':
+                            # if connect handler raised error we reject the
+                            # connection
+                            return False
             else:
-                try:
-                    return self.handlers[event](*args)
-                except:
-                    self.logger.exception(event + ' handler error')
-                    if event == 'connect':
-                        # if connect handler raised error we reject the
-                        # connection
-                        return False
+                if run_async:
+                    async def async_handler():
+                        return self.handlers[event](*args)
+
+                    return self.start_background_task(async_handler)
+                else:
+                    try:
+                        ret = self.handlers[event](*args)
+                    except:
+                        self.logger.exception(event + ' handler error')
+                        if event == 'connect':
+                            # if connect handler raised error we reject the
+                            # connection
+                            return False
         return ret

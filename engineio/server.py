@@ -354,7 +354,7 @@ class Server(object):
                           'pingInterval': int(self.ping_interval * 1000)})
         s.send(pkt)
 
-        ret = self._trigger_event('connect', sid, environ, async=False)
+        ret = self._trigger_event('connect', sid, environ, run_async=False)
         if ret is False:
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
@@ -383,9 +383,9 @@ class Server(object):
 
     def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
-        async = kwargs.pop('async', False)
+        run_async = kwargs.pop('run_async', False)
         if event in self.handlers:
-            if async:
+            if run_async:
                 return self.start_background_task(self.handlers[event], *args)
             else:
                 try:

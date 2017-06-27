@@ -53,7 +53,7 @@ class Socket(object):
             self.send(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.MESSAGE:
             self.server._trigger_event('message', self.sid, pkt.data,
-                                       async=self.server.async_handlers)
+                                       run_async=self.server.async_handlers)
         elif pkt.packet_type == packet.UPGRADE:
             self.send(packet.Packet(packet.NOOP))
         elif pkt.packet_type == packet.CLOSE:
@@ -109,7 +109,7 @@ class Socket(object):
         """Close the socket connection."""
         if not self.closed and not self.closing:
             self.closing = True
-            self.server._trigger_event('disconnect', self.sid, async=False)
+            self.server._trigger_event('disconnect', self.sid, run_async=False)
             if not abort:
                 self.send(packet.Packet(packet.CLOSE))
             self.closed = True
