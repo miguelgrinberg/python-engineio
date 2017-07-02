@@ -94,8 +94,14 @@ class AsyncServer(server.Server):
         Note: this method is a coroutine.
         """
         if sid is not None:
-            await self._get_socket(sid).close()
-            del self.sockets[sid]
+            try:
+                socket = self._get_socket(sid)
+            except KeyError:  # pragma: no cover
+                # the socket was already closed or gone
+                pass
+            else:
+                await socket.close()
+                del self.sockets[sid]
         else:
             await asyncio.wait([client.close()
                                 for client in six.itervalues(self.sockets)])

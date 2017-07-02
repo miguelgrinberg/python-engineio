@@ -199,8 +199,14 @@ class Server(object):
                     is not given, then all clients are closed.
         """
         if sid is not None:
-            self._get_socket(sid).close()
-            del self.sockets[sid]
+            try:
+                socket = self._get_socket(sid)
+            except KeyError:  # pragma: no cover
+                # the socket was already closed or gone
+                pass
+            else:
+                socket.close()
+                del self.sockets[sid]
         else:
             for client in six.itervalues(self.sockets):
                 client.close()
