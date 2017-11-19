@@ -33,7 +33,6 @@ class Payload(object):
 
     def decode(self, encoded_payload):
         """Decode a transmitted payload."""
-        fixed_double_encode = False
         self.packets = []
         while encoded_payload:
             if six.byte2int(encoded_payload[0:1]) <= 1:
@@ -49,36 +48,20 @@ class Payload(object):
                 i = encoded_payload.find(b':')
                 if i == -1:
                     raise ValueError('invalid payload')
-                # the packet_len below is given in utf-8 characters, but we
-                # receive the payload as bytes, so down below this length is
-                # adjusted to reflect byte length
+
+                # extracting the packet out of the payload is extremely
+                # inefficient, because the payload needs to be treated as
+                # binary, but the non-binary packets have to be parsed as
+                # unicode. Luckily this complication only applies to long
+                # polling, as the websocket transport sends packets
+                # individually wrapped.
                 packet_len = int(encoded_payload[0:i])
-                if not fixed_double_encode:
-                    # the engine.io javascript client sends text payloads with
-                    # a double UTF-8 encoding. Here we try to fix that mess and
-                    # restore the original packet
-                    try:
-                        # first we remove one UTF-8 encoding layer
-                        fixed_payload = encoded_payload.decode(
-                            'utf-8').encode('raw_unicode_escape')
-
-                        # then we make sure the result can be decoded a second
-                        # time (this will raise an exception if not)
-                        fixed_payload.decode('utf-8')
-
-                        # if a second utf-8 decode worked, then this appears to
-                        # be a double encoded packet, so here we keep the
-                        # packet after a single decode, since the packet class
-                        # will perform a decode as well, and in this case it is
-                        # not necessary to adjust the packet length
-                        encoded_payload = fixed_payload
-                    except:
-                        # if we couldn't apply a double utf-8 decode then
-                        # the packet must have been correct, so we just adjust
-                        # the packet length to be in bytes and not utf-8
-                        # characters and keep going
-                        packet_len += len(encoded_payload) - len(fixed_payload)
-                    fixed_double_encode = True
-                pkt = encoded_payload[i + 1: i + 1 + packet_len]
+                pkt = encoded_payload.decode('utf-8', errors='ignore')[
+                    i + 1: i + 1 + packet_len].encode('utf-8')
                 self.packets.append(packet.Packet(encoded_packet=pkt))
+
+                # the engine.io protocol sends the packet length in
+                # utf-8 characters, but we need it in bytes to be able to
+                # jump to the next packet in the payload
+                packet_len = len(pkt)
             encoded_payload = encoded_payload[i + 1 + packet_len:]
