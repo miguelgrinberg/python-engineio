@@ -33,11 +33,12 @@ class Socket(object):
             raise exceptions.QueueEmpty()
         if packets == [None]:
             return []
-        try:
-            packets.append(self.queue.get(block=False))
-            self.queue.task_done()
-        except self.server._async['queue'].Empty:
-            pass
+        while True:
+            try:
+                packets.append(self.queue.get(block=False))
+                self.queue.task_done()
+            except self.server._async['queue'].Empty:
+                break
         return packets
 
     def receive(self, pkt):
