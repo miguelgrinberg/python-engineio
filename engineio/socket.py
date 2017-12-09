@@ -1,4 +1,5 @@
 import six
+import sys
 import time
 
 from . import exceptions
@@ -91,8 +92,9 @@ class Socket(object):
         try:
             packets = self.poll()
         except exceptions.QueueEmpty:
+            exc = sys.exc_info()
             self.close(wait=False)
-            raise
+            six.reraise(*exc)
         return packets
 
     def handle_post_request(self, environ):

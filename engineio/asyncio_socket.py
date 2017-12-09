@@ -1,5 +1,6 @@
 import asyncio
 import six
+import sys
 import time
 
 from . import exceptions
@@ -76,8 +77,9 @@ class AsyncSocket(socket.Socket):
         try:
             packets = await self.poll()
         except exceptions.QueueEmpty:
+            exc = sys.exc_info()
             await self.close(wait=False)
-            raise
+            six.reraise(*exc)
         return packets
 
     async def handle_post_request(self, environ):
