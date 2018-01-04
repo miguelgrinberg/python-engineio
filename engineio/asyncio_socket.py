@@ -53,7 +53,7 @@ class AsyncSocket(socket.Socket):
     async def send(self, pkt):
         """Send a packet to the client."""
         if self.closed:
-            raise IOError('Socket is closed')
+            raise exceptions.SocketIsClosedError()
         if time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
@@ -200,10 +200,13 @@ class AsyncSocket(socket.Socket):
                 await self.receive(pkt)
             except exceptions.UnknownPacketError:
                 pass
+            except exceptions.SocketIsClosedError:
+                self.server.logger.info('Receive error -- socket is closed')
+                break
             except:  # pragma: no cover
                 # if we get an unexpected exception we log the error and exit
                 # the connection properly
-                self.server.logger.exception('Receive error')
+                self.server.logger.exception('Unknown receive error')
 
         await self.queue.put(None)  # unlock the writer task so it can exit
         await asyncio.wait_for(writer_task, timeout=None)

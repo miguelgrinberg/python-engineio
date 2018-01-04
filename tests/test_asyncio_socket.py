@@ -388,7 +388,7 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         _run(s.close(wait=False))
-        self.assertRaises(IOError, _run,
+        self.assertRaises(exceptions.SocketIsClosedError, _run,
                           s.send(packet.Packet(packet.NOOP)))
 
     def test_close_after_close(self):

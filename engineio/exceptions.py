@@ -12,3 +12,7 @@ class UnknownPacketError(EngineIOError):
 
 class QueueEmpty(EngineIOError):
     pass
+
+
+class SocketIsClosedError(EngineIOError):
+    pass

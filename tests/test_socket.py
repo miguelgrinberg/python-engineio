@@ -372,7 +372,8 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
         s.close(wait=False)
-        self.assertRaises(IOError, s.send, packet.Packet(packet.NOOP))
+        self.assertRaises(exceptions.SocketIsClosedError, s.send,
+                          packet.Packet(packet.NOOP))
 
     def test_close_after_close(self):
         mock_server = self._get_mock_server()
