@@ -8,7 +8,7 @@ else:
     import mock
 
 if sys.version_info >= (3, 5):
-    from aiohttp import web, hdrs
+    from aiohttp import web
     from engineio import async_aiohttp
 
 
