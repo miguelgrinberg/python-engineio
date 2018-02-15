@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 
 import aiohttp
 import six
+import inspect
 
 
 def create_route(app, engineio_server, engineio_endpoint):
@@ -99,10 +100,16 @@ class WebSocket(object):  # pragma: no cover
         await self._sock.close()
 
     async def send(self, message):
+        async def call_async_conditionally(func, arguments):
+            if inspect.iscoroutinefunction(func):
+                await func(arguments)
+            else:
+                func(arguments)
+
         if isinstance(message, bytes):
-            self._sock.send_bytes(message)
+            await call_async_conditionally(self._sock.send_bytes, message)
         else:
-            self._sock.send_str(message)
+            await call_async_conditionally(self._sock.send_str, message)
 
     async def wait(self):
         msg = await self._sock.receive()
