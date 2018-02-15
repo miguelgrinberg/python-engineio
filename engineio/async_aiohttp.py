@@ -101,7 +101,7 @@ class WebSocket(object):  # pragma: no cover
 
     async def send(self, message):
         async def call_async_conditionally(func, arguments):
-            if inspect.iscoroutinefunction(object):
+            if inspect.iscoroutinefunction(func):
                 await func(arguments)
             else:
                 func(arguments)
