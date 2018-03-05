@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from urllib.parse import urlsplit
 
@@ -100,9 +101,13 @@ class WebSocket(object):  # pragma: no cover
 
     async def send(self, message):
         if isinstance(message, bytes):
-            self._sock.send_bytes(message)
+            f = self._sock.send_bytes
         else:
-            self._sock.send_str(message)
+            f = self._sock.send_str
+        if asyncio.iscoroutinefunction(f):
+            await f(message)
+        else:
+            f(message)
 
     async def wait(self):
         msg = await self._sock.receive()
