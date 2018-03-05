@@ -8,20 +8,17 @@ else:
     import mock
 
 if sys.version_info >= (3, 5):
-    from aiohttp import web
     from engineio import async_aiohttp
 
 
 @unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
 class AiohttpTests(unittest.TestCase):
-    @mock.patch('aiohttp.web_urldispatcher.UrlDispatcher.add_route')
-    def test_create_route(self, add_route):
-        app = web.Application()
+    def test_create_route(self):
+        app = mock.MagicMock()
         mock_server = mock.MagicMock()
         async_aiohttp.create_route(app, mock_server, '/foo')
-        add_route.assert_any_call('GET', '/foo', mock_server.handle_request,
-                                  name=None)
-        add_route.assert_any_call('POST', '/foo', mock_server.handle_request)
+        app.router.add_get.assert_any_call('/foo', mock_server.handle_request)
+        app.router.add_post.assert_any_call('/foo', mock_server.handle_request)
 
     def test_translate_request(self):
         request = mock.MagicMock()
