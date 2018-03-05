@@ -48,8 +48,10 @@ class AiohttpTests(unittest.TestCase):
         self.assertTrue(
             environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d')
 
-    @mock.patch('engineio.async_aiohttp.aiohttp.web.Response')
-    def test_make_response(self, Response):
-        async_aiohttp.make_response('202 ACCEPTED', 'headers', 'payload')
-        Response.assert_called_once_with(body='payload', status=202,
-                                         headers='headers')
+    # @mock.patch('async_aiohttp.aiohttp.web.Response')
+    def test_make_response(self):
+        rv = async_aiohttp.make_response('202 ACCEPTED', {'foo': 'bar'},
+                                         b'payload')
+        self.assertEqual(rv.status, 202)
+        self.assertEqual(rv.headers['foo'], 'bar')
+        self.assertEqual(rv.body, b'payload')

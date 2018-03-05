@@ -2,7 +2,7 @@ import asyncio
 import sys
 from urllib.parse import urlsplit
 
-import aiohttp
+from aiohttp.web import Response, WebSocketResponse
 import six
 
 
@@ -74,8 +74,8 @@ def make_response(status, headers, payload):
     """This function generates an appropriate response object for this async
     mode.
     """
-    return aiohttp.web.Response(body=payload, status=int(status.split()[0]),
-                                headers=headers)
+    return Response(body=payload, status=int(status.split()[0]),
+                    headers=headers)
 
 
 class WebSocket(object):  # pragma: no cover
@@ -89,7 +89,7 @@ class WebSocket(object):  # pragma: no cover
 
     async def __call__(self, environ):
         request = environ['aiohttp.request']
-        self._sock = aiohttp.web.WebSocketResponse()
+        self._sock = WebSocketResponse()
         await self._sock.prepare(request)
 
         self.environ = environ
