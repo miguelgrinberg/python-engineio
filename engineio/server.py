@@ -7,7 +7,7 @@ import zlib
 import six
 from six.moves import urllib
 
-from .exceptions import EngineIOError
+from . import exceptions
 from . import packet
 from . import payload
 from . import socket
@@ -276,7 +276,7 @@ class Server(object):
                                 r = self._ok(packets, b64=b64)
                             else:
                                 r = packets
-                        except EngineIOError:
+                        except exceptions.EngineIOError:
                             if sid in self.sockets:  # pragma: no cover
                                 self.disconnect(sid)
                             r = self._bad_request()
@@ -291,7 +291,7 @@ class Server(object):
                     try:
                         socket.handle_post_request(environ)
                         r = self._ok()
-                    except EngineIOError:
+                    except exceptions.EngineIOError:
                         if sid in self.sockets:  # pragma: no cover
                             self.disconnect(sid)
                         r = self._bad_request()
@@ -384,7 +384,10 @@ class Server(object):
             headers = None
             if self.cookie:
                 headers = [('Set-Cookie', self.cookie + '=' + sid)]
-            return self._ok(s.poll(), headers=headers, b64=b64)
+            try:
+                return self._ok(s.poll(), headers=headers, b64=b64)
+            except exceptions.QueueEmpty:
+                return self._bad_request()
 
     def _upgrades(self, sid, transport):
         """Return the list of possible upgrades for a client connection."""

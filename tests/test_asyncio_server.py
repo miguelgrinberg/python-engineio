@@ -279,6 +279,19 @@ class TestAsyncServer(unittest.TestCase):
 
     @mock.patch('engineio.asyncio_socket.AsyncSocket')
     @mock.patch('importlib.import_module')
+    def test_connect_bad_poll(self, import_module, AsyncSocket):
+        a = self.get_async_mock()
+        import_module.side_effect = [a]
+        AsyncSocket.return_value = self._get_mock_socket()
+        AsyncSocket.return_value.poll.side_effect = [exceptions.QueueEmpty]
+        s = asyncio_server.AsyncServer()
+        _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_count, 1)
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '400 BAD REQUEST')
+
+    @mock.patch('engineio.asyncio_socket.AsyncSocket')
+    @mock.patch('importlib.import_module')
     def test_connect_transport_websocket(self, import_module, AsyncSocket):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET',
                                  'QUERY_STRING': 'transport=websocket'})

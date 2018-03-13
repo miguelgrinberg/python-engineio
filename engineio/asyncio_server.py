@@ -3,7 +3,7 @@ import asyncio
 import six
 from six.moves import urllib
 
-from .exceptions import EngineIOError
+from . import exceptions
 from . import packet
 from . import server
 from . import asyncio_socket
@@ -148,7 +148,7 @@ class AsyncServer(server.Server):
                                 r = self._ok(packets, b64=b64)
                             else:
                                 r = packets
-                        except EngineIOError:
+                        except exceptions.EngineIOError:
                             if sid in self.sockets:  # pragma: no cover
                                 await self.disconnect(sid)
                             r = self._bad_request()
@@ -163,7 +163,7 @@ class AsyncServer(server.Server):
                     try:
                         await socket.handle_post_request(environ)
                         r = self._ok()
-                    except EngineIOError:
+                    except exceptions.EngineIOError:
                         if sid in self.sockets:  # pragma: no cover
                             await self.disconnect(sid)
                         r = self._bad_request()
@@ -250,7 +250,10 @@ class AsyncServer(server.Server):
             headers = None
             if self.cookie:
                 headers = [('Set-Cookie', self.cookie + '=' + sid)]
-            return self._ok(await s.poll(), headers=headers, b64=b64)
+            try:
+                return self._ok(await s.poll(), headers=headers, b64=b64)
+            except exceptions.QueueEmpty:
+                return self._bad_request()
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
