@@ -526,6 +526,15 @@ class TestServer(unittest.TestCase):
         headers = start_response.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
+    def test__cors_options(self):
+        s = server.Server()
+        environ = {'REQUEST_METHOD': 'OPTIONS', 'QUERY_STRING': ''}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        headers = start_response.call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Methods', 'OPTIONS, GET, POST'),
+                      headers)
+
     def test_connect_event(self):
         s = server.Server()
         s._generate_id = mock.MagicMock(return_value='123')

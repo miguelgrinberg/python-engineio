@@ -300,6 +300,8 @@ class Server(object):
                         # and keep going
                         self.logger.exception('post request handler error')
                         r = self._ok()
+            elif method == 'OPTIONS':
+                r = self._ok()
             else:
                 self.logger.warning('Method %s not supported', method)
                 r = self._method_not_found()
@@ -469,6 +471,8 @@ class Server(object):
             headers = [('Access-Control-Allow-Origin', environ['HTTP_ORIGIN'])]
         else:
             headers = [('Access-Control-Allow-Origin', '*')]
+        if environ['REQUEST_METHOD'] == 'OPTIONS':
+            headers = [('Access-Control-Allow-Methods', 'OPTIONS, GET, POST')]
         if self.cors_credentials:
             headers += [('Access-Control-Allow-Credentials', 'true')]
         return headers
