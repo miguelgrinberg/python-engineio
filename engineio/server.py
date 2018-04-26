@@ -472,7 +472,10 @@ class Server(object):
         else:
             headers = [('Access-Control-Allow-Origin', '*')]
         if environ['REQUEST_METHOD'] == 'OPTIONS':
-            headers = [('Access-Control-Allow-Methods', 'OPTIONS, GET, POST')]
+            headers += [('Access-Control-Allow-Methods', 'OPTIONS, GET, POST')]
+        if 'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' in environ:
+            headers += [('Access-Control-Allow-Headers',
+                         environ['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])]
         if self.cors_credentials:
             headers += [('Access-Control-Allow-Credentials', 'true')]
         return headers
