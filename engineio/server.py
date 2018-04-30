@@ -47,9 +47,10 @@ class Server(object):
     :param cookie: Name of the HTTP cookie that contains the client session
                    id. If set to ``None``, a cookie is not sent to the client.
                    The default is ``'io'``.
-    :param cors_allowed_origins: List of origins that are allowed to connect
-                                 to this server. All origins are allowed by
-                                 default.
+    :param cors_allowed_origins: Origin or list of origins that are allowed to
+                                 connect to this server. All origins are
+                                 allowed by default, which is equivalent to
+                                 setting this argument to ``'*'``.
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server. The default
                              is ``True``.
@@ -463,9 +464,15 @@ class Server(object):
 
     def _cors_headers(self, environ):
         """Return the cross-origin-resource-sharing headers."""
-        if self.cors_allowed_origins is not None and \
-                environ.get('HTTP_ORIGIN', '') not in \
-                self.cors_allowed_origins:
+        if isinstance(self.cors_allowed_origins, six.string_types):
+            if self.cors_allowed_origins == '*':
+                allowed_origins = None
+            else:
+                allowed_origins = [self.cors_allowed_origins]
+        else:
+            allowed_origins = self.cors_allowed_origins
+        if allowed_origins is not None and \
+                environ.get('HTTP_ORIGIN', '') not in allowed_origins:
             return []
         if 'HTTP_ORIGIN' in environ:
             headers = [('Access-Control-Allow-Origin', environ['HTTP_ORIGIN'])]
