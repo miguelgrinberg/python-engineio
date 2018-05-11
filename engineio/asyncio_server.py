@@ -172,6 +172,8 @@ class AsyncServer(server.Server):
                         # and keep going
                         self.logger.exception('post request handler error')
                         r = self._ok()
+            elif method == 'OPTIONS':
+                r = self._ok()
             else:
                 self.logger.warning('Method %s not supported', method)
                 r = self._method_not_found()

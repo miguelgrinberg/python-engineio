@@ -15,6 +15,8 @@ def create_route(app, engineio_server, engineio_endpoint):
     """
     app.router.add_get(engineio_endpoint, engineio_server.handle_request)
     app.router.add_post(engineio_endpoint, engineio_server.handle_request)
+    app.router.add_route('OPTIONS', engineio_endpoint,
+                         engineio_server.handle_request)
 
 
 def translate_request(request):
