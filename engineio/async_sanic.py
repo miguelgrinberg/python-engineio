@@ -89,7 +89,7 @@ def translate_request(request):
     return environ
 
 
-def make_response(status, headers, payload):
+def make_response(status, headers, payload, environ):
     """This function generates an appropriate response object for this async
     mode.
     """

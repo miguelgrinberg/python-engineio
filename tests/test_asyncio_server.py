@@ -84,7 +84,7 @@ class TestAsyncServer(unittest.TestCase):
 
     def test_async_modes(self):
         s = asyncio_server.AsyncServer()
-        self.assertEqual(s.async_modes(), ['aiohttp', 'sanic'])
+        self.assertEqual(s.async_modes(), ['aiohttp', 'sanic', 'tornado'])
 
     def test_async_mode_aiohttp(self):
         s = asyncio_server.AsyncServer(async_mode='aiohttp')

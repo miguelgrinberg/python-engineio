@@ -18,9 +18,10 @@ class AsyncServer(server.Server):
 
     :param async_mode: The asynchronous model to use. See the Deployment
                        section in the documentation for a description of the
-                       available options. Valid async modes are "aiohttp". If
-                       this argument is not given, an async mode is chosen
-                       based on the installed packages.
+                       available options. Valid async modes are "aiohttp",
+                       "sanic" and "tornado". If this argument is not given,
+                       an async mode is chosen based on the installed
+                       packages.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting.
     :param ping_interval: The interval in seconds at which the client pings
@@ -55,7 +56,7 @@ class AsyncServer(server.Server):
         return True
 
     def async_modes(self):
-        return ['aiohttp', 'sanic']
+        return ['aiohttp', 'sanic', 'tornado']
 
     def attach(self, app, engineio_path='engine.io'):
         """Attach the Engine.IO server to an application."""
@@ -192,7 +193,8 @@ class AsyncServer(server.Server):
         cors_headers = self._cors_headers(environ)
         return self._async['make_response'](r['status'],
                                             r['headers'] + cors_headers,
-                                            r['response'])
+                                            r['response'],
+                                            environ)
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.

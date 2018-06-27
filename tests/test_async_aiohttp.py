@@ -51,7 +51,7 @@ class AiohttpTests(unittest.TestCase):
     # @mock.patch('async_aiohttp.aiohttp.web.Response')
     def test_make_response(self):
         rv = async_aiohttp.make_response('202 ACCEPTED', {'foo': 'bar'},
-                                         b'payload')
+                                         b'payload', {})
         self.assertEqual(rv.status, 202)
         self.assertEqual(rv.headers['foo'], 'bar')
         self.assertEqual(rv.body, b'payload')
