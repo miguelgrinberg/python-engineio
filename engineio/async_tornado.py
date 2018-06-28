@@ -5,13 +5,13 @@ from urllib.parse import urlsplit
 try:
     import tornado.web
     import tornado.websocket
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 import six
 
 
 def get_tornado_handler(engineio_server):
-    class Handler(tornado.websocket.WebSocketHandler):
+    class Handler(tornado.websocket.WebSocketHandler):  # pragma: no cover
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.receive_queue = asyncio.Queue()
@@ -59,6 +59,9 @@ def translate_request(handler):
     payload = handler.request.body
 
     uri_parts = urlsplit(handler.request.path)
+    full_uri = handler.request.path
+    if handler.request.query:  # pragma: no cover
+        full_uri += '?' + handler.request.query
     environ = {
         'wsgi.input': AwaitablePayload(payload),
         'wsgi.errors': sys.stderr,
@@ -70,7 +73,7 @@ def translate_request(handler):
         'SERVER_SOFTWARE': 'aiohttp',
         'REQUEST_METHOD': handler.request.method,
         'QUERY_STRING': handler.request.query or '',
-        'RAW_URI': handler.request.path,
+        'RAW_URI': full_uri,
         'SERVER_PROTOCOL': 'HTTP/%s' % handler.request.version,
         'REMOTE_ADDR': '127.0.0.1',
         'REMOTE_PORT': '0',
@@ -89,9 +92,6 @@ def translate_request(handler):
             continue
 
         key = 'HTTP_%s' % hdr_name.replace('-', '_')
-        if key in environ:
-            hdr_value = '%s,%s' % (environ[key], hdr_value)
-
         environ[key] = hdr_value
 
     environ['wsgi.url_scheme'] = environ.get('HTTP_X_FORWARDED_PROTO', 'http')
