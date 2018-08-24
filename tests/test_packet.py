@@ -91,3 +91,10 @@ class TestPacket(unittest.TestCase):
         self.assertEqual(pkt.data, 123)
         self.assertFalse(pkt.binary)
         self.assertEqual(pkt.encode(), b'4123')
+
+    def test_decode_number_packet(self):
+        pkt = packet.Packet(encoded_packet=b'4123')
+        self.assertEqual(pkt.packet_type, packet.MESSAGE)
+        self.assertEqual(pkt.data, 123)
+        self.assertFalse(pkt.binary)
+        self.assertEqual(pkt.encode(), b'4123')
