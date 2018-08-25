@@ -83,5 +83,10 @@ class Packet(object):
                 try:
                     self.data = self.json.loads(
                         encoded_packet[1:].decode('utf-8'))
+                    if isinstance(self.data, int):
+                        # do not allow integer payloads, see
+                        # github.com/miguelgrinberg/python-engineio/issues/75
+                        # for background on this decision
+                        raise ValueError
                 except ValueError:
                     self.data = encoded_packet[1:].decode('utf-8')
