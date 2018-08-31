@@ -59,6 +59,7 @@ class TestSocket(unittest.TestCase):
                               'websocket_class': 'wc'}
         mock_server._async['translate_request'].return_value = 'request'
         mock_server._async['make_response'].return_value = 'response'
+        mock_server.sleep = asyncio.sleep
         mock_server._trigger_event = AsyncMock()
         return mock_server
 

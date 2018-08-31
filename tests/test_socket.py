@@ -41,6 +41,7 @@ class TestSocket(unittest.TestCase):
             return th
 
         mock_server.start_background_task = bg_task
+        mock_server.sleep = time.sleep
         return mock_server
 
     def _join_bg_tasks(self):

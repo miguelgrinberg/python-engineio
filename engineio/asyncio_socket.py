@@ -119,6 +119,20 @@ class AsyncSocket(socket.Socket):
 
     async def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
+        # force a polling cycle on the client in short intervals
+        # this is necessary because some clients may block on a long polling request
+        # and while they are blocked they cannot continue the upgrade process
+        # sending a no-op every 100ms ensures that clients wake up and the upgrade is fast
+        # (the same behaviour is also implemented in the javascript engine.io server implementation)
+        async def check_loop():
+            once = False
+            while not once or not check_loop.quit:
+                once = True
+                if self.queue.empty():
+                    await self.send(packet.Packet(packet.NOOP))
+                await self.server.sleep(0.1)
+        check_loop.quit = False
+
         if self.connected:
             # the socket was already connected, so this is an upgrade
             await self.queue.join()  # flush the queue first
@@ -133,9 +147,10 @@ class AsyncSocket(socket.Socket):
             await ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
-            await self.send(packet.Packet(packet.NOOP))
+            asyncio.ensure_future(check_loop())
 
             pkt = await ws.wait()
+            check_loop.quit = True # we are done with the upgrade process (either success or fail)
             decoded_pkt = packet.Packet(encoded_packet=pkt)
             if decoded_pkt.packet_type != packet.UPGRADE:
                 self.upgraded = False
