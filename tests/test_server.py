@@ -46,6 +46,14 @@ class TestServer(unittest.TestCase):
         mock_socket.upgraded = False
         return mock_socket
 
+    @classmethod
+    def setUpClass(cls):
+        server.Server._default_monitor_clients = False
+
+    @classmethod
+    def tearDownClass(cls):
+        server.Server._default_monitor_clients = True
+
     def setUp(self):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
 
@@ -863,3 +871,11 @@ class TestServer(unittest.TestCase):
         t = time.time()
         s.sleep(0.1)
         self.assertTrue(time.time() - t > 0.1)
+
+    def test_service_task_started(self):
+        s = server.Server(monitor_clients=True)
+        s._service_task = mock.MagicMock()
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        s._service_task.assert_called_once_with()

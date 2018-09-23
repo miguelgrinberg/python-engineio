@@ -68,8 +68,17 @@ class TestAsyncServer(unittest.TestCase):
         mock_socket.send = AsyncMock()
         mock_socket.handle_get_request = AsyncMock()
         mock_socket.handle_post_request = AsyncMock()
+        mock_socket.check_ping_timeout = AsyncMock()
         mock_socket.close = AsyncMock()
         return mock_socket
+
+    @classmethod
+    def setUpClass(cls):
+        asyncio_server.AsyncServer._default_monitor_clients = False
+
+    @classmethod
+    def tearDownClass(cls):
+        asyncio_server.AsyncServer._default_monitor_clients = True
 
     def setUp(self):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
@@ -839,3 +848,12 @@ class TestAsyncServer(unittest.TestCase):
             ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
             fut)
         self.assertEqual(result, ['bar'])
+
+    @mock.patch('importlib.import_module')
+    def test_service_task_started(self, import_module):
+        a = self.get_async_mock()
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(monitor_clients=True)
+        s._service_task = AsyncMock()
+        _run(s.handle_request('request'))
+        s._service_task.mock.assert_called_once_with()

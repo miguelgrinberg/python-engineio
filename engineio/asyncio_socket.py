@@ -50,14 +50,24 @@ class AsyncSocket(socket.Socket):
         else:
             raise exceptions.UnknownPacketError()
 
-    async def send(self, pkt):
-        """Send a packet to the client."""
+    async def check_ping_timeout(self):
+        """Make sure the client is still sending pings.
+
+        This helps detect disconnections for long-polling clients.
+        """
         if self.closed:
             raise exceptions.SocketIsClosedError()
         if time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
-            return await self.close(wait=False, abort=True)
+            await self.close(wait=False, abort=True)
+            return False
+        return True
+
+    async def send(self, pkt):
+        """Send a packet to the client."""
+        if not await self.check_ping_timeout():
+            return
         self.server.logger.info('%s: Sending packet %s data %s',
                                 self.sid, packet.packet_names[pkt.packet_type],
                                 pkt.data if not isinstance(pkt.data, bytes)
@@ -123,7 +133,10 @@ class AsyncSocket(socket.Socket):
             # the socket was already connected, so this is an upgrade
             await self.queue.join()  # flush the queue first
 
-            pkt = await ws.wait()
+            try:
+                pkt = await ws.wait()
+            except IOError:  # pragma: no cover
+                return
             if pkt != packet.Packet(packet.PING,
                                     data=six.text_type('probe')).encode(
                                         always_bytes=False):
@@ -135,7 +148,10 @@ class AsyncSocket(socket.Socket):
                 data=six.text_type('probe')).encode(always_bytes=False))
             await self.send(packet.Packet(packet.NOOP))
 
-            pkt = await ws.wait()
+            try:
+                pkt = await ws.wait()
+            except IOError:  # pragma: no cover
+                return
             decoded_pkt = packet.Packet(encoded_packet=pkt)
             if decoded_pkt.packet_type != packet.UPGRADE:
                 self.upgraded = False

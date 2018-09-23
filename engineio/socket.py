@@ -63,14 +63,23 @@ class Socket(object):
         else:
             raise exceptions.UnknownPacketError()
 
-    def send(self, pkt):
-        """Send a packet to the client."""
+    def check_ping_timeout(self):
+        """Make sure the client is still sending pings.
+
+        This helps detect disconnections for long-polling clients.
+        """
         if self.closed:
             raise exceptions.SocketIsClosedError()
         if time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             self.close(wait=False, abort=True)
+            return False
+        return True
+
+    def send(self, pkt):
+        """Send a packet to the client."""
+        if not self.check_ping_timeout():
             return
         self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',

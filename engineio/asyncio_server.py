@@ -225,6 +225,11 @@ class AsyncServer(server.Server):
 
     async def _handle_connect(self, environ, transport, b64=False):
         """Handle a client connection request."""
+        if self.start_service_task:
+            # start the service task to monitor connected clients
+            self.start_service_task = False
+            self.start_background_task(self._service_task)
+
         sid = self._generate_id()
         s = asyncio_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
@@ -295,3 +300,25 @@ class AsyncServer(server.Server):
                             # connection
                             return False
         return ret
+
+    async def _service_task(self):  # pragma: no cover
+        """Monitor connected clients and clean up those that time out."""
+        while True:
+            if len(self.sockets) == 0:
+                # nothing to do
+                await self.sleep(self.ping_timeout)
+                continue
+
+            # go through the entire client list in a ping interval cycle
+            sleep_interval = self.ping_timeout / len(self.sockets)
+
+            try:
+                # iterate over the current clients
+                for socket in self.sockets.copy().values():
+                    if socket.closed:
+                        continue
+                    await socket.check_ping_timeout()
+                    await self.sleep(sleep_interval)
+            except:
+                # an unexpected exception has occurred, log it and continue
+                self.logger.exception('service task exception')
