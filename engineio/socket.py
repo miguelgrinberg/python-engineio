@@ -127,6 +127,7 @@ class Socket(object):
             self.closed = True
             if wait:
                 self.queue.join()
+            del self.server.sockets[self.sid]
 
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
