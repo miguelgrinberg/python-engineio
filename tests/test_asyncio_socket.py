@@ -130,7 +130,7 @@ class TestSocket(unittest.TestCase):
         s.last_ping = time.time() - 1
         s.close = AsyncMock()
         _run(s.send('packet'))
-        s.close.mock.assert_called_once_with(wait=False, abort=True)
+        s.close.mock.assert_called_once_with(wait=False, abort=False)
 
     def test_polling_read(self):
         mock_server = self._get_mock_server()

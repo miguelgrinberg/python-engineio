@@ -111,7 +111,7 @@ class TestSocket(unittest.TestCase):
         s.last_ping = time.time() - 1
         s.close = mock.MagicMock()
         s.send('packet')
-        s.close.assert_called_once_with(wait=False, abort=True)
+        s.close.assert_called_once_with(wait=False, abort=False)
 
     def test_polling_read(self):
         mock_server = self._get_mock_server()

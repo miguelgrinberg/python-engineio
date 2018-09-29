@@ -60,7 +60,10 @@ class AsyncSocket(socket.Socket):
         if time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
-            await self.close(wait=False, abort=True)
+            # Passing abort=False here will cause close() to write a
+            # CLOSE packet. This has the effect of updating half-open sockets
+            # to their correct state of disconnected
+            await self.close(wait=False, abort=False)
             return False
         return True
 
@@ -226,4 +229,4 @@ class AsyncSocket(socket.Socket):
 
         await self.queue.put(None)  # unlock the writer task so it can exit
         await asyncio.wait_for(writer_task, timeout=None)
-        await self.close(wait=True, abort=True)
+        await self.close(wait=False, abort=True)
