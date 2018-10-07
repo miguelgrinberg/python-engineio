@@ -528,6 +528,8 @@ class Server(object):
                         continue
                     s.check_ping_timeout()
                     self.sleep(sleep_interval)
+            except (SystemExit, KeyboardInterrupt):
+                break
             except:
                 # an unexpected exception has occurred, log it and continue
                 self.logger.exception('service task exception')
