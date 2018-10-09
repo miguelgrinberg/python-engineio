@@ -315,9 +315,8 @@ class AsyncServer(server.Server):
             try:
                 # iterate over the current clients
                 for socket in self.sockets.copy().values():
-                    if socket.closed:
-                        continue
-                    await socket.check_ping_timeout()
+                    if not socket.closing and not socket.closed:
+                        await socket.check_ping_timeout()
                     await self.sleep(sleep_interval)
             except:
                 # an unexpected exception has occurred, log it and continue

@@ -524,9 +524,8 @@ class Server(object):
             try:
                 # iterate over the current clients
                 for s in self.sockets.copy().values():
-                    if s.closed:
-                        continue
-                    s.check_ping_timeout()
+                    if not s.closing and not s.closed:
+                        s.check_ping_timeout()
                     self.sleep(sleep_interval)
             except (SystemExit, KeyboardInterrupt):
                 break
