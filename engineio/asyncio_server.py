@@ -116,7 +116,11 @@ class AsyncServer(server.Server):
 
         Note: this method is a coroutine.
         """
-        environ = self._async['translate_request'](*args, **kwargs)
+        translate_request = self._async['translate_request']
+        if asyncio.iscoroutinefunction(translate_request):
+            environ = await translate_request(*args, **kwargs)
+        else:
+            environ = translate_request(*args, **kwargs)
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
         if 'j' in query:
@@ -191,10 +195,15 @@ class AsyncServer(server.Server):
                     r['headers'] += [('Content-Encoding', encoding)]
                     break
         cors_headers = self._cors_headers(environ)
-        return self._async['make_response'](r['status'],
-                                            r['headers'] + cors_headers,
-                                            r['response'],
-                                            environ)
+        make_response = self._async['make_response']
+        if asyncio.iscoroutinefunction(make_response):
+            response = await make_response(r['status'],
+                                           r['headers'] + cors_headers,
+                                           r['response'], environ)
+        else:
+            response = make_response(r['status'], r['headers'] + cors_headers,
+                                     r['response'], environ)
+        return response
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.

@@ -129,8 +129,8 @@ class Server(object):
         if self.async_mode is None:
             raise ValueError('Invalid async_mode specified')
         if self.is_asyncio_based() and \
-                ('asyncio' not in self._async or
-                 not self._async['asyncio']):  # pragma: no cover
+                ('asyncio' not in self._async or not
+                 self._async['asyncio']):  # pragma: no cover
             raise ValueError('The selected async_mode is not asyncio '
                              'compatible')
         if not self.is_asyncio_based() and 'asyncio' in self._async and \
