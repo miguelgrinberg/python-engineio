@@ -4,14 +4,14 @@ import uvicorn
 import engineio
 from engineio.async_asgi import create_asgi_app
 
-from app import App
-
 eio = engineio.AsyncServer(async_mode='asgi')
-app = create_asgi_app(eio, App({
-    '/latency.html': b'text/html',
-    '/static/engine.io.js': b'application/javascript',
-    '/static/style.css': b'text/css',
-}))
+app = create_asgi_app(eio, static_files={
+    '/': {'content_type': 'text/html', 'filename': 'latency.html'},
+    '/static/engine.io.js': {'content_type': 'application/javascript',
+                             'filename': 'static/engine.io.js'},
+    '/static/style.css': {'content_type': 'text/css',
+                          'filename': 'static/style.css'}
+})
 
 
 async def index(request):

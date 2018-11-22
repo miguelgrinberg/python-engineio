@@ -3,15 +3,18 @@ import sys
 
 class Asgi:
     def __init__(self, engineio_server, asgi_app=None,
-                 engineio_path='engine.io'):
+                 engineio_path='engine.io', static_files=None):
         self.engineio_server = engineio_server
         self.asgi_app = asgi_app
         self.engineio_path = engineio_path.strip('/')
+        self.static_files = static_files or {}
 
     def __call__(self, scope):
         if scope['type'] in ['http', 'websocket'] and \
                 scope['path'].startswith('/{0}/'.format(self.engineio_path)):
             return self.engineio_asgi_app(scope)
+        elif scope['type'] == 'http' and scope['path'] in self.static_files:
+            return self.serve_static_file(scope)
         elif self.asgi_app is not None:
             return self.asgi_app(scope)
         elif scope['type'] == 'lifespan':
@@ -24,9 +27,27 @@ class Asgi:
             await self.engineio_server.handle_request(scope, receive, send)
         return _app
 
-    async def default_asgi_app(self, receive, send):
-        await receive()
-        return self.not_found(receive, send)
+    def serve_static_file(self, scope):
+        async def _send_static_file(receive, send):
+            event = await receive()
+            if event['type'] == 'http.request':
+                if scope['path'] in self.static_files:
+                    content_type = self.static_files[scope['path']][
+                        'content_type'].encode('utf-8')
+                    filename = self.static_files[scope['path']]['filename']
+                    status_code = 200
+                    with open(filename, 'rb') as f:
+                        payload = f.read()
+                else:
+                    content_type = b'text/plain'
+                    status_code = 404
+                    payload = b'not found'
+                await send({'type': 'http.response.start',
+                            'status': status_code,
+                            'headers': [(b'Content-Type', content_type)]})
+                await send({'type': 'http.response.body',
+                            'body': payload})
+        return _send_static_file
 
     async def lifespan(self, receive, send):
         event = await receive()
@@ -44,9 +65,10 @@ class Asgi:
                     'body': b'not found'})
 
 
-def create_asgi_app(engineio_server, asgi_app=None, engineio_path='engine.io'):
+def create_asgi_app(engineio_server, asgi_app=None, engineio_path='engine.io',
+                    static_files=None):
     return Asgi(engineio_server, asgi_app=asgi_app,
-                engineio_path=engineio_path)
+                engineio_path=engineio_path, static_files=static_files)
 
 
 async def translate_request(scope, receive, send):

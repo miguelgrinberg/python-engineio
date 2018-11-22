@@ -9,7 +9,11 @@ class Middleware(object):
     :param engineio_path: The endpoint where the Engine.IO application should
                           be installed. The default value is appropriate for
                           most cases.
-
+    :param static_files: A dictionary where the keys are URLs that should be
+                         served as static files. For each URL, the value is
+                         a dictionary with ``content_type`` and ``filename``
+                         keys. This option is intended to be used for serving
+                         client files during development.
     Example usage::
 
         import engineio
@@ -20,10 +24,12 @@ class Middleware(object):
         app = engineio.Middleware(eio, wsgi_app)
         eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
     """
-    def __init__(self, engineio_app, wsgi_app=None, engineio_path='engine.io'):
+    def __init__(self, engineio_app, wsgi_app=None, engineio_path='engine.io',
+                 static_files=None):
         self.engineio_app = engineio_app
         self.wsgi_app = wsgi_app
         self.engineio_path = engineio_path.strip('/')
+        self.static_files = static_files or {}
 
     def __call__(self, environ, start_response):
         if 'gunicorn.socket' in environ:
@@ -45,6 +51,12 @@ class Middleware(object):
         if path is not None and \
                 path.startswith('/{0}/'.format(self.engineio_path)):
             return self.engineio_app.handle_request(environ, start_response)
+        elif path in self.static_files:
+            start_response(
+                '200 OK',
+                [('Content-Type', self.static_files[path]['content_type'])])
+            with open(self.static_files[path]['filename'], 'rb') as f:
+                return [f.read()]
         elif self.wsgi_app is not None:
             return self.wsgi_app(environ, start_response)
         else:
