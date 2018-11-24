@@ -14,6 +14,7 @@ class Middleware(object):
                          a dictionary with ``content_type`` and ``filename``
                          keys. This option is intended to be used for serving
                          client files during development.
+
     Example usage::
 
         import engineio
