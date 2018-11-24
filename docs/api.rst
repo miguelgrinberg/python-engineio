@@ -6,12 +6,6 @@ API Reference
 
 .. module:: engineio
 
-``Middleware`` class
---------------------
-
-.. autoclass:: Middleware
-   :members:
-
 ``Server`` class
 ----------------
 
@@ -24,3 +18,21 @@ API Reference
 .. autoclass:: AsyncServer
    :members:
    :inherited-members:
+
+``WSGIApp`` class
+-----------------
+
+.. autoclass:: WSGIApp
+   :members:
+
+``ASGIApp`` class
+-----------------
+
+.. autoclass:: ASGIApp
+
+``Middleware`` class (deprecated)
+---------------------------------
+
+.. autoclass:: Middleware
+   :members:
+

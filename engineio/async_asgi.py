@@ -1,11 +1,41 @@
 import sys
 
 
-class Asgi:
-    def __init__(self, engineio_server, asgi_app=None,
-                 engineio_path='engine.io', static_files=None):
+class ASGIApp:
+    """ASGI application middleware for Engine.IO.
+
+    This middleware dispatches traffic to an Engine.IO application, and
+    optionally serve a list of static files to the client or forward regular
+    HTTP traffic to another ASGI application.
+
+    :param engineio_server: The Engine.IO server.
+    :param static_files: A dictionary where the keys are URLs that should be
+                         served as static files. For each URL, the value is
+                         a dictionary with ``content_type`` and ``filename``
+                         keys. This option is intended to be used for serving
+                         client files during development.
+    :param other_asgi_app: A separate ASGI app that receives all other traffic.
+    :param engineio_path: The endpoint where the Engine.IO application should
+                          be installed. The default value is appropriate for
+                          most cases.
+
+    Example usage::
+
+        import engineio
+        import uvicorn
+
+        eio = engineio.Server()
+        app = engineio.ASGIApp(eio, static_files={
+            '/': {'content_type': 'text/html', 'filename': 'index.html'},
+            '/index.html': {'content_type': 'text/html',
+                            'filename': 'index.html'},
+        })
+        uvicorn.run(app, '127.0.0.1', 5000)
+    """
+    def __init__(self, engineio_server, other_asgi_app=None,
+                 static_files=None, engineio_path='engine.io'):
         self.engineio_server = engineio_server
-        self.asgi_app = asgi_app
+        self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path.strip('/')
         self.static_files = static_files or {}
 
@@ -15,8 +45,8 @@ class Asgi:
             return self.engineio_asgi_app(scope)
         elif scope['type'] == 'http' and scope['path'] in self.static_files:
             return self.serve_static_file(scope)
-        elif self.asgi_app is not None:
-            return self.asgi_app(scope)
+        elif self.other_asgi_app is not None:
+            return self.other_asgi_app(scope)
         elif scope['type'] == 'lifespan':
             return self.lifespan
         else:
@@ -63,12 +93,6 @@ class Asgi:
                     'headers': [(b'Content-Type', b'text/plain')]})
         await send({'type': 'http.response.body',
                     'body': b'not found'})
-
-
-def create_asgi_app(engineio_server, asgi_app=None, engineio_path='engine.io',
-                    static_files=None):
-    return Asgi(engineio_server, asgi_app=asgi_app,
-                engineio_path=engineio_path, static_files=static_files)
 
 
 async def translate_request(scope, receive, send):

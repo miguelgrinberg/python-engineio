@@ -1,21 +1,15 @@
-import os
 import uvicorn
 
 import engineio
 
 eio = engineio.AsyncServer(async_mode='asgi')
-app = engineio.create_asgi_app(eio, static_files={
+app = engineio.ASGIApp(eio, static_files={
     '/': {'content_type': 'text/html', 'filename': 'latency.html'},
     '/static/engine.io.js': {'content_type': 'application/javascript',
                              'filename': 'static/engine.io.js'},
     '/static/style.css': {'content_type': 'text/css',
                           'filename': 'static/style.css'}
 })
-
-
-async def index(request):
-    with open('latency.html') as f:
-        return web.Response(text=f.read(), content_type='text/html')
 
 
 @eio.on('message')

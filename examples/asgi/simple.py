@@ -4,16 +4,11 @@ import uvicorn
 import engineio
 
 eio = engineio.AsyncServer(async_mode='asgi')
-app = engineio.create_asgi_app(eio, static_files={
+app = engineio.ASGIApp(eio, static_files={
     '/': {'content_type': 'text/html', 'filename': 'simple.html'},
     '/static/engine.io.js': {'content_type': 'application/javascript',
                              'filename': 'static/engine.io.js'}
 })
-
-
-async def index(request):
-    with open('simple.html') as f:
-        return web.Response(text=f.read(), content_type='text/html')
 
 
 @eio.on('connect')

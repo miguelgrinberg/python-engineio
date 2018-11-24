@@ -8,7 +8,7 @@ async_mode = None
 
 eio = engineio.Server(async_mode=async_mode)
 app = Flask(__name__)
-app.wsgi_app = engineio.Middleware(eio, app.wsgi_app)
+app.wsgi_app = engineio.WSGIApp(eio, app.wsgi_app)
 
 
 @app.route('/')
