@@ -4,32 +4,6 @@ Deployment
 The following sections describe a variety of deployment strategies for
 Engine.IO servers.
 
-Sanic
------
-
-`Sanic <http://sanic.readthedocs.io/>`_ is a very efficient asynchronous web
-server for Python 3.5 and newer.
-
-Instances of class ``engineio.AsyncServer`` will automatically use Sanic for
-asynchronous operations if the framework is installed. To request its use
-explicitly, the ``async_mode`` option can be given in the constructor::
-
-    eio = engineio.AsyncServer(async_mode='sanic')
-
-A server configured for Sanic must be attached to an existing application::
-
-    app = Sanic()
-    eio.attach(app)
-
-The Sanic application can define regular routes that will coexist with the
-Engine.IO server. A typical pattern is to add routes that serve a client
-application and any associated static files to this application.
-
-The Sanic application is then executed in the usual manner::
-
-    if __name__ == '__main__':
-        app.run()
-
 aiohttp
 -------
 
@@ -89,6 +63,43 @@ The tornado application is then executed in the usual manner::
 
     app.listen(port)
     tornado.ioloop.IOLoop.current().start()
+
+Sanic
+-----
+
+`Sanic <http://sanic.readthedocs.io/>`_ is a very efficient asynchronous web
+server for Python 3.5 and newer.
+
+Instances of class ``engineio.AsyncServer`` will automatically use Sanic for
+asynchronous operations if the framework is installed. To request its use
+explicitly, the ``async_mode`` option can be given in the constructor::
+
+    eio = engineio.AsyncServer(async_mode='sanic')
+
+A server configured for Sanic must be attached to an existing application::
+
+    app = Sanic()
+    eio.attach(app)
+
+The Sanic application can define regular routes that will coexist with the
+Engine.IO server. A typical pattern is to add routes that serve a client
+application and any associated static files to this application.
+
+The Sanic application is then executed in the usual manner::
+
+    if __name__ == '__main__':
+        app.run()
+
+Uvicorn, Daphne, and other ASGI servers
+---------------------------------------
+
+The ``engineio.ASGIApp`` class is an ASGI compatible application that can
+forward Engine.IO traffic to an ``engineio.AsyncServer`` instance::
+
+   eio = engineio.AsyncServer(async_mode='asgi')
+   app = engineio.ASGIApp(eio)
+
+The application can then be deployed with any ASGI compatible web server.
 
 Eventlet
 --------
