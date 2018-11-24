@@ -222,9 +222,9 @@ class Socket(object):
             pkt = packet.Packet(encoded_packet=p)
             try:
                 self.receive(pkt)
-            except exceptions.UnknownPacketError:
+            except exceptions.UnknownPacketError:  # pragma: no cover
                 pass
-            except exceptions.SocketIsClosedError:
+            except exceptions.SocketIsClosedError:  # pragma: no cover
                 self.server.logger.info('Receive error -- socket is closed')
                 break
             except:  # pragma: no cover

@@ -93,7 +93,8 @@ class TestAsyncServer(unittest.TestCase):
 
     def test_async_modes(self):
         s = asyncio_server.AsyncServer()
-        self.assertEqual(s.async_modes(), ['aiohttp', 'sanic', 'tornado'])
+        self.assertEqual(s.async_modes(), ['aiohttp', 'sanic', 'tornado',
+                                           'asgi'])
 
     def test_async_mode_aiohttp(self):
         s = asyncio_server.AsyncServer(async_mode='aiohttp')
@@ -183,6 +184,30 @@ class TestAsyncServer(unittest.TestCase):
                       a._async['make_response'].call_args[0][1])
         packets = payload.Payload(
             encoded_payload=a._async['make_response'].call_args[0][2]).packets
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].packet_type, packet.OPEN)
+        self.assertIn('upgrades', packets[0].data)
+        self.assertEqual(packets[0].data['upgrades'], ['websocket'])
+        self.assertIn('sid', packets[0].data)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_async_request_response_handlers(self, import_module):
+        a = self.get_async_mock()
+        a._async['translate_request'] = AsyncMock(
+            return_value=a._async['translate_request'].return_value)
+        a._async['make_response'] = AsyncMock(
+            return_value=a._async['make_response'].return_value)
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        _run(s.handle_request('request'))
+        self.assertEqual(len(s.sockets), 1)
+        self.assertEqual(a._async['make_response'].mock.call_count, 1)
+        self.assertEqual(a._async['make_response'].mock.call_args[0][0],
+                         '200 OK')
+        self.assertIn(('Content-Type', 'application/octet-stream'),
+                      a._async['make_response'].mock.call_args[0][1])
+        packets = payload.Payload(encoded_payload=a._async[
+            'make_response'].mock.call_args[0][2]).packets
         self.assertEqual(len(packets), 1)
         self.assertEqual(packets[0].packet_type, packet.OPEN)
         self.assertIn('upgrades', packets[0].data)
@@ -386,6 +411,17 @@ class TestAsyncServer(unittest.TestCase):
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Credentials', 'true'), headers)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_cors_options(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'OPTIONS',
+                                 'QUERY_STRING': ''})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cors_credentials=False)
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Methods',
+                       'OPTIONS, GET, POST'), headers)
 
     @mock.patch('importlib.import_module')
     def test_connect_event(self, import_module):
