@@ -31,7 +31,6 @@ small Flask application that serves the HTML/Javascript to the client:
 
     import engineio
     import eventlet
-    import eventlet.wsgi
     from flask import Flask, render_template
 
     eio = engineio.Server()
@@ -57,11 +56,10 @@ small Flask application that serves the HTML/Javascript to the client:
 
     if __name__ == '__main__':
         # wrap Flask application with engineio's middleware
-        app = engineio.Middleware(eio, app)
+        app = engineio.WSGIApp(eio, app)
 
         # deploy as an eventlet WSGI server
         eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
-
 
 And below is a similar example, coded for asyncio (Python 3.5+ only) with the
 `aiohttp`_ framework:
