@@ -58,7 +58,7 @@ class ASGIApp:
         return _app
 
     def serve_static_file(self, scope):
-        async def _send_static_file(receive, send):
+        async def _send_static_file(receive, send):  # pragma: no cover
             event = await receive()
             if event['type'] == 'http.request':
                 if scope['path'] in self.static_files:
@@ -83,7 +83,7 @@ class ASGIApp:
         event = await receive()
         if event['type'] == 'lifespan.startup':
             await send({'type': 'lifespan.startup.complete'})
-        elif event['type'] == 'lifespan.shutdown.complete':
+        elif event['type'] == 'lifespan.shutdown':
             await send({'type': 'lifespan.shutdown.complete'})
 
     async def not_found(self, receive, send):
@@ -96,7 +96,7 @@ class ASGIApp:
 
 
 async def translate_request(scope, receive, send):
-    class AwaitablePayload(object):
+    class AwaitablePayload(object):  # pragma: no cover
         def __init__(self, payload):
             self.payload = payload or b''
 
@@ -119,6 +119,8 @@ async def translate_request(scope, receive, send):
                 payload += event.get('body') or b''
     elif event['type'] == 'websocket.connect':
         await send({'type': 'websocket.accept'})
+    else:
+        return {}
 
     raw_uri = scope['path'].encode('utf-8')
     if 'query_string' in scope and scope['query_string']:
@@ -134,8 +136,8 @@ async def translate_request(scope, receive, send):
         'SERVER_SOFTWARE': 'asgi',
         'REQUEST_METHOD': scope.get('method', 'GET'),
         'PATH_INFO': scope['path'],
-        'QUERY_STRING': scope.get('query_string', '').decode('utf-8'),
-        'RAW_URI': raw_uri,
+        'QUERY_STRING': scope.get('query_string', b'').decode('utf-8'),
+        'RAW_URI': raw_uri.decode('utf-8'),
         'SCRIPT_NAME': '',
         'SERVER_PROTOCOL': 'HTTP/1.1',
         'REMOTE_ADDR': '127.0.0.1',
@@ -175,7 +177,7 @@ async def make_response(status, headers, payload, environ):
                                 'body': payload})
 
 
-class WebSocket(object):
+class WebSocket(object):  # pragma: no cover
     """
     This wrapper class provides an asgi WebSocket interface that is
     somewhat compatible with eventlet's implementation.
