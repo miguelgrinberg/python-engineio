@@ -34,6 +34,5 @@ or::
 
     $ python latency.py
 
-You can then access the application from your web browser at
-``http://localhost:5000/simple.html`` and ``http://localhost:5000/latency.html``
-respectively..
+You can then access the applications from your web browser at
+``http://localhost:5000``.
