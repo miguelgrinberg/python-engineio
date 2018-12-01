@@ -9,7 +9,7 @@ if sys.version_info >= (3, 5):  # pragma: no cover
 else:  # pragma: no cover
     AsyncServer = None
 
-__version__ = '2.3.2'
+__version__ = '3.0.0'
 
 __all__ = ['__version__', 'Server', 'WSGIApp', 'Middleware']
 if AsyncServer is not None:  # pragma: no cover
