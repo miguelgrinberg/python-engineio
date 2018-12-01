@@ -18,7 +18,7 @@ if sys.version_info >= (3, 5):
     import asyncio
     from asyncio import coroutine
     from engineio import asyncio_server
-    from engineio import async_aiohttp
+    from engineio.async_drivers import aiohttp as async_aiohttp
 else:
     # mock coroutine so that Python 2 doesn't complain
     def coroutine(f):

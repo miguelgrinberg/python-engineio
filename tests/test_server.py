@@ -112,7 +112,7 @@ class TestServer(unittest.TestCase):
 
         from eventlet.green import threading
         from eventlet import queue
-        from engineio import async_eventlet
+        from engineio.async_drivers import eventlet as async_eventlet
 
         self.assertEqual(s._async['threading'], threading)
         self.assertEqual(s._async['thread_class'], 'Thread')
@@ -128,7 +128,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='gevent_uwsgi')
         self.assertEqual(s.async_mode, 'gevent_uwsgi')
 
-        from engineio import async_gevent_uwsgi
+        from engineio.async_drivers import gevent_uwsgi as async_gevent_uwsgi
 
         self.assertEqual(s._async['threading'], async_gevent_uwsgi)
         self.assertEqual(s._async['thread_class'], 'Thread')
@@ -138,7 +138,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(s._async['websocket_class'], 'uWSGIWebSocket')
         del sys.modules['gevent']
         del sys.modules['uwsgi']
-        del sys.modules['engineio.async_gevent_uwsgi']
+        del sys.modules['engineio.async_drivers.gevent_uwsgi']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi_without_uwsgi(self, import_module):
@@ -157,7 +157,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='gevent_uwsgi')
         self.assertEqual(s.async_mode, 'gevent_uwsgi')
 
-        from engineio import async_gevent_uwsgi
+        from engineio.async_drivers import gevent_uwsgi as async_gevent_uwsgi
 
         self.assertEqual(s._async['threading'], async_gevent_uwsgi)
         self.assertEqual(s._async['thread_class'], 'Thread')
@@ -167,7 +167,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(s._async['websocket_class'], None)
         del sys.modules['gevent']
         del sys.modules['uwsgi']
-        del sys.modules['engineio.async_gevent_uwsgi']
+        del sys.modules['engineio.async_drivers.gevent_uwsgi']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent(self, import_module):
@@ -176,7 +176,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='gevent')
         self.assertEqual(s.async_mode, 'gevent')
 
-        from engineio import async_gevent
+        from engineio.async_drivers import gevent as async_gevent
 
         self.assertEqual(s._async['threading'], async_gevent)
         self.assertEqual(s._async['thread_class'], 'Thread')
@@ -186,7 +186,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(s._async['websocket_class'], 'WebSocketWSGI')
         del sys.modules['gevent']
         del sys.modules['geventwebsocket']
-        del sys.modules['engineio.async_gevent']
+        del sys.modules['engineio.async_drivers.gevent']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_without_websocket(self, import_module):
@@ -195,7 +195,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='gevent')
         self.assertEqual(s.async_mode, 'gevent')
 
-        from engineio import async_gevent
+        from engineio.async_drivers import gevent as async_gevent
 
         self.assertEqual(s._async['threading'], async_gevent)
         self.assertEqual(s._async['thread_class'], 'Thread')
@@ -205,7 +205,7 @@ class TestServer(unittest.TestCase):
         self.assertEqual(s._async['websocket_class'], None)
         del sys.modules['gevent']
         del sys.modules['geventwebsocket']
-        del sys.modules['engineio.async_gevent']
+        del sys.modules['engineio.async_drivers.gevent']
 
     @unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
     @mock.patch('importlib.import_module', side_effect=_mock_import)

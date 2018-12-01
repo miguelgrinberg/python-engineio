@@ -117,7 +117,7 @@ class Server(object):
         for mode in modes:
             try:
                 self._async = importlib.import_module(
-                    'engineio.async_' + mode)._async
+                    'engineio.async_drivers.' + mode)._async
                 asyncio_based = self._async['asyncio'] \
                     if 'asyncio' in self._async else False
                 if asyncio_based != self.is_asyncio_based():

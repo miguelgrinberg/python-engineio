@@ -16,7 +16,7 @@ else:
     import mock
 
 if sys.version_info >= (3, 5):
-    from engineio import async_tornado
+    from engineio.async_drivers import tornado as async_tornado
 
 
 def _run(coro):

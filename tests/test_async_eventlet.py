@@ -7,7 +7,7 @@ if six.PY3:
 else:
     import mock
 
-from engineio import async_eventlet
+from engineio.async_drivers import eventlet as async_eventlet
 
 
 class TestAsyncEventlet(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestAsyncEventlet(unittest.TestCase):
         start_response = 'bar'
         self.assertRaises(RuntimeError, wsgi, environ, start_response)
 
-    @mock.patch('engineio.async_eventlet._WebSocketWSGI.__call__',
+    @mock.patch('engineio.async_drivers.eventlet._WebSocketWSGI.__call__',
                 return_value='data')
     def test_wsgi_call(self, _WebSocketWSGI):
         _WebSocketWSGI.__call__ = lambda e, s: 'data'

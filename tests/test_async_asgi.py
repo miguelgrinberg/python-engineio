@@ -11,7 +11,7 @@ else:
 if sys.version_info >= (3, 5):
     import asyncio
     from asyncio import coroutine
-    from engineio import async_asgi
+    from engineio.async_drivers import asgi as async_asgi
 
 
 def AsyncMock(*args, **kwargs):
