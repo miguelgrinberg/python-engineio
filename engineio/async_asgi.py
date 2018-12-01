@@ -4,11 +4,12 @@ import sys
 class ASGIApp:
     """ASGI application middleware for Engine.IO.
 
-    This middleware dispatches traffic to an Engine.IO application, and
-    optionally serve a list of static files to the client or forward regular
+    This middleware dispatches traffic to an Engine.IO application. It can
+    also serve a list of static files to the client, or forward unrelated
     HTTP traffic to another ASGI application.
 
-    :param engineio_server: The Engine.IO server.
+    :param engineio_server: The Engine.IO server. Must be an instance of the
+                            ``engineio.AsyncServer`` class.
     :param static_files: A dictionary where the keys are URLs that should be
                          served as static files. For each URL, the value is
                          a dictionary with ``content_type`` and ``filename``
@@ -24,7 +25,7 @@ class ASGIApp:
         import engineio
         import uvicorn
 
-        eio = engineio.Server()
+        eio = engineio.AsyncServer()
         app = engineio.ASGIApp(eio, static_files={
             '/': {'content_type': 'text/html', 'filename': 'index.html'},
             '/index.html': {'content_type': 'text/html',

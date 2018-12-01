@@ -1,11 +1,12 @@
 class WSGIApp(object):
     """WSGI application middleware for Engine.IO.
 
-    This middleware dispatches traffic to an Engine.IO application, and
-    optionally forwards regular HTTP traffic to a WSGI application, or serve
-    a list of predefined static files to clients.
+    This middleware dispatches traffic to an Engine.IO application. It can
+    also serve a list of static files to the client, or forward unrelated
+    HTTP traffic to another WSGI application.
 
-    :param engineio_app: The Engine.IO server.
+    :param engineio_app: The Engine.IO server. Must be an instance of the
+                         ``engineio.Server`` class.
     :param wsgi_app: The WSGI app that receives all other traffic.
     :param static_files: A dictionary where the keys are URLs that should be
                          served as static files. For each URL, the value is
