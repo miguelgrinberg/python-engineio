@@ -12,7 +12,7 @@ from . import packet
 from . import payload
 from . import socket
 
-default_logger = logging.getLogger('engineio')
+default_logger = logging.getLogger('engineio.server')
 
 
 class Server(object):
@@ -28,7 +28,7 @@ class Server(object):
                        argument is not given, "eventlet" is tried first, then
                        "gevent_uwsgi", then "gevent", and finally "threading".
                        The first async mode that has all its dependencies
-                       installed is then one that is chosen.
+                       installed is the one that is chosen.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
                          is 60 seconds.

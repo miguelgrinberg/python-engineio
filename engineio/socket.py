@@ -128,6 +128,7 @@ class Socket(object):
             if not abort:
                 self.send(packet.Packet(packet.CLOSE))
             self.closed = True
+            self.queue.put(None)
             if wait:
                 self.queue.join()
 

@@ -16,3 +16,7 @@ class QueueEmpty(EngineIOError):
 
 class SocketIsClosedError(EngineIOError):
     pass
+
+
+class ConnectionError(EngineIOError):
+    pass

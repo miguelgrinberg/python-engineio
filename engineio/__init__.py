@@ -1,5 +1,6 @@
 import sys
 
+from .client import Client
 from .middleware import WSGIApp, Middleware
 from .server import Server
 if sys.version_info >= (3, 5):  # pragma: no cover
@@ -11,6 +12,6 @@ else:  # pragma: no cover
 
 __version__ = '3.0.0'
 
-__all__ = ['__version__', 'Server', 'WSGIApp', 'Middleware']
+__all__ = ['__version__', 'Server', 'WSGIApp', 'Middleware', 'Client']
 if AsyncServer is not None:  # pragma: no cover
     __all__ += ['AsyncServer', 'ASGIApp', 'get_tornado_handler']
