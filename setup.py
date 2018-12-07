@@ -30,9 +30,17 @@ setup(
     platforms='any',
     install_requires=[
         'six>=1.9.0',
-        'urllib3>=1.24',
-        'websocket-client>=0.54.0',
     ],
+    extras_require={
+        'client': [
+            'urllib3>=1.24',
+            'websocket-client>=0.54.0',
+        ],
+        'asyncio_client': [
+            'aiohttp>=3.4',
+            'websockets>7.0',
+        ]
+    },
     tests_require=[
         'mock',
         'eventlet',

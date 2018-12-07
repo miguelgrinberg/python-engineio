@@ -157,9 +157,9 @@ class Socket(object):
             self.queue.join()  # flush the queue first
 
             pkt = ws.wait()
-            if pkt != packet.Packet(packet.PING,
-                                    data=six.text_type('probe')).encode(
-                                        always_bytes=False):
+            decoded_pkt = packet.Packet(encoded_packet=pkt)
+            if decoded_pkt.packet_type != packet.PING or \
+                    decoded_pkt.data != 'probe':
                 self.server.logger.info(
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
                 return []
