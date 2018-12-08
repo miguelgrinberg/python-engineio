@@ -1,16 +1,21 @@
 import logging
+try:
+    import queue
+except ImportError:
+    import Queue as queue
 import signal
+import threading
 import time
 
 import six
 from six.moves import urllib
 try:
     import urllib3
-except ImportError:
+except ImportError:  # pragma: no cover
     urllib3 = None
 try:
     import websocket
-except ImportError:
+except ImportError:  # pragma: no cover
     websocket = None
 from . import exceptions
 from . import packet
@@ -52,7 +57,7 @@ class Client(object):
     """
     event_names = ['connect', 'disconnect', 'message']
 
-    def __init__(self, logger=None, json=None):
+    def __init__(self, logger=False, json=None):
         self.handlers = {}
         self.base_url = None
         self.transports = None
@@ -62,7 +67,6 @@ class Client(object):
         self.ping_interval = None
         self.ping_timeout = None
         self.pong_received = True
-        self.read_loop_task = None
         self.http = None
         self.ws = None
         self.read_loop_task = None
@@ -145,7 +149,7 @@ class Client(object):
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
         if transports is not None:
-            if isinstance(transports, six.text_type):
+            if isinstance(transports, six.string_types):
                 transports = [transports]
             transports = [transport for transport in transports
                           if transport in valid_transports]
@@ -198,7 +202,7 @@ class Client(object):
             self.state = 'disconnected'
             try:
                 connected_clients.remove(self)
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 pass
         self._reset()
 
@@ -224,7 +228,6 @@ class Client(object):
         the Python standard library. The `start()` method on this object is
         already called by this function.
         """
-        import threading
         daemon = kwargs.pop('_daemon', None)
         th = threading.Thread(target=target, args=args, kwargs=kwargs)
         if daemon:
@@ -234,7 +237,6 @@ class Client(object):
 
     def sleep(self, seconds=0):
         """Sleep for the requested amount of time."""
-        import time
         return time.sleep(seconds)
 
     def _reset(self):
@@ -453,7 +455,6 @@ class Client(object):
 
     def _create_queue(self):
         """Create the client's send queue."""
-        import queue
         return queue.Queue(), queue.Empty
 
     def _trigger_event(self, event, *args, **kwargs):

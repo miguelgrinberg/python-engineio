@@ -11,6 +11,18 @@ This package contains two Engine.IO clients:
 The methods in the two clients are the same, with the only difference that in
 the ``asyncio`` client most methods are implemented as coroutines.
 
+Installation
+------------
+
+To install the standard Python client along with its dependencies, use the
+following command::
+
+    pip install "python-engineio[client]"
+
+If instead you plan on using the ``asyncio`` client, then use this::
+
+    pip install "python-engineio[async_client]"
+
 Creating a Client Instance
 --------------------------
 

@@ -1,6 +1,27 @@
 The Engine.IO Server
 ====================
 
+This package contains two Engine.IO servers:
+
+- The :func:`engineio.Server` class creates a server compatible with the
+  standard Python library.
+- The :func:`engineio.AsyncServer` class creates a server compatible with
+  the ``asyncio`` package.
+
+The methods in the two servers are the same, with the only difference that in
+the ``asyncio`` server most methods are implemented as coroutines.
+
+Installation
+------------
+
+To install the Python Engine.IO server use the following command::
+
+    pip install "python-engineio"
+
+In addition to the server, you will need to select an asynchronous framework
+or server to use along with it. The list of supported packages is covered
+in the :ref:`deployment-strategies` section.
+
 Creating a Server Instance
 --------------------------
 
@@ -123,6 +144,8 @@ Or for ``asyncio``::
 
 The single argument passed to the method is the number of seconds to sleep
 for.
+
+ .. _deployment-strategies:
 
 Deployment Strategies
 ---------------------
