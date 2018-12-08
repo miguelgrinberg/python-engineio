@@ -2,12 +2,12 @@ import asyncio
 
 try:
     import aiohttp
-except ImportError:
+except ImportError:  # pragma: no cover
     aiohttp = None
 import six
 try:
     import websockets
-except ImportError:
+except ImportError:  # pragma: no cover
     websockets = None
 
 from . import client
@@ -107,7 +107,7 @@ class AsyncClient(client.Client):
 
         Note: this method is a coroutine.
         """
-        if self.state != 'disconnected':
+        if self.state == 'connected':
             await self._send_packet(packet.Packet(packet.CLOSE))
             await self.queue.put(None)
             self.state = 'disconnecting'
@@ -120,7 +120,7 @@ class AsyncClient(client.Client):
             self.state = 'disconnected'
             try:
                 client.connected_clients.remove(self)
-            except ValueError:
+            except ValueError:  # pragma: no cover
                 pass
         self._reset()
 
@@ -370,6 +370,7 @@ class AsyncClient(client.Client):
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
         run_async = kwargs.pop('run_async', False)
+        ret = None
         if event in self.handlers:
             if asyncio.iscoroutinefunction(self.handlers[event]) is True:
                 if run_async:

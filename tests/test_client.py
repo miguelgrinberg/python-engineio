@@ -13,7 +13,7 @@ from engineio import client
 from engineio import packet
 
 
-class TestServer(unittest.TestCase):
+class TestClient(unittest.TestCase):
     def test_is_asyncio_based(self):
         c = client.Client()
         self.assertEqual(c.is_asyncio_based(), False)
@@ -63,43 +63,6 @@ class TestServer(unittest.TestCase):
     def test_on_event_invalid(self):
         c = client.Client()
         self.assertRaises(ValueError, c.on, 'invalid')
-
-    def test_trigger_event(self):
-        c = client.Client()
-        f = {}
-
-        @c.on('connect')
-        def foo():
-            return 'foo'
-
-        @c.on('message')
-        def bar(data):
-            f['bar'] = data
-            return 'bar'
-
-        r = c._trigger_event('connect', run_async=False)
-        self.assertEqual(r, 'foo')
-        r = c._trigger_event('message', 123, run_async=True)
-        r.join()
-        self.assertEqual(f['bar'], 123)
-        r = c._trigger_event('message', 321)
-        self.assertEqual(r, 'bar')
-
-    def test_trigger_event_error(self):
-        c = client.Client()
-
-        @c.on('connect')
-        def foo():
-            return 1 / 0
-
-        @c.on('message')
-        def bar(data):
-            return 1 / 0
-
-        r = c._trigger_event('connect', run_async=False)
-        self.assertEqual(r, None)
-        r = c._trigger_event('message', 123, run_async=False)
-        self.assertEqual(r, None)
 
     def test_already_connected(self):
         c = client.Client()
@@ -214,7 +177,7 @@ class TestServer(unittest.TestCase):
         c.disconnect()
         c.queue.join.assert_called_once_with()
         c.read_loop_task.join.assert_called_once_with()
-        c.ws.assert_not_called()
+        c.ws.mock.assert_not_called()
         self.assertNotIn(c, client.connected_clients)
 
     def test_disconnect_websocket(self):
@@ -267,3 +230,40 @@ class TestServer(unittest.TestCase):
         t = time.time()
         c.sleep(0.1)
         self.assertTrue(time.time() - t > 0.1)
+
+    def test_trigger_event(self):
+        c = client.Client()
+        f = {}
+
+        @c.on('connect')
+        def foo():
+            return 'foo'
+
+        @c.on('message')
+        def bar(data):
+            f['bar'] = data
+            return 'bar'
+
+        r = c._trigger_event('connect', run_async=False)
+        self.assertEqual(r, 'foo')
+        r = c._trigger_event('message', 123, run_async=True)
+        r.join()
+        self.assertEqual(f['bar'], 123)
+        r = c._trigger_event('message', 321)
+        self.assertEqual(r, 'bar')
+
+    def test_trigger_event_error(self):
+        c = client.Client()
+
+        @c.on('connect')
+        def foo():
+            return 1 / 0
+
+        @c.on('message')
+        def bar(data):
+            return 1 / 0
+
+        r = c._trigger_event('connect', run_async=False)
+        self.assertEqual(r, None)
+        r = c._trigger_event('message', 123, run_async=False)
+        self.assertEqual(r, None)
