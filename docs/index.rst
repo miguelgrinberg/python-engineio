@@ -6,14 +6,16 @@
 python-engineio
 ===============
 
-This project implements an Engine.IO server that can run standalone or
-integrated with a variety of Python web frameworks.
+This project implements Python based Engine.IO client and server that can run
+standalone or integrated with a variety of Python web frameworks and
+applications.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    intro
-   deployment
+   client
+   server
    api
 
 * :ref:`genindex`

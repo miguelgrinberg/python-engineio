@@ -10,64 +10,78 @@ What is Engine.IO?
 ------------------
 
 Engine.IO is a lightweight transport protocol that enables real-time
-bidirectional event-based communication between clients (typically web
-browsers) and a server. The official implementations of the client and
-server components are written in JavaScript.
+bidirectional event-based communication between clients (typically, though
+not always, web browsers) and a server. The official implementations of the
+client and server components are written in JavaScript. This package provides
+Python implementations of both, each with standard and ``asyncio`` variants.
 
-The Engine.IO protocol is extremely simple. The example that follows shows the
-client-side Javascript code required to setup an Engine.IO connection to
-a server::
+The Engine.IO protocol is extremely simple. Once a connection between a client
+and a server is established, either side can send "messages" to the other
+side. Event handlers provided by the applications on both ends are invoked
+when a message is received, or when a connection is established or dropped.
 
-    var socket = eio('http://chat.example.com');
-    socket.on('open', function() { alert('connected'); });
-    socket.on('message', function(data) { alert(data); });
-    socket.on('close', function() { alert('disconnected'); });
-    socket.send('Hello from the client!');
+Client Examples
+---------------
 
-Features
---------
+The example that follows shows a simple Python client::
 
-- Fully compatible with the Javascript
-  `engine.io-client <https://github.com/Automattic/engine.io-client>`_ library,
-  and with other Engine.IO clients.
-- Compatible with Python 2.7 and Python 3.3+.
-- Supports large number of clients even on modest hardware due to being
-  asynchronous.
-- Compatible with `aiohttp <http://aiohttp.readthedocs.io/>`_,
-  `sanic <http://sanic.readthedocs.io/>`_,
-  `tornado <http://www.tornadoweb.org/>`_,
-  `eventlet <http://eventlet.net/>`_,
-  `gevent <http://gevent.org>`_,
-  or any `WSGI <https://wsgi.readthedocs.io/en/latest/index.html>`_ or
-  `ASGI <https://asgi.readthedocs.io/en/latest/>`_ compatible server.
-- Includes WSGI and ASGI middlewares that integrate Engine.IO traffic with
-  other web applications.
+    import engineio
+
+    eio = engineio.Client()
+
+    @eio.on('connect')
+    def on_connect():
+        print('connection established')
+
+    @eio.on('message')
+    def on_message(data):
+        print('message received with ', data)
+        eio.send({'response': 'my response'})
+    
+    @eio.on('disconnect')
+    def on_disconnect():
+        print('disconnected from server')
+    
+    eio.connect('http://localhost:5000')
+    eio.wait()
+
+And here is a similar client written using the official Engine.IO Javascript
+client::
+
+    <script src="/path/to/engine.io.js"></script>
+    <script>
+        var socket = eio('http://localhost:5000');
+        socket.on('open', function() { console.log('connection established'); });
+        socket.on('message', function(data) {
+            console.log('message received with ' + data);
+            socket.send({response: 'my response'});
+        });
+        socket.on('close', function() { console.log('disconnected from server'); });
+    </script>
+
+Client Features
+---------------
+
+- Can connect to other Engine.IO complaint servers besides the one in this package.
+- Compatible with Python 2.7 and 3.5+.
+- Two versions of the client, one for standard Python and another for ``asyncio``.
 - Uses an event-based architecture implemented with decorators that hides the
   details of the protocol.
 - Implements HTTP long-polling and WebSocket transports.
-- Supports XHR2 and XHR browsers as clients.
-- Supports text and binary messages.
-- Supports gzip and deflate HTTP compression.
-- Configurable CORS responses to avoid cross-origin problems with browsers.
 
-Examples
---------
+Server Examples
+---------------
 
 The following application is a basic example that uses the Eventlet
-asynchronous server and includes a small Flask application that serves the
-HTML/Javascript to the client::
+asynchronous server::
 
     import engineio
     import eventlet
-    from flask import Flask, render_template
 
     eio = engineio.Server()
-    app = Flask(__name__)
-
-    @app.route('/')
-    def index():
-        """Serve the client-side application."""
-        return render_template('index.html')
+    app = engineio.WSGIApp(eio, static_files={
+        '/': {'content_type': 'text/html', 'filename': 'index.html'}
+    })
 
     @eio.on('connect')
     def connect(sid, environ):
@@ -83,28 +97,18 @@ HTML/Javascript to the client::
         print('disconnect ', sid)
 
     if __name__ == '__main__':
-        # wrap Flask application with engineio's middleware
-        app = engineio.Middleware(eio, app)
+        eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
 
-        # deploy as an eventlet WSGI server
-        eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
+Below is a similar application, coded for asyncio (Python 3.5+ only) and the
+Uvicorn web server::
 
-Below is a similar application, coded for asyncio (Python 3.5+ only) with the
-aiohttp framework::
-
-    from aiohttp import web
     import engineio
+    import uvicorn
 
     eio = engineio.AsyncServer()
-    app = web.Application()
-
-    # attach the Engine.IO server to the application
-    eio.attach(app)
-
-    async def index(request):
-        """Serve the client-side application."""
-        with open('index.html') as f:
-            return web.Response(text=f.read(), content_type='text/html')
+    app = engineio.ASGIApp(eio, static_files={
+        '/': {'content_type': 'text/html', 'filename': 'index.html'}
+    })
 
     @eio.on('connect')
     def connect(sid, environ):
@@ -119,30 +123,31 @@ aiohttp framework::
     def disconnect(sid):
         print('disconnect ', sid)
 
-    app.router.add_static('/static', 'static')
-    app.router.add_get('/', index)
-
     if __name__ == '__main__':
-        # run the aiohttp application
-        web.run_app(app)
+        uvicorn.run('127.0.0.1', 5000)
 
-The client-side application must include the
-`engine.io-client <https://github.com/Automattic/engine.io-client>`_ library
-(version 1.5.0 or newer recommended).
+Server Features
+---------------
 
-Each time a client connects to the server the ``connect`` event handler is
-invoked with the ``sid`` (session ID) assigned to the connection and the WSGI
-environment dictionary. The server can inspect authentication or other headers
-to decide if the client is allowed to connect. To reject a client the handler
-must return ``False``.
-
-When the client sends a message to the server the ``message`` event handler is
-invoked with the ``sid`` and the message.
-
-Finally, when the connection is broken, the ``disconnect`` event is called,
-allowing the application to perform cleanup.
-
-Because Engine.IO is a bidirectional protocol, the server can send messages to
-any connected client at any time. The ``engineio.Server.send()`` method takes
-the client's ``sid`` and the message payload, which can be of type ``str``,
-``bytes``, ``list`` or ``dict`` (the last two are JSON encoded).
+- Can accept clients running other complaint Engine.IO clients besides the one in this
+  package.
+- Compatible with Python 2.7 and Python 3.5+.
+- Two versions of the server, one for standard Python and another for ``asyncio``.
+- Supports large number of clients even on modest hardware due to being
+  asynchronous.
+- Can be hosted on any `WSGI <https://wsgi.readthedocs.io/en/latest/index.html>`_ and
+  `ASGI <https://asgi.readthedocs.io/en/latest/>`_ web servers includind
+  `Gunicorn <https://gunicorn.org/>`_, `Uvicorn <https://github.com/encode/uvicorn>`_,
+  `eventlet <http://eventlet.net/>`_ and `gevent <http://gevent.org>`_.
+- Can be integrated with WSGI applications written in frameworks such as Flask, Django,
+  etc.
+- Can be integrated with `aiohttp <http://aiohttp.readthedocs.io/>`_,
+  `sanic <http://sanic.readthedocs.io/>`_ and `tornado <http://www.tornadoweb.org/>`_
+  ``asyncio`` applications.
+- Uses an event-based architecture implemented with decorators that hides the
+  details of the protocol.
+- Implements HTTP long-polling and WebSocket transports.
+- Supports XHR2 and XHR browsers as clients.
+- Supports text and binary messages.
+- Supports gzip and deflate HTTP compression.
+- Configurable CORS responses to avoid cross-origin problems with browsers.
