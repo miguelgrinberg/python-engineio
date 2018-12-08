@@ -155,7 +155,7 @@ class AsyncClient(client.Client):
         self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
         self.logger.info('Attempting polling connection to ' + self.base_url)
         r = await self._send_request(
-            'GET', self.base_url + self._get_url_timestamp())
+            'GET', self.base_url + self._get_url_timestamp(), headers=headers)
         if r is None:
             self._reset()
             raise exceptions.ConnectionError(
@@ -254,7 +254,8 @@ class AsyncClient(client.Client):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
         try:
-            ws = await websockets.connect(websocket_url)
+            ws = await websockets.connect(websocket_url,
+                                          extra_headers=headers)
         except (websockets.exceptions.InvalidURI,
                 websockets.exceptions.InvalidHandshake):
             self.logger.warning(

@@ -246,7 +246,7 @@ class Client(object):
         self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
         self.logger.info('Attempting polling connection to ' + self.base_url)
         r = self._send_request(
-            'GET', self.base_url + self._get_url_timestamp())
+            'GET', self.base_url + self._get_url_timestamp(), headers=headers)
         if r is None:
             self._reset()
             raise exceptions.ConnectionError(
@@ -344,7 +344,7 @@ class Client(object):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
         try:
-            ws = websocket.create_connection(websocket_url)
+            ws = websocket.create_connection(websocket_url, header=headers)
         except ConnectionRefusedError:
             self.logger.warning(
                 'WebSocket upgrade failed: connection error')
