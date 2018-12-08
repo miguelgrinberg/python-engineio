@@ -6,6 +6,19 @@ API Reference
 
 .. module:: engineio
 
+``Client`` class
+----------------
+
+.. autoclass:: Client
+   :members:
+
+``AsyncClient`` class
+---------------------
+
+.. autoclass:: AsyncClient
+   :members:
+   :inherited-members:
+
 ``Server`` class
 ----------------
 

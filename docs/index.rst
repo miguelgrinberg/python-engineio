@@ -16,9 +16,6 @@ integrated with a variety of Python web frameworks.
    deployment
    api
 
-Indices and tables
-==================
-
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`

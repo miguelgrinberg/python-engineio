@@ -38,7 +38,8 @@ class AsyncClient(client.Client):
                       engineio_path='engine.io'):
         """Connect to an Engine.IO server.
 
-        :param url: The URL of the Engine.IO server.
+        :param url: The URL of the Engine.IO server. It can include custom
+                    query string parameters if required by the server.
         :param headers: A dictionary with custom headers to send with the
                         connection request.
         :param transports: The list of allowed transports. Valid transports
@@ -85,7 +86,6 @@ class AsyncClient(client.Client):
     async def send(self, data, binary=None):
         """Send a message to a client.
 
-        :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
@@ -101,6 +101,9 @@ class AsyncClient(client.Client):
 
     async def disconnect(self, abort=False):
         """Disconnect from the server.
+
+        :param abort: If set to ``True``, do not wait for background tasks
+                      associated with the connection to end.
 
         Note: this method is a coroutine.
         """

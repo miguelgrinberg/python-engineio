@@ -90,8 +90,8 @@ class Client(object):
     def on(self, event, handler=None):
         """Register an event handler.
 
-        :param event: The event name. Can be ``'connect'``, ``'reconnect'``,
-                      ``'message'`` or ``'disconnect'``.
+        :param event: The event name. Can be ``'connect'``, ``'message'`` or
+                      ``'disconnect'``.
         :param handler: The function that should be invoked to handle the
                         event. When this parameter is not given, the method
                         acts as a decorator for the handler function.
@@ -124,7 +124,8 @@ class Client(object):
                 engineio_path='engine.io'):
         """Connect to an Engine.IO server.
 
-        :param url: The URL of the Engine.IO server.
+        :param url: The URL of the Engine.IO server. It can include custom
+                    query string parameters if required by the server.
         :param headers: A dictionary with custom headers to send with the
                         connection request.
         :param transports: The list of allowed transports. Valid transports
@@ -167,7 +168,6 @@ class Client(object):
     def send(self, data, binary=None):
         """Send a message to a client.
 
-        :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
@@ -180,7 +180,11 @@ class Client(object):
                                         binary=binary))
 
     def disconnect(self, abort=False):
-        """Disconnect from the server."""
+        """Disconnect from the server.
+
+        :param abort: If set to ``True``, do not wait for background tasks
+                      associated with the connection to end.
+        """
         if self.state == 'connected':
             self._send_packet(packet.Packet(packet.CLOSE))
             self.queue.put(None)
@@ -199,10 +203,10 @@ class Client(object):
         self._reset()
 
     def transport(self):
-        """Return the name of the transport used by the client.
+        """Return the name of the transport currently in use.
 
-        The two possible values returned by this function are ``'polling'``
-        and ``'websocket'``.
+        The possible values returned by this function are ``'polling'`` and
+        ``'websocket'``.
         """
         return self.current_transport
 

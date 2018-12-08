@@ -71,7 +71,7 @@ class WSGIApp(object):
 
 
 class Middleware(WSGIApp):
-    """This class has been renamed to WSGIApp and is now deprecated."""
+    """This class has been renamed to ``WSGIApp`` and is now deprecated."""
     def __init__(self, engineio_app, wsgi_app=None,
                  engineio_path='engine.io'):
         super(Middleware, self).__init__(engineio_app, wsgi_app,

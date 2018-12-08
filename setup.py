@@ -5,7 +5,7 @@ python-engineio
 Engine.IO server.
 """
 import re
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 with open('engineio/__init__.py', 'r') as f:
@@ -24,7 +24,7 @@ setup(
     author_email='miguelgrinberg50@gmail.com',
     description='Engine.IO server',
     long_description=long_description,
-    packages=['engineio'],
+    packages=find_packages(),
     zip_safe=False,
     include_package_data=True,
     platforms='any',
