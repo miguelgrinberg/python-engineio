@@ -353,7 +353,7 @@ class TestAsyncServer(unittest.TestCase):
 
         # this mock handler just closes the socket, as it would happen on a
         # real websocket exchange
-        @asyncio.coroutine
+        @coroutine
         def mock_handle(environ):
             s.sockets['123'].closed = True
 
@@ -540,7 +540,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
 
-        @asyncio.coroutine
+        @coroutine
         def mock_get_request(*args, **kwargs):
             mock_socket.closed = True
             return 'resp'
@@ -558,7 +558,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
 
-        @asyncio.coroutine
+        @coroutine
         def mock_get_request(*args, **kwargs):
             raise exceptions.QueueEmpty()
 
@@ -586,7 +586,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
 
-        @asyncio.coroutine
+        @coroutine
         def mock_post_request(*args, **kwargs):
             raise exceptions.ContentTooLongError()
 
@@ -789,7 +789,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_trigger_event_coroutine(self):
         result = []
 
-        @asyncio.coroutine
+        @coroutine
         def foo_handler(arg):
             result.append('ok')
             result.append(arg)
@@ -813,11 +813,11 @@ class TestAsyncServer(unittest.TestCase):
         self.assertIsNone(_run(s._trigger_event('message', 'bar')))
 
     def test_trigger_event_coroutine_error(self):
-        @asyncio.coroutine
+        @coroutine
         def connect_handler(arg):
             return 1 / 0
 
-        @asyncio.coroutine
+        @coroutine
         def foo_handler(arg):
             return 1 / 0
 
@@ -843,7 +843,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_trigger_event_coroutine_async(self):
         result = []
 
-        @asyncio.coroutine
+        @coroutine
         def foo_handler(arg):
             result.append('ok')
             result.append(arg)
@@ -872,7 +872,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_trigger_event_coroutine_async_error(self):
         result = []
 
-        @asyncio.coroutine
+        @coroutine
         def foo_handler(arg):
             result.append(arg)
             return 1 / 0
