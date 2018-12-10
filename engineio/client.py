@@ -24,7 +24,7 @@ from . import payload
 default_logger = logging.getLogger('engineio.client')
 connected_clients = []
 
-if six.PY2:
+if six.PY2:  # pragma: no cover
     ConnectionError = OSError
 
 

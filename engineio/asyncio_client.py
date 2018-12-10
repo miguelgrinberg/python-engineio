@@ -151,7 +151,7 @@ class AsyncClient(client.Client):
 
     async def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
-        if aiohttp is None:
+        if aiohttp is None:  # pragma: no cover
             self.logger.error('aiohttp not installed -- cannot make HTTP '
                               'requests!')
             return
@@ -176,7 +176,7 @@ class AsyncClient(client.Client):
         if open_packet == []:
             raise exceptions.ConnectionError(
                 'OPEN packet not returned by server')
-        if len(p.packets) > 1:
+        if len(p.packets) > 1:  # pragma: no cover
             self.logger.info('extra packets found in server response')
         open_packet = open_packet[0]
         self.logger.info(
@@ -205,7 +205,7 @@ class AsyncClient(client.Client):
 
     async def _connect_websocket(self, url, headers, engineio_path):
         """Establish or upgrade to a WebSocket connection with the server."""
-        if websockets is None:
+        if websockets is None:  # pragma: no cover
             self.logger.error('websockets package not installed')
             return False
         websocket_url = self._get_engineio_url(url, engineio_path,
@@ -221,14 +221,17 @@ class AsyncClient(client.Client):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
         try:
-            ws = await websockets.connect(websocket_url,
-                                          extra_headers=headers)
+            ws = await websockets.connect(
+                websocket_url + self._get_url_timestamp(),
+                extra_headers=headers)
         except (websockets.exceptions.InvalidURI,
                 websockets.exceptions.InvalidHandshake):
-            self.logger.warning(
-                'WebSocket upgrade failed: connection error')
-            return False
-
+            if upgrade:
+                self.logger.warning(
+                    'WebSocket upgrade failed: connection error')
+                return False
+            else:
+                raise exceptions.ConnectionError('Connection error')
         if upgrade:
             await ws.send(packet.Packet(packet.PING, data='probe').encode())
             pkt = packet.Packet(encoded_packet=await ws.recv())
@@ -289,7 +292,8 @@ class AsyncClient(client.Client):
             packet.packet_names[pkt.packet_type],
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
 
-    async def _send_request(self, method, url, headers=None, body=None):
+    async def _send_request(
+            self, method, url, headers=None, body=None):  # pragma: no cover
         if self.http is None:
             self.http = aiohttp.ClientSession()
         method = getattr(self.http, method.lower())
@@ -398,6 +402,7 @@ class AsyncClient(client.Client):
             p = None
             try:
                 p = await self.ws.recv()
+                print('***', p)
             except websockets.exceptions.ConnectionClosed:
                 self.logger.warning(
                     'WebSocket connection was closed, aborting')

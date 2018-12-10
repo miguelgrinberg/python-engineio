@@ -237,7 +237,6 @@ class AsgiTests(unittest.TestCase):
         }
         _run(async_asgi.make_response('202 ACCEPTED', [('foo', 'bar')],
                                       b'payload', environ))
-        print(environ['asgi.send'].mock.call_args_list)
         environ['asgi.send'].mock.assert_any_call(
             {'type': 'http.response.start', 'status': 202,
              'headers': [(b'foo', b'bar')]})

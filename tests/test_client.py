@@ -649,8 +649,8 @@ class TestClient(unittest.TestCase):
 
         c.sleep = fake_sleep
         c._ping_loop()
-        self.assertEqual(c._send_packet.call_args_list[0][0][0].encode(),
-                         b'2')
+        self.assertEqual(
+            c._send_packet.call_args_list[0][0][0].encode(), b'2')
 
     def test_ping_loop_missing_pong(self):
         c = client.Client()
@@ -806,7 +806,8 @@ class TestClient(unittest.TestCase):
         c.state = 'connected'
         c.queue = mock.MagicMock()
         c.ws = mock.MagicMock()
-        c.ws.recv.side_effect = [packet.Packet(packet.PING), ValueError]
+        c.ws.recv.side_effect = [packet.Packet(packet.PING).encode(),
+                                 ValueError]
         c.write_loop_task = mock.MagicMock()
         c._receive_packet = mock.MagicMock()
         c._read_loop_websocket()

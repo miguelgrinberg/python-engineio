@@ -1,4 +1,5 @@
 import sys
+import time
 import unittest
 
 import six
@@ -6,9 +7,20 @@ if six.PY3:
     from unittest import mock
 else:
     import mock
+try:
+    import websockets
+except ImportError:
+    # weirdness to avoid errors in PY2 test run
+    class _dummy():
+        pass
+    websockets = _dummy()
+    websockets.exceptions = _dummy()
+    websockets.exceptions.InvalidURI = _dummy()
 
 from engineio import client
+from engineio import exceptions
 from engineio import packet
+from engineio import payload
 if sys.version_info >= (3, 5):
     import asyncio
     from asyncio import coroutine
@@ -126,6 +138,11 @@ class TestAsyncClient(unittest.TestCase):
         _run(c.wait())
         self.assertEqual(done, [True])
 
+    def test_wait_no_task(self):
+        c = asyncio_client.AsyncClient()
+        c.read_loop_task = None
+        _run(c.wait())
+
     def test_send(self):
         c = asyncio_client.AsyncClient()
         saved_packets = []
@@ -203,6 +220,313 @@ class TestAsyncClient(unittest.TestCase):
     def test_sleep(self):
         c = asyncio_client.AsyncClient()
         _run(c.sleep(0))
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_polling_connection_failed(self, _time):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock(return_value=None)
+        self.assertRaises(
+            exceptions.ConnectionError, _run, c.connect(
+                'http://foo', headers={'Foo': 'Bar'}))
+        c._send_request.mock.assert_called_once_with(
+            'GET', 'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
+            headers={'Foo': 'Bar'})
+
+    def test_polling_connection_404(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 404
+        self.assertRaises(
+            exceptions.ConnectionError, _run, c.connect('http://foo'))
+
+    def test_polling_connection_invalid_packet(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=b'foo')
+        self.assertRaises(
+            exceptions.ConnectionError, _run, c.connect('http://foo'))
+
+    def test_polling_connection_no_open_packet(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.CLOSE, {
+                    'sid': '123', 'upgrades': [], 'pingInterval': 10,
+                    'pingTimeout': 20
+                })
+            ]).encode())
+        self.assertRaises(
+            exceptions.ConnectionError, _run, c.connect('http://foo'))
+
+    def test_polling_connection_successful(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.OPEN, {
+                    'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                    'pingTimeout': 2000
+                })
+            ]).encode())
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = AsyncMock()
+        c.on('connect', on_connect)
+        _run(c.connect('http://foo'))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_called_once_with()
+        c._read_loop_websocket.mock.assert_not_called()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.mock.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'http://foo/engine.io/?transport=polling&EIO=3&sid=123')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'polling')
+
+    def test_polling_connection_upgraded(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.OPEN, {
+                    'sid': '123', 'upgrades': ['websocket'],
+                    'pingInterval': 1000, 'pingTimeout': 2000
+                })
+            ]).encode())
+        c._connect_websocket = AsyncMock(return_value=True)
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        _run(c.connect('http://foo'))
+
+        c._connect_websocket.mock.assert_called_once_with('http://foo', {},
+                                                          'engine.io')
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'http://foo/engine.io/?transport=polling&EIO=3&sid=123')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, ['websocket'])
+
+    def test_polling_connection_not_upgraded(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.OPEN, {
+                    'sid': '123', 'upgrades': ['websocket'],
+                    'pingInterval': 1000, 'pingTimeout': 2000
+                })
+            ]).encode())
+        c._connect_websocket = AsyncMock(return_value=False)
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        _run(c.connect('http://foo'))
+        time.sleep(0.1)
+
+        c._connect_websocket.mock.assert_called_once_with('http://foo', {},
+                                                          'engine.io')
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_called_once_with()
+        c._read_loop_websocket.mock.assert_not_called()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
+        side_effect=[websockets.exceptions.InvalidURI]))
+    def test_websocket_connection_failed(self, _time):
+        c = asyncio_client.AsyncClient()
+        self.assertRaises(
+            exceptions.ConnectionError, _run,
+            c.connect('http://foo', transports=['websocket'],
+                      headers={'Foo': 'Bar'}))
+        asyncio_client.websockets.connect.mock.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            extra_headers={'Foo': 'Bar'})
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
+        side_effect=[websockets.exceptions.InvalidURI]))
+    def test_websocket_upgrade_failed(self, _time):
+        c = asyncio_client.AsyncClient()
+        c.sid = '123'
+        self.assertFalse(_run(c.connect(
+            'http://foo', transports=['websocket'])))
+        asyncio_client.websockets.connect.mock.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
+            extra_headers={})
+
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
+    def test_websocket_connection_no_open_packet(self):
+        asyncio_client.websockets.connect.mock.return_value.recv = AsyncMock(
+            return_value=packet.Packet(packet.CLOSE).encode())
+        c = asyncio_client.AsyncClient()
+        self.assertRaises(
+            exceptions.ConnectionError, _run,
+            c.connect('http://foo', transports=['websocket']))
+
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
+    def test_websocket_connection_successful(self):
+        ws = asyncio_client.websockets.connect.mock.return_value
+        ws.recv = AsyncMock(return_value=packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode())
+        c = asyncio_client.AsyncClient()
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        _run(c.connect('ws://foo', transports=['websocket']))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_not_called()
+        c._read_loop_websocket.mock.assert_called_once_with()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'ws://foo/engine.io/?transport=websocket&EIO=3')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'websocket')
+        self.assertEqual(c.ws, ws)
+
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
+    def test_websocket_upgrade_no_pong(self):
+        ws = asyncio_client.websockets.connect.mock.return_value
+        ws.recv = AsyncMock(return_value=packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode())
+        ws.send = AsyncMock()
+        c = asyncio_client.AsyncClient()
+        c.sid = '123'
+        c.current_transport = 'polling'
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        self.assertFalse(_run(c.connect('ws://foo',
+                                        transports=['websocket'])))
+
+        c._ping_loop.mock.assert_not_called()
+        c._read_loop_polling.mock.assert_not_called()
+        c._read_loop_websocket.mock.assert_not_called()
+        c._write_loop.mock.assert_not_called()
+        on_connect.assert_not_called()
+        self.assertEqual(c.transport(), 'polling')
+        ws.send.mock.assert_called_once_with(b'2probe')
+
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
+    def test_websocket_upgrade_successful(self):
+        ws = asyncio_client.websockets.connect.mock.return_value
+        ws.recv = AsyncMock(return_value=packet.Packet(
+            packet.PONG, 'probe').encode())
+        ws.send = AsyncMock()
+        c = asyncio_client.AsyncClient()
+        c.sid = '123'
+        c.base_url = 'http://foo'
+        c.current_transport = 'polling'
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        self.assertTrue(_run(c.connect('ws://foo',
+                                       transports=['websocket'])))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_not_called()
+        c._read_loop_websocket.mock.assert_called_once_with()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.assert_not_called()  # was called by polling
+        self.assertNotIn(c, client.connected_clients)  # was added by polling
+        self.assertEqual(c.base_url, 'http://foo')  # not changed
+        self.assertEqual(c.sid, '123')  # not changed
+        self.assertEqual(c.transport(), 'websocket')
+        self.assertEqual(c.ws, ws)
+        self.assertEqual(
+            ws.send.mock.call_args_list[0],
+            ((packet.Packet(packet.PING, 'probe').encode(),),))  # ping
+        self.assertEqual(
+            ws.send.mock.call_args_list[1],
+            ((packet.Packet(packet.UPGRADE).encode(),),))  # upgrade
+
+    def test_receive_unknown_packet(self):
+        c = asyncio_client.AsyncClient()
+        _run(c._receive_packet(packet.Packet(encoded_packet=b'9')))
+        # should be ignored
+
+    def test_receive_noop_packet(self):
+        c = asyncio_client.AsyncClient()
+        _run(c._receive_packet(packet.Packet(packet.NOOP)))
+        # should be ignored
+
+    def test_receive_pong_packet(self):
+        c = asyncio_client.AsyncClient()
+        c.pong_received = False
+        _run(c._receive_packet(packet.Packet(packet.PONG)))
+        self.assertTrue(c.pong_received)
+
+    def test_receive_message_packet(self):
+        c = asyncio_client.AsyncClient()
+        on_message = AsyncMock()
+        c.on('message', on_message)
+        _run(c._receive_packet(packet.Packet(packet.MESSAGE, {'foo': 'bar'})))
+        on_message.mock.assert_called_once_with({'foo': 'bar'})
+
+    def test_send_packet_disconnected(self):
+        c = asyncio_client.AsyncClient()
+        c.queue, c.queue_empty = c._create_queue()
+        c.state = 'disconnected'
+        _run(c._send_packet(packet.Packet(packet.NOOP)))
+        self.assertTrue(c.queue.empty())
+
+    def test_send_packet(self):
+        c = asyncio_client.AsyncClient()
+        c.queue, c.queue_empty = c._create_queue()
+        c.state = 'connected'
+        _run(c._send_packet(packet.Packet(packet.NOOP)))
+        self.assertFalse(c.queue.empty())
+        pkt = _run(c.queue.get())
+        self.assertEqual(pkt.packet_type, packet.NOOP)
 
     def test_trigger_event_function(self):
         result = []
@@ -314,3 +638,209 @@ class TestAsyncClient(unittest.TestCase):
             ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
             fut)
         self.assertEqual(result, ['bar'])
+
+    def test_ping_loop_disconnected(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'disconnected'
+        _run(c._ping_loop())
+        # should not block
+
+    def test_ping_loop_disconnect(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_interval = 10
+        c._send_packet = AsyncMock()
+
+        states = [
+            ('disconnecting', True)
+        ]
+
+        @coroutine
+        def fake_sleep(interval):
+            self.assertEqual(interval, 10)
+            c.state, c.pong_received = states.pop(0)
+
+        c.sleep = fake_sleep
+        _run(c._ping_loop())
+        self.assertEqual(
+            c._send_packet.mock.call_args_list[0][0][0].encode(), b'2')
+
+    def test_ping_loop_missing_pong(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_interval = 10
+        c._send_packet = AsyncMock()
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+
+        states = [
+            ('connected', False)
+        ]
+
+        @coroutine
+        def fake_sleep(interval):
+            self.assertEqual(interval, 10)
+            c.state, c.pong_received = states.pop(0)
+
+        c.sleep = fake_sleep
+        _run(c._ping_loop())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+
+    def test_ping_loop_missing_pong_websocket(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_interval = 10
+        c._send_packet = AsyncMock()
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c.ws = mock.MagicMock()
+        c.ws.close = AsyncMock()
+
+        states = [
+            ('connected', False)
+        ]
+
+        @coroutine
+        def fake_sleep(interval):
+            self.assertEqual(interval, 10)
+            c.state, c.pong_received = states.pop(0)
+
+        c.sleep = fake_sleep
+        _run(c._ping_loop())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+        c.ws.close.mock.assert_called_once_with()
+
+    def test_read_loop_polling_disconnected(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'disconnected'
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_polling())
+        # should not block
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_read_loop_polling_no_response(self, _time):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.base_url = 'http://foo'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c._send_request = AsyncMock(return_value=None)
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_polling())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+        c._send_request.mock.assert_called_once_with(
+            'GET', 'http://foo&t=123.456')
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_read_loop_polling_bad_status(self, _time):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.base_url = 'http://foo'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 400
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_polling())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+        c._send_request.mock.assert_called_once_with(
+            'GET', 'http://foo&t=123.456')
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_read_loop_polling_bad_packet(self, _time):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.base_url = 'http://foo'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=b'foo')
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_polling())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+        c._send_request.mock.assert_called_once_with(
+            'GET', 'http://foo&t=123.456')
+
+    def test_read_loop_polling(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.base_url = 'http://foo'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c._send_request = AsyncMock()
+        c._send_request.mock.side_effect = [
+            mock.MagicMock(status=200, read=AsyncMock(
+                return_value=payload.Payload(packets=[
+                    packet.Packet(packet.PING),
+                    packet.Packet(packet.NOOP)]).encode())),
+            None
+        ]
+        c.write_loop_task = AsyncMock()()
+        c._receive_packet = AsyncMock()
+        _run(c._read_loop_polling())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+        self.assertEqual(c._send_request.mock.call_count, 2)
+        self.assertEqual(c._receive_packet.mock.call_count, 2)
+        self.assertEqual(
+            c._receive_packet.mock.call_args_list[0][0][0].encode(), b'2')
+        self.assertEqual(
+            c._receive_packet.mock.call_args_list[1][0][0].encode(), b'6')
+
+    def test_read_loop_websocket_disconnected(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'disconnected'
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_websocket())
+        # should not block
+
+    def test_read_loop_websocket_no_response(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'ws://foo'
+        c.state = 'connected'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c.ws = mock.MagicMock()
+        c.ws.recv = AsyncMock(
+            side_effect=websockets.exceptions.ConnectionClosed)
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_websocket())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+
+    def test_read_loop_websocket_unexpected_error(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'ws://foo'
+        c.state = 'connected'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c.ws = mock.MagicMock()
+        c.ws.recv = AsyncMock(side_effect=ValueError)
+        c.write_loop_task = AsyncMock()()
+        _run(c._read_loop_websocket())
+        self.assertEqual(c.state, 'disconnected')
+        c.queue.put.mock.assert_called_once_with(None)
+
+    def test_read_loop_websocket(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'ws://foo'
+        c.state = 'connected'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c.ws = mock.MagicMock()
+        c.ws.recv = AsyncMock(side_effect=[
+            packet.Packet(packet.PING).encode(), ValueError])
+        c.write_loop_task = AsyncMock()()
+        c._receive_packet = AsyncMock()
+        _run(c._read_loop_websocket())
+        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(
+            c._receive_packet.mock.call_args_list[0][0][0].encode(), b'2')
+        c.queue.put.mock.assert_called_once_with(None)
