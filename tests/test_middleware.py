@@ -117,3 +117,10 @@ class TestWSGIApp(unittest.TestCase):
         m(environ, start_response)
         self.assertIn('eventlet.input', environ)
         self.assertEqual(environ['eventlet.input'].get_socket(), 123)
+
+    def test_legacy_middleware_class(self):
+        m = engineio.Middleware('eio', 'wsgi', 'eio_path')
+        self.assertEqual(m.engineio_app, 'eio')
+        self.assertEqual(m.wsgi_app, 'wsgi')
+        self.assertEqual(m.static_files, {})
+        self.assertEqual(m.engineio_path, 'eio_path')

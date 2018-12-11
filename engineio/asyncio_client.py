@@ -402,7 +402,6 @@ class AsyncClient(client.Client):
             p = None
             try:
                 p = await self.ws.recv()
-                print('***', p)
             except websockets.exceptions.ConnectionClosed:
                 self.logger.warning(
                     'WebSocket connection was closed, aborting')
@@ -424,15 +423,17 @@ class AsyncClient(client.Client):
         await self.write_loop_task
         self.logger.info('Exiting read loop task')
 
-    async def _writer_loop(self):
+    async def _write_loop(self):
         """This background task sends packages to the server as they are
         pushed to the send queue.
         """
         while self.state == 'connected':
             packets = None
             try:
+                print(1)
                 packets = [await asyncio.wait_for(self.queue.get(),
                                                   self.ping_timeout)]
+                print(2)
             except self.queue_empty:
                 self.logger.error('packet queue is empty, aborting')
                 self._reset()
@@ -443,7 +444,9 @@ class AsyncClient(client.Client):
             else:
                 while True:
                     try:
+                        print(3)
                         packets.append(self.queue.get_nowait())
+                        print(4, packets[-1])
                     except self.queue_empty:
                         break
                     if packets[-1] is None:
@@ -470,12 +473,13 @@ class AsyncClient(client.Client):
                                         'response, aborting', r.status)
                     self._reset()
                     break
-            elif self.current_transport == 'websocket':
+            else:
+                # websocket
                 try:
                     for pkt in packets:
                         await self.ws.send(pkt.encode())
                         self.queue.task_done()
-                except websockets.exceptions.ConnectionError:
+                except websockets.exceptions.ConnectionClosed:
                     self.logger.warning(
                         'WebSocket connection was closed, aborting')
                     self._reset()

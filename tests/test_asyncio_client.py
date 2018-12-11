@@ -204,6 +204,38 @@ class TestAsyncClient(unittest.TestCase):
         c.ws.close.mock.assert_called_once_with()
         self.assertNotIn(c, client.connected_clients)
 
+    def test_disconnect_polling_abort(self):
+        c = asyncio_client.AsyncClient()
+        client.connected_clients.append(c)
+        c.state = 'connected'
+        c.current_transport = 'polling'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c.queue.join = AsyncMock()
+        c.read_loop_task = AsyncMock()()
+        c.ws = mock.MagicMock()
+        c.ws.close = AsyncMock()
+        _run(c.disconnect(abort=True))
+        c.queue.join.mock.assert_not_called()
+        c.ws.close.mock.assert_not_called()
+        self.assertNotIn(c, client.connected_clients)
+
+    def test_disconnect_websocket_abort(self):
+        c = asyncio_client.AsyncClient()
+        client.connected_clients.append(c)
+        c.state = 'connected'
+        c.current_transport = 'websocket'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c.queue.join = AsyncMock()
+        c.read_loop_task = AsyncMock()()
+        c.ws = mock.MagicMock()
+        c.ws.close = AsyncMock()
+        _run(c.disconnect(abort=True))
+        c.queue.join.mock.assert_not_called()
+        c.ws.mock.assert_not_called()
+        self.assertNotIn(c, client.connected_clients)
+
     def test_background_tasks(self):
         r = []
 
@@ -639,6 +671,12 @@ class TestAsyncClient(unittest.TestCase):
             fut)
         self.assertEqual(result, ['bar'])
 
+    def test_trigger_unknown_event(self):
+        c = asyncio_client.AsyncClient()
+        _run(c._trigger_event('connect', run_async=False))
+        _run(c._trigger_event('message', 123, run_async=True))
+        # should do nothing
+
     def test_ping_loop_disconnected(self):
         c = asyncio_client.AsyncClient()
         c.state = 'disconnected'
@@ -809,7 +847,7 @@ class TestAsyncClient(unittest.TestCase):
         c.queue.put = AsyncMock()
         c.ws = mock.MagicMock()
         c.ws.recv = AsyncMock(
-            side_effect=websockets.exceptions.ConnectionClosed)
+            side_effect=websockets.exceptions.ConnectionClosed(1, 'foo'))
         c.write_loop_task = AsyncMock()()
         _run(c._read_loop_websocket())
         self.assertEqual(c.state, 'disconnected')
@@ -844,3 +882,219 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(
             c._receive_packet.mock.call_args_list[0][0][0].encode(), b'2')
         c.queue.put.mock.assert_called_once_with(None)
+
+    def test_write_loop_disconnected(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'disconnected'
+        _run(c._write_loop())
+        # should not block
+
+    def test_write_loop_no_packets(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_timeout = 2
+        c.queue = mock.MagicMock()
+        c.queue.get = AsyncMock(return_value=None)
+        _run(c._write_loop())
+        c.queue.task_done.assert_called_once_with()
+        c.queue.get.mock.assert_called_once_with()
+
+    def test_write_loop_empty_queue(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_timeout = 2
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=RuntimeError)
+        _run(c._write_loop())
+        c.queue.get.mock.assert_called_once_with()
+
+    def test_write_loop_polling_one_packet(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'http://foo'
+        c.state = 'connected'
+        c.current_transport = 'polling'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            RuntimeError
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=RuntimeError)
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 1)
+        p = payload.Payload(
+            packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})])
+        c._send_request.mock.assert_called_once_with(
+            'POST', 'http://foo', body=p.encode(),
+            headers={'Content-Type': 'application/octet-stream'})
+
+    def test_write_loop_polling_three_packets(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'http://foo'
+        c.state = 'connected'
+        c.current_transport = 'polling'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            RuntimeError
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            packet.Packet(packet.PING),
+            packet.Packet(packet.NOOP),
+            RuntimeError
+        ])
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 3)
+        p = payload.Payload(packets=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            packet.Packet(packet.PING),
+            packet.Packet(packet.NOOP),
+        ])
+        c._send_request.mock.assert_called_once_with(
+            'POST', 'http://foo', body=p.encode(),
+            headers={'Content-Type': 'application/octet-stream'})
+
+    def test_write_loop_polling_two_packets_done(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'http://foo'
+        c.state = 'connected'
+        c.current_transport = 'polling'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            RuntimeError
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            packet.Packet(packet.PING),
+            None
+        ])
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 3)
+        p = payload.Payload(packets=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            packet.Packet(packet.PING),
+        ])
+        c._send_request.mock.assert_called_once_with(
+            'POST', 'http://foo', body=p.encode(),
+            headers={'Content-Type': 'application/octet-stream'})
+        self.assertEqual(c.state, 'disconnected')
+
+    def test_write_loop_polling_bad_connection(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'http://foo'
+        c.state = 'connected'
+        c.current_transport = 'polling'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            RuntimeError
+        ])
+        c._send_request = AsyncMock(return_value=None)
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 1)
+        p = payload.Payload(
+            packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})])
+        c._send_request.mock.assert_called_once_with(
+            'POST', 'http://foo', body=p.encode(),
+            headers={'Content-Type': 'application/octet-stream'})
+        self.assertEqual(c.state, 'disconnected')
+
+    def test_write_loop_polling_bad_status(self):
+        c = asyncio_client.AsyncClient()
+        c.base_url = 'http://foo'
+        c.state = 'connected'
+        c.current_transport = 'polling'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            RuntimeError
+        ])
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 500
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 1)
+        p = payload.Payload(
+            packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})])
+        c._send_request.mock.assert_called_once_with(
+            'POST', 'http://foo', body=p.encode(),
+            headers={'Content-Type': 'application/octet-stream'})
+        self.assertEqual(c.state, 'disconnected')
+
+    def test_write_loop_websocket_one_packet(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.current_transport = 'websocket'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            RuntimeError
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            RuntimeError
+        ])
+        c.ws = mock.MagicMock()
+        c.ws.send = AsyncMock()
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 1)
+        self.assertEqual(c.ws.send.mock.call_count, 1)
+        c.ws.send.mock.assert_called_once_with(b'4{"foo":"bar"}')
+
+    def test_write_loop_websocket_three_packets(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.current_transport = 'websocket'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            RuntimeError
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            packet.Packet(packet.PING),
+            packet.Packet(packet.NOOP),
+            RuntimeError
+        ])
+        c.ws = mock.MagicMock()
+        c.ws.send = AsyncMock()
+        _run(c._write_loop())
+        self.assertEqual(c.queue.task_done.call_count, 3)
+        self.assertEqual(c.ws.send.mock.call_count, 3)
+        self.assertEqual(c.ws.send.mock.call_args_list[0][0][0],
+                         b'4{"foo":"bar"}')
+        self.assertEqual(c.ws.send.mock.call_args_list[1][0][0], b'2')
+        self.assertEqual(c.ws.send.mock.call_args_list[2][0][0], b'6')
+
+    def test_write_loop_websocket_bad_connection(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.current_transport = 'websocket'
+        c.queue = mock.MagicMock()
+        c.queue_empty = RuntimeError
+        c.queue.get = AsyncMock(side_effect=[
+            packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
+            RuntimeError
+        ])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[
+            RuntimeError
+        ])
+        c.ws = mock.MagicMock()
+        c.ws.send = AsyncMock(
+            side_effect=websockets.exceptions.ConnectionClosed(1, 'foo'))
+        _run(c._write_loop())
+        self.assertEqual(c.state, 'disconnected')
