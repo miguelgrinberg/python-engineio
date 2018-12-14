@@ -1,26 +1,6 @@
 Engine.IO Examples
 ==================
 
-This directory contains several example Engine.IO applications, organized by
-directory:
-
-wsgi
-----
-
-Examples that are compatible with the WSGI protocol and frameworks.
-
-aiohttp
--------
-
-Examples that are compatible with the aiohttp framework for asyncio.
-
-sanic
------
-
-Examples that are compatible with the sanic framework for asyncio.
-
-
-tornado
--------
-
-Examples that are compatible with the Tornado framework.
+This directory contains several example Engine.IO applications. Look in the
+`server` directory for Engine.IO servers, and in the `client` directory for
+Engine.IO clients.

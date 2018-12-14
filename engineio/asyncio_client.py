@@ -430,10 +430,8 @@ class AsyncClient(client.Client):
         while self.state == 'connected':
             packets = None
             try:
-                print(1)
                 packets = [await asyncio.wait_for(self.queue.get(),
                                                   self.ping_timeout)]
-                print(2)
             except self.queue_empty:
                 self.logger.error('packet queue is empty, aborting')
                 self._reset()
@@ -444,9 +442,7 @@ class AsyncClient(client.Client):
             else:
                 while True:
                     try:
-                        print(3)
                         packets.append(self.queue.get_nowait())
-                        print(4, packets[-1])
                     except self.queue_empty:
                         break
                     if packets[-1] is None:
