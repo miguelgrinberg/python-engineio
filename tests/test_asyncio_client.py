@@ -329,7 +329,7 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'polling')
 
-    def test_polling_connection_successful(self):
+    def test_polling_connection_with_more_packets(self):
         c = asyncio_client.AsyncClient()
         c._send_request = AsyncMock()
         c._send_request.mock.return_value.status = 200
@@ -350,7 +350,7 @@ class TestAsyncClient(unittest.TestCase):
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
         time.sleep(0.1)
-        c._receive_packet.mock.assert_called_once()
+        self.assertEqual(c._receive_packet.mock.call_count, 1)
         self.assertEqual(
             c._receive_packet.mock.call_args_list[0][0][0].packet_type,
             packet.NOOP)

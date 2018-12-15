@@ -354,13 +354,13 @@ class TestClient(unittest.TestCase):
         c._ping_loop = mock.MagicMock()
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
-        c._receive_packet = mock.MagicMock()
         c._write_loop = mock.MagicMock()
+        c._receive_packet = mock.MagicMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         c.connect('http://foo')
         time.sleep(0.1)
-        c._receive_packet.assert_called_once()
+        self.assertEqual(c._receive_packet.call_count, 1)
         self.assertEqual(
             c._receive_packet.call_args_list[0][0][0].packet_type,
             packet.NOOP)
