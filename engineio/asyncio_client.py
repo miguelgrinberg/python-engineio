@@ -171,14 +171,10 @@ class AsyncClient(client.Client):
         except ValueError:
             six.raise_from(exceptions.ConnectionError(
                 'Unexpected response from server'), None)
-        open_packet = [pkt for pkt in p.packets
-                       if pkt.packet_type == packet.OPEN]
-        if open_packet == []:
+        open_packet = p.packets[0]
+        if open_packet.packet_type != packet.OPEN:
             raise exceptions.ConnectionError(
                 'OPEN packet not returned by server')
-        if len(p.packets) > 1:  # pragma: no cover
-            self.logger.info('extra packets found in server response')
-        open_packet = open_packet[0]
         self.logger.info(
             'Polling connection accepted with ' + str(open_packet.data))
         self.sid = open_packet.data['sid']
@@ -191,6 +187,9 @@ class AsyncClient(client.Client):
         self.state = 'connected'
         client.connected_clients.append(self)
         await self._trigger_event('connect')
+
+        for pkt in p.packets[1:]:
+            await self._receive_packet(pkt)
 
         if 'websocket' in self.upgrades and 'websocket' in self.transports:
             # attempt to upgrade to websocket

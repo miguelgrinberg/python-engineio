@@ -329,6 +329,32 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'polling')
 
+    def test_polling_connection_successful(self):
+        c = asyncio_client.AsyncClient()
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.OPEN, {
+                    'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                    'pingTimeout': 2000
+                }),
+                packet.Packet(packet.NOOP)
+            ]).encode())
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        c._receive_packet = AsyncMock()
+        on_connect = AsyncMock()
+        c.on('connect', on_connect)
+        _run(c.connect('http://foo'))
+        time.sleep(0.1)
+        c._receive_packet.mock.assert_called_once()
+        self.assertEqual(
+            c._receive_packet.mock.call_args_list[0][0][0].packet_type,
+            packet.NOOP)
+
     def test_polling_connection_upgraded(self):
         c = asyncio_client.AsyncClient()
         c._send_request = AsyncMock()

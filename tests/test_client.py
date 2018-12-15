@@ -341,6 +341,31 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.transport(), 'polling')
 
     @mock.patch('engineio.client.Client._send_request')
+    def test_polling_connection_with_more_packets(self, _send_request):
+        _send_request.return_value.status = 200
+        _send_request.return_value.data = payload.Payload(packets=[
+            packet.Packet(packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }),
+            packet.Packet(packet.NOOP)
+        ]).encode()
+        c = client.Client()
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._receive_packet = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('http://foo')
+        time.sleep(0.1)
+        c._receive_packet.assert_called_once()
+        self.assertEqual(
+            c._receive_packet.call_args_list[0][0][0].packet_type,
+            packet.NOOP)
+
+    @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_upgraded(self, _send_request):
         _send_request.return_value.status = 200
         _send_request.return_value.data = payload.Payload(packets=[
