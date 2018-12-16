@@ -111,6 +111,7 @@ class AsyncClient(client.Client):
             await self._send_packet(packet.Packet(packet.CLOSE))
             await self.queue.put(None)
             self.state = 'disconnecting'
+            await self._trigger_event('disconnect')
             if not abort:
                 await self.queue.join()
             if self.current_transport == 'websocket':
@@ -372,13 +373,11 @@ class AsyncClient(client.Client):
                 self.logger.warning(
                     'Connection refused by the server, aborting')
                 await self.queue.put(None)
-                self._reset()
                 break
             if r.status != 200:
                 self.logger.warning('Unexpected status code %s in server '
                                     'response, aborting', r.status)
                 await self.queue.put(None)
-                self._reset()
                 break
             try:
                 p = payload.Payload(encoded_payload=await r.read())
@@ -386,13 +385,19 @@ class AsyncClient(client.Client):
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
                 await self.queue.put(None)
-                self._reset()
                 break
             for pkt in p.packets:
                 await self._receive_packet(pkt)
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
+        if self.state == 'connected':
+            await self._trigger_event('disconnect')
+            try:
+                client.connected_clients.remove(self)
+            except ValueError:  # pragma: no cover
+                pass
+            self._reset()
         self.logger.info('Exiting read loop task')
 
     async def _read_loop_websocket(self):
@@ -405,13 +410,11 @@ class AsyncClient(client.Client):
                 self.logger.warning(
                     'WebSocket connection was closed, aborting')
                 await self.queue.put(None)
-                self._reset()
                 break
             except Exception as e:
                 self.logger.info(
                     'Unexpected error "%s", aborting', str(e))
                 await self.queue.put(None)
-                self._reset()
                 break
             if isinstance(p, six.text_type):  # pragma: no cover
                 p = p.encode('utf-8')
@@ -420,6 +423,13 @@ class AsyncClient(client.Client):
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
+        if self.state == 'connected':
+            await self._trigger_event('disconnect')
+            try:
+                client.connected_clients.remove(self)
+            except ValueError:  # pragma: no cover
+                pass
+            self._reset()
         self.logger.info('Exiting read loop task')
 
     async def _write_loop(self):

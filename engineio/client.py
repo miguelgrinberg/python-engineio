@@ -197,6 +197,7 @@ class Client(object):
             self._send_packet(packet.Packet(packet.CLOSE))
             self.queue.put(None)
             self.state = 'disconnecting'
+            self._trigger_event('disconnect')
             if not abort:
                 self.queue.join()
             if self.current_transport == 'websocket':
@@ -470,13 +471,11 @@ class Client(object):
                 self.logger.warning(
                     'Connection refused by the server, aborting')
                 self.queue.put(None)
-                self._reset()
                 break
             if r.status != 200:
                 self.logger.warning('Unexpected status code %s in server '
                                     'response, aborting', r.status)
                 self.queue.put(None)
-                self._reset()
                 break
             try:
                 p = payload.Payload(encoded_payload=r.data)
@@ -484,13 +483,19 @@ class Client(object):
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
                 self.queue.put(None)
-                self._reset()
                 break
             for pkt in p.packets:
                 self._receive_packet(pkt)
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
+        if self.state == 'connected':
+            self._trigger_event('disconnect')
+            try:
+                connected_clients.remove(self)
+            except ValueError:  # pragma: no cover
+                pass
+            self._reset()
         self.logger.info('Exiting read loop task')
 
     def _read_loop_websocket(self):
@@ -503,13 +508,11 @@ class Client(object):
                 self.logger.warning(
                     'WebSocket connection was closed, aborting')
                 self.queue.put(None)
-                self._reset()
                 break
             except Exception as e:
                 self.logger.info(
                     'Unexpected error "%s", aborting', str(e))
                 self.queue.put(None)
-                self._reset()
                 break
             if isinstance(p, six.text_type):  # pragma: no cover
                 p = p.encode('utf-8')
@@ -518,6 +521,13 @@ class Client(object):
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
+        if self.state == 'connected':
+            self._trigger_event('disconnect')
+            try:
+                connected_clients.remove(self)
+            except ValueError:  # pragma: no cover
+                pass
+            self._reset()
         self.logger.info('Exiting read loop task')
 
     def _write_loop(self):

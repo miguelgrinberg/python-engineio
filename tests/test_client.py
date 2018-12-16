@@ -186,11 +186,13 @@ class TestClient(unittest.TestCase):
         c.queue = mock.MagicMock()
         c.read_loop_task = mock.MagicMock()
         c.ws = mock.MagicMock()
+        c._trigger_event = mock.MagicMock()
         c.disconnect()
         c.queue.join.assert_called_once_with()
         c.read_loop_task.join.assert_called_once_with()
         c.ws.mock.assert_not_called()
         self.assertNotIn(c, client.connected_clients)
+        c._trigger_event.assert_called_once_with('disconnect')
 
     def test_disconnect_websocket(self):
         c = client.Client()
@@ -200,11 +202,13 @@ class TestClient(unittest.TestCase):
         c.queue = mock.MagicMock()
         c.read_loop_task = mock.MagicMock()
         c.ws = mock.MagicMock()
+        c._trigger_event = mock.MagicMock()
         c.disconnect()
         c.queue.join.assert_called_once_with()
         c.read_loop_task.join.assert_called_once_with()
         c.ws.close.assert_called_once_with()
         self.assertNotIn(c, client.connected_clients)
+        c._trigger_event.assert_called_once_with('disconnect')
 
     def test_disconnect_polling_abort(self):
         c = client.Client()
@@ -722,9 +726,11 @@ class TestClient(unittest.TestCase):
     def test_read_loop_polling_disconnected(self):
         c = client.Client()
         c.state = 'disconnected'
+        c._trigger_event = mock.MagicMock()
         c.write_loop_task = mock.MagicMock()
         c._read_loop_polling()
         c.write_loop_task.join.assert_called_once_with()
+        c._trigger_event.assert_not_called()
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_no_response(self, _time):
@@ -733,12 +739,14 @@ class TestClient(unittest.TestCase):
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
         c._send_request = mock.MagicMock(return_value=None)
+        c._trigger_event = mock.MagicMock()
         c.write_loop_task = mock.MagicMock()
         c._read_loop_polling()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
         c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
+        c._trigger_event.assert_called_once_with('disconnect')
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_bad_status(self, _time):
