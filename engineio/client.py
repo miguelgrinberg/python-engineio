@@ -74,6 +74,8 @@ class Client(object):
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None
+        self.ping_loop_task = None
+        self.ping_loop_event = self._create_event()
         self.queue = None
         self.queue_empty = None
         self.state = 'disconnected'
@@ -198,8 +200,6 @@ class Client(object):
             self.queue.put(None)
             self.state = 'disconnecting'
             self._trigger_event('disconnect')
-            if not abort:
-                self.queue.join()
             if self.current_transport == 'websocket':
                 self.ws.close()
             if not abort:
@@ -233,10 +233,7 @@ class Client(object):
         the Python standard library. The `start()` method on this object is
         already called by this function.
         """
-        daemon = kwargs.pop('_daemon', None)
         th = threading.Thread(target=target, args=args, kwargs=kwargs)
-        if daemon:
-            th.daemon = daemon
         th.start()
         return th
 
@@ -297,7 +294,7 @@ class Client(object):
                 return
 
         # start background tasks associated with this client
-        self.start_background_task(self._ping_loop, _daemon=True)
+        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
@@ -358,7 +355,7 @@ class Client(object):
         self.ws = ws
 
         # start background tasks associated with this client
-        self.start_background_task(self._ping_loop, _daemon=True)
+        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_websocket)
@@ -404,6 +401,10 @@ class Client(object):
         """Create the client's send queue."""
         return queue.Queue(), queue.Empty
 
+    def _create_event(self):
+        """Create an event."""
+        return threading.Event()
+
     def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
         run_async = kwargs.pop('run_async', False)
@@ -446,6 +447,7 @@ class Client(object):
         interval.
         """
         self.pong_received = True
+        self.ping_loop_event.clear()
         while self.state == 'connected':
             if not self.pong_received:
                 self.logger.warning(
@@ -457,7 +459,7 @@ class Client(object):
                 break
             self.pong_received = False
             self._send_packet(packet.Packet(packet.PING))
-            self.sleep(self.ping_interval)
+            self.ping_loop_event.wait(timeout=self.ping_interval)
         self.logger.info('Exiting ping task')
 
     def _read_loop_polling(self):
@@ -489,6 +491,9 @@ class Client(object):
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
+        self.logger.info('Waiting for ping loop task to end')
+        self.ping_loop_event.set()
+        self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect')
             try:
@@ -521,6 +526,9 @@ class Client(object):
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
+        self.logger.info('Waiting for ping loop task to end')
+        self.ping_loop_event.set()
+        self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect')
             try:

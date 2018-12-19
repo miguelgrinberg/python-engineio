@@ -188,7 +188,6 @@ class TestClient(unittest.TestCase):
         c.ws = mock.MagicMock()
         c._trigger_event = mock.MagicMock()
         c.disconnect()
-        c.queue.join.assert_called_once_with()
         c.read_loop_task.join.assert_called_once_with()
         c.ws.mock.assert_not_called()
         self.assertNotIn(c, client.connected_clients)
@@ -204,7 +203,6 @@ class TestClient(unittest.TestCase):
         c.ws = mock.MagicMock()
         c._trigger_event = mock.MagicMock()
         c.disconnect()
-        c.queue.join.assert_called_once_with()
         c.read_loop_task.join.assert_called_once_with()
         c.ws.close.assert_called_once_with()
         self.assertNotIn(c, client.connected_clients)
@@ -254,20 +252,6 @@ class TestClient(unittest.TestCase):
         task.join()
         self.assertIn('task', flag)
         self.assertTrue(flag['task'])
-        self.assertEqual(task.daemon, False)
-
-    def test_daemon_background_tasks(self):
-        flag = {}
-
-        def bg_task():
-            flag['task'] = True
-
-        c = client.Client()
-        task = c.start_background_task(bg_task, _daemon=True)
-        task.join()
-        self.assertIn('task', flag)
-        self.assertTrue(flag['task'])
-        self.assertEqual(task.daemon, True)
 
     def test_sleep(self):
         c = client.Client()
@@ -672,11 +656,11 @@ class TestClient(unittest.TestCase):
             ('disconnecting', True)
         ]
 
-        def fake_sleep(interval):
-            self.assertEqual(interval, 10)
+        def fake_wait(timeout):
+            self.assertEqual(timeout, 10)
             c.state, c.pong_received = states.pop(0)
 
-        c.sleep = fake_sleep
+        c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         self.assertEqual(
             c._send_packet.call_args_list[0][0][0].encode(), b'2')
@@ -692,11 +676,11 @@ class TestClient(unittest.TestCase):
             ('connected', False)
         ]
 
-        def fake_sleep(interval):
-            self.assertEqual(interval, 10)
+        def fake_wait(timeout):
+            self.assertEqual(timeout, 10)
             c.state, c.pong_received = states.pop(0)
 
-        c.sleep = fake_sleep
+        c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
@@ -713,11 +697,11 @@ class TestClient(unittest.TestCase):
             ('connected', False)
         ]
 
-        def fake_sleep(interval):
-            self.assertEqual(interval, 10)
+        def fake_wait(timeout):
+            self.assertEqual(timeout, 10)
             c.state, c.pong_received = states.pop(0)
 
-        c.sleep = fake_sleep
+        c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
@@ -728,8 +712,10 @@ class TestClient(unittest.TestCase):
         c.state = 'disconnected'
         c._trigger_event = mock.MagicMock()
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_polling()
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
         c._trigger_event.assert_not_called()
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -741,10 +727,12 @@ class TestClient(unittest.TestCase):
         c._send_request = mock.MagicMock(return_value=None)
         c._trigger_event = mock.MagicMock()
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_polling()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
         c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
         c._trigger_event.assert_called_once_with('disconnect')
 
@@ -757,10 +745,12 @@ class TestClient(unittest.TestCase):
         c._send_request = mock.MagicMock()
         c._send_request.return_value.status = 400
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_polling()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
         c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -773,10 +763,12 @@ class TestClient(unittest.TestCase):
         c._send_request.return_value.status = 200
         c._send_request.return_value.data = b'foo'
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_polling()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
         c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
 
     def test_read_loop_polling(self):
@@ -792,6 +784,7 @@ class TestClient(unittest.TestCase):
             None
         ]
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._receive_packet = mock.MagicMock()
         c._read_loop_polling()
         self.assertEqual(c.state, 'disconnected')
@@ -807,8 +800,10 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         c.state = 'disconnected'
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_websocket()
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
 
     def test_read_loop_websocket_no_response(self):
         c = client.Client()
@@ -817,10 +812,12 @@ class TestClient(unittest.TestCase):
         c.ws = mock.MagicMock()
         c.ws.recv.side_effect = websocket.WebSocketConnectionClosedException
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_websocket()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
 
     def test_read_loop_websocket_unexpected_error(self):
         c = client.Client()
@@ -829,10 +826,12 @@ class TestClient(unittest.TestCase):
         c.ws = mock.MagicMock()
         c.ws.recv.side_effect = ValueError
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._read_loop_websocket()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
 
     def test_read_loop_websocket(self):
         c = client.Client()
@@ -842,11 +841,13 @@ class TestClient(unittest.TestCase):
         c.ws.recv.side_effect = [packet.Packet(packet.PING).encode(),
                                  ValueError]
         c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
         c._receive_packet = mock.MagicMock()
         c._read_loop_websocket()
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
+        c.ping_loop_task.join.assert_called_once_with()
         self.assertEqual(c._receive_packet.call_args_list[0][0][0].encode(),
                          b'2')
 

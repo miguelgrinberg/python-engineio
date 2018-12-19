@@ -185,7 +185,6 @@ class TestAsyncClient(unittest.TestCase):
         c.ws.close = AsyncMock()
         c._trigger_event = AsyncMock()
         _run(c.disconnect())
-        c.queue.join.mock.assert_called_once_with()
         c.ws.close.mock.assert_not_called()
         self.assertNotIn(c, client.connected_clients)
         c._trigger_event.mock.assert_called_once_with('disconnect')
@@ -203,7 +202,6 @@ class TestAsyncClient(unittest.TestCase):
         c.ws.close = AsyncMock()
         c._trigger_event = AsyncMock()
         _run(c.disconnect())
-        c.queue.join.mock.assert_called_once_with()
         c.ws.close.mock.assert_called_once_with()
         self.assertNotIn(c, client.connected_clients)
         c._trigger_event.mock.assert_called_once_with('disconnect')
@@ -724,11 +722,10 @@ class TestAsyncClient(unittest.TestCase):
         ]
 
         @coroutine
-        def fake_sleep(interval):
-            self.assertEqual(interval, 10)
+        def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
-        c.sleep = fake_sleep
+        c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         self.assertEqual(
             c._send_packet.mock.call_args_list[0][0][0].encode(), b'2')
@@ -746,11 +743,10 @@ class TestAsyncClient(unittest.TestCase):
         ]
 
         @coroutine
-        def fake_sleep(interval):
-            self.assertEqual(interval, 10)
+        def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
-        c.sleep = fake_sleep
+        c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -770,11 +766,10 @@ class TestAsyncClient(unittest.TestCase):
         ]
 
         @coroutine
-        def fake_sleep(interval):
-            self.assertEqual(interval, 10)
+        def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
-        c.sleep = fake_sleep
+        c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -785,6 +780,7 @@ class TestAsyncClient(unittest.TestCase):
         c.state = 'disconnected'
         c._trigger_event = AsyncMock()
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_polling())
         c._trigger_event.mock.assert_not_called()
         # should not block
@@ -799,6 +795,7 @@ class TestAsyncClient(unittest.TestCase):
         c._send_request = AsyncMock(return_value=None)
         c._trigger_event = AsyncMock()
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_polling())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -816,6 +813,7 @@ class TestAsyncClient(unittest.TestCase):
         c._send_request = AsyncMock()
         c._send_request.mock.return_value.status = 400
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_polling())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -834,6 +832,7 @@ class TestAsyncClient(unittest.TestCase):
         c._send_request.mock.return_value.read = AsyncMock(
             return_value=b'foo')
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_polling())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -855,6 +854,7 @@ class TestAsyncClient(unittest.TestCase):
             None
         ]
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         c._receive_packet = AsyncMock()
         _run(c._read_loop_polling())
         self.assertEqual(c.state, 'disconnected')
@@ -870,6 +870,7 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c.state = 'disconnected'
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_websocket())
         # should not block
 
@@ -883,6 +884,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ws.recv = AsyncMock(
             side_effect=websockets.exceptions.ConnectionClosed(1, 'foo'))
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_websocket())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -896,6 +898,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ws = mock.MagicMock()
         c.ws.recv = AsyncMock(side_effect=ValueError)
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_websocket())
         self.assertEqual(c.state, 'disconnected')
         c.queue.put.mock.assert_called_once_with(None)
@@ -910,6 +913,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ws.recv = AsyncMock(side_effect=[
             packet.Packet(packet.PING).encode(), ValueError])
         c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
         c._receive_packet = AsyncMock()
         _run(c._read_loop_websocket())
         self.assertEqual(c.state, 'disconnected')

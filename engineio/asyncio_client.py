@@ -112,8 +112,6 @@ class AsyncClient(client.Client):
             await self.queue.put(None)
             self.state = 'disconnecting'
             await self._trigger_event('disconnect')
-            if not abort:
-                await self.queue.join()
             if self.current_transport == 'websocket':
                 await self.ws.close()
             if not abort:
@@ -198,7 +196,7 @@ class AsyncClient(client.Client):
                 # upgrade to websocket succeeded, we're done here
                 return
 
-        self.start_background_task(self._ping_loop)
+        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
@@ -241,6 +239,8 @@ class AsyncClient(client.Client):
                 return False
             await ws.send(packet.Packet(packet.UPGRADE).encode())
             self.current_transport = 'websocket'
+            if self.http:
+                await self.http.close()
             self.logger.info('WebSocket upgrade was successful')
         else:
             open_packet = packet.Packet(encoded_packet=await ws.recv())
@@ -259,7 +259,7 @@ class AsyncClient(client.Client):
             await self._trigger_event('connect')
 
         self.ws = ws
-        self.start_background_task(self._ping_loop)
+        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_websocket)
@@ -306,6 +306,10 @@ class AsyncClient(client.Client):
         """Create the client's send queue."""
         return asyncio.Queue(), asyncio.QueueEmpty
 
+    def _create_event(self):
+        """Create an event."""
+        return asyncio.Event()
+
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
         run_async = kwargs.pop('run_async', False)
@@ -348,6 +352,7 @@ class AsyncClient(client.Client):
         interval.
         """
         self.pong_received = True
+        self.ping_loop_event.clear()
         while self.state == 'connected':
             if not self.pong_received:
                 self.logger.warning(
@@ -359,7 +364,8 @@ class AsyncClient(client.Client):
                 break
             self.pong_received = False
             await self._send_packet(packet.Packet(packet.PING))
-            await self.sleep(self.ping_interval)
+            await asyncio.wait_for(self.ping_loop_event.wait(),
+                                   self.ping_interval)
         self.logger.info('Exiting ping task')
 
     async def _read_loop_polling(self):
@@ -391,6 +397,9 @@ class AsyncClient(client.Client):
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
+        self.logger.info('Waiting for ping loop task to end')
+        self.ping_loop_event.set()
+        await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect')
             try:
@@ -408,7 +417,7 @@ class AsyncClient(client.Client):
                 p = await self.ws.recv()
             except websockets.exceptions.ConnectionClosed:
                 self.logger.warning(
-                    'WebSocket connection was closed, aborting')
+                    'Read loop: WebSocket connection was closed, aborting')
                 await self.queue.put(None)
                 break
             except Exception as e:
@@ -423,6 +432,9 @@ class AsyncClient(client.Client):
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
+        self.logger.info('Waiting for ping loop task to end')
+        self.ping_loop_event.set()
+        await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect')
             try:
@@ -486,7 +498,8 @@ class AsyncClient(client.Client):
                         self.queue.task_done()
                 except websockets.exceptions.ConnectionClosed:
                     self.logger.warning(
-                        'WebSocket connection was closed, aborting')
+                        'Write loop: WebSocket connection was closed, '
+                        'aborting')
                     self._reset()
                     break
         self.logger.info('Exiting write loop task')
