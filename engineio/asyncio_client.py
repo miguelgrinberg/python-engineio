@@ -231,15 +231,17 @@ class AsyncClient(client.Client):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            await ws.send(packet.Packet(packet.PING, data='probe').encode())
+            await ws.send(packet.Packet(packet.PING, data='probe').encode(
+                always_bytes=False))
             pkt = packet.Packet(encoded_packet=await ws.recv())
             if pkt.packet_type != packet.PONG or pkt.data != 'probe':
                 self.logger.warning(
                     'WebSocket upgrade failed: no PONG packet')
                 return False
-            await ws.send(packet.Packet(packet.UPGRADE).encode())
+            await ws.send(packet.Packet(packet.UPGRADE).encode(
+                always_bytes=False))
             self.current_transport = 'websocket'
-            if self.http:
+            if self.http:  # pragma: no cover
                 await self.http.close()
             self.logger.info('WebSocket upgrade was successful')
         else:
@@ -364,8 +366,12 @@ class AsyncClient(client.Client):
                 break
             self.pong_received = False
             await self._send_packet(packet.Packet(packet.PING))
-            await asyncio.wait_for(self.ping_loop_event.wait(),
-                                   self.ping_interval)
+            try:
+                await asyncio.wait_for(self.ping_loop_event.wait(),
+                                       self.ping_interval)
+            except (asyncio.TimeoutError,
+                    asyncio.CancelledError):  # pragma: no cover
+                pass
         self.logger.info('Exiting ping task')
 
     async def _read_loop_polling(self):
@@ -450,10 +456,11 @@ class AsyncClient(client.Client):
         """
         while self.state == 'connected':
             packets = None
+            timeout = max(self.ping_interval, self.ping_timeout)
             try:
-                packets = [await asyncio.wait_for(self.queue.get(),
-                                                  self.ping_timeout)]
-            except self.queue_empty:
+                packets = [await asyncio.wait_for(self.queue.get(), timeout)]
+            except (self.queue_empty, asyncio.TimeoutError,
+                    asyncio.CancelledError):
                 self.logger.error('packet queue is empty, aborting')
                 self._reset()
                 break
@@ -494,7 +501,7 @@ class AsyncClient(client.Client):
                 # websocket
                 try:
                     for pkt in packets:
-                        await self.ws.send(pkt.encode())
+                        await self.ws.send(pkt.encode(always_bytes=False))
                         self.queue.task_done()
                 except websockets.exceptions.ConnectionClosed:
                     self.logger.warning(

@@ -510,7 +510,7 @@ class TestAsyncClient(unittest.TestCase):
         c._write_loop.mock.assert_not_called()
         on_connect.assert_not_called()
         self.assertEqual(c.transport(), 'polling')
-        ws.send.mock.assert_called_once_with(b'2probe')
+        ws.send.mock.assert_called_once_with('2probe')
 
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_upgrade_successful(self):
@@ -544,10 +544,10 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.ws, ws)
         self.assertEqual(
             ws.send.mock.call_args_list[0],
-            ((packet.Packet(packet.PING, 'probe').encode(),),))  # ping
+            (('2probe',),))  # ping
         self.assertEqual(
             ws.send.mock.call_args_list[1],
-            ((packet.Packet(packet.UPGRADE).encode(),),))  # upgrade
+            (('5',),))  # upgrade
 
     def test_receive_unknown_packet(self):
         c = asyncio_client.AsyncClient()
@@ -930,6 +930,7 @@ class TestAsyncClient(unittest.TestCase):
     def test_write_loop_no_packets(self):
         c = asyncio_client.AsyncClient()
         c.state = 'connected'
+        c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
         c.queue.get = AsyncMock(return_value=None)
@@ -940,6 +941,7 @@ class TestAsyncClient(unittest.TestCase):
     def test_write_loop_empty_queue(self):
         c = asyncio_client.AsyncClient()
         c.state = 'connected'
+        c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -951,6 +953,8 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -973,6 +977,8 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1002,6 +1008,8 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1030,6 +1038,8 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1053,6 +1063,8 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1076,6 +1088,8 @@ class TestAsyncClient(unittest.TestCase):
     def test_write_loop_websocket_one_packet(self):
         c = asyncio_client.AsyncClient()
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1091,11 +1105,13 @@ class TestAsyncClient(unittest.TestCase):
         _run(c._write_loop())
         self.assertEqual(c.queue.task_done.call_count, 1)
         self.assertEqual(c.ws.send.mock.call_count, 1)
-        c.ws.send.mock.assert_called_once_with(b'4{"foo":"bar"}')
+        c.ws.send.mock.assert_called_once_with('4{"foo":"bar"}')
 
     def test_write_loop_websocket_three_packets(self):
         c = asyncio_client.AsyncClient()
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1114,13 +1130,15 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.queue.task_done.call_count, 3)
         self.assertEqual(c.ws.send.mock.call_count, 3)
         self.assertEqual(c.ws.send.mock.call_args_list[0][0][0],
-                         b'4{"foo":"bar"}')
-        self.assertEqual(c.ws.send.mock.call_args_list[1][0][0], b'2')
-        self.assertEqual(c.ws.send.mock.call_args_list[2][0][0], b'6')
+                         '4{"foo":"bar"}')
+        self.assertEqual(c.ws.send.mock.call_args_list[1][0][0], '2')
+        self.assertEqual(c.ws.send.mock.call_args_list[2][0][0], '6')
 
     def test_write_loop_websocket_bad_connection(self):
         c = asyncio_client.AsyncClient()
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError

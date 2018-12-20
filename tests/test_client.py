@@ -860,6 +860,7 @@ class TestClient(unittest.TestCase):
     def test_write_loop_no_packets(self):
         c = client.Client()
         c.state = 'connected'
+        c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
         c.queue.get.return_value = None
@@ -870,6 +871,7 @@ class TestClient(unittest.TestCase):
     def test_write_loop_empty_queue(self):
         c = client.Client()
         c.state = 'connected'
+        c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -881,6 +883,8 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -903,6 +907,8 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -930,6 +936,8 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -956,6 +964,8 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -978,6 +988,8 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         c.base_url = 'http://foo'
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -999,6 +1011,8 @@ class TestClient(unittest.TestCase):
     def test_write_loop_websocket_one_packet(self):
         c = client.Client()
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1016,6 +1030,8 @@ class TestClient(unittest.TestCase):
     def test_write_loop_websocket_three_packets(self):
         c = client.Client()
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
@@ -1037,6 +1053,8 @@ class TestClient(unittest.TestCase):
     def test_write_loop_websocket_bad_connection(self):
         c = client.Client()
         c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError

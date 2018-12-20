@@ -544,8 +544,9 @@ class Client(object):
         """
         while self.state == 'connected':
             packets = None
+            timeout = max(self.ping_interval, self.ping_timeout)
             try:
-                packets = [self.queue.get(timeout=self.ping_timeout)]
+                packets = [self.queue.get(timeout=timeout)]
             except self.queue_empty:
                 self.logger.error('packet queue is empty, aborting')
                 self._reset()
