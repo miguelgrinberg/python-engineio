@@ -145,7 +145,7 @@ Or for ``asyncio``::
 The single argument passed to the method is the number of seconds to sleep
 for.
 
- .. _deployment-strategies:
+.. _deployment-strategies:
 
 Deployment Strategies
 ---------------------

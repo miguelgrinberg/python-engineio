@@ -21,7 +21,7 @@ following command::
 
 If instead you plan on using the ``asyncio`` client, then use this::
 
-    pip install "python-engineio[async_client]"
+    pip install "python-engineio[asyncio_client]"
 
 Creating a Client Instance
 --------------------------
