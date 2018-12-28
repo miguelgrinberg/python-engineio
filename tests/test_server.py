@@ -44,6 +44,7 @@ class TestServer(unittest.TestCase):
         mock_socket.closed = False
         mock_socket.closing = False
         mock_socket.upgraded = False
+        mock_socket.session = {}
         return mock_socket
 
     @classmethod
@@ -298,6 +299,15 @@ class TestServer(unittest.TestCase):
         self.assertEqual(r, False)
         r = s._trigger_event('message', 3, 4, run_async=False)
         self.assertEqual(r, None)
+
+    def test_session(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        s.sockets['foo'] = mock_socket
+        with s.session('foo') as session:
+            self.assertEqual(session, {})
+            session['username'] = 'bar'
+        self.assertEqual(s.get_session('foo'), {'username': 'bar'})
 
     def test_close_one_socket(self):
         s = server.Server()

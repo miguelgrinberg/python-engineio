@@ -70,6 +70,7 @@ class TestAsyncServer(unittest.TestCase):
         mock_socket.handle_post_request = AsyncMock()
         mock_socket.check_ping_timeout = AsyncMock()
         mock_socket.close = AsyncMock()
+        mock_socket.session = {}
         return mock_socket
 
     @classmethod
@@ -137,6 +138,18 @@ class TestAsyncServer(unittest.TestCase):
         a._async['create_route'].assert_called_with('app', s, '/ghi/')
         s.attach('app', engineio_path='jkl/')
         a._async['create_route'].assert_called_with('app', s, '/jkl/')
+
+    def test_session(self):
+        s = asyncio_server.AsyncServer()
+        s.sockets['foo'] = mock_socket = self._get_mock_socket()
+
+        async def _func():
+            async with s.session('foo') as session:
+                await s.sleep(0)
+                session['username'] = 'bar'
+            self.assertEqual(await s.get_session('foo'), {'username': 'bar'})
+
+        _run(_func())
 
     def test_disconnect(self):
         s = asyncio_server.AsyncServer()

@@ -86,6 +86,64 @@ class AsyncServer(server.Server):
         await socket.send(packet.Packet(packet.MESSAGE, data=data,
                                         binary=binary))
 
+    async def get_session(self, sid):
+        """Return the user session for a client.
+
+        :param sid: The session id of the client.
+
+        The return value is a dictionary. Modifications made to this
+        dictionary are not guaranteed to be preserved. If you want to modify
+        the user session, use the ``session`` context manager instead.
+        """
+        socket = self._get_socket(sid)
+        return socket.session
+
+    async def save_session(self, sid, session):
+        """Store the user session for a client.
+
+        :param sid: The session id of the client.
+        :param session: The session dictionary.
+        """
+        socket = self._get_socket(sid)
+        socket.session = session
+
+    def session(self, sid):
+        """Return the user session for a client with context manager syntax.
+
+        :param sid: The session id of the client.
+
+        This is a context manager that returns the user session dictionary for
+        the client. Any changes that are made to this dictionary inside the
+        context manager block are saved back to the session. Example usage::
+
+            @eio.on('connect')
+            def on_connect(sid, environ):
+                username = authenticate_user(environ)
+                if not username:
+                    return False
+                with eio.session(sid) as session:
+                    session['username'] = username
+
+            @eio.on('message')
+            def on_message(sid, msg):
+                async with eio.session(sid) as session:
+                    print('received message from ', session['username'])
+        """
+        class _session_context_manager(object):
+            def __init__(self, server, sid):
+                self.server = server
+                self.sid = sid
+                self.session = None
+
+            async def __aenter__(self):
+                self.session = await self.server.get_session(sid)
+                return self.session
+
+            async def __aexit__(self, *args):
+                await self.server.save_session(sid, self.session)
+
+        return _session_context_manager(self, sid)
+
     async def disconnect(self, sid=None):
         """Disconnect a client.
 

@@ -20,6 +20,7 @@ class Socket(object):
         self.upgraded = False
         self.closing = False
         self.closed = False
+        self.session = {}
 
     def create_queue(self):
         return getattr(self.server._async['queue'],
