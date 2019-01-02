@@ -95,6 +95,66 @@ The ``send()`` method can be invoked inside an event handler as a response
 to a client event, or in any other part of the application, including in
 background tasks.
 
+User Sessions
+-------------
+
+The server can maintain application-specific information in a user session
+dedicated to each connected client. Applications can use the user session to
+write any details about the user that need to be preserved throughout the life
+of the connection, such as usernames or user ids.
+
+The ``save_session()`` and ``get_session()`` methods are used to store and
+retrieve information in the user session::
+
+    @eio.on('connect')
+    def on_connect(sid, environ):
+        username = authenticate_user(environ)
+        eio.save_session(sid, {'username': username})
+
+    @eio.on('message')
+    def on_message(sid, data):
+        session = eio.get_session(sid)
+        print('message from ', session['username'])
+
+For the ``asyncio`` server, these methods are coroutines::
+
+
+    @eio.on('connect')
+    async def on_connect(sid, environ):
+        username = authenticate_user(environ)
+        await eio.save_session(sid, {'username': username})
+
+    @eio.on('message')
+    async def on_message(sid, data):
+        session = await eio.get_session(sid)
+        print('message from ', session['username'])
+
+The session can also be manipulated with the `session()` context manager::
+
+    @eio.on('connect')
+    def on_connect(sid, environ):
+        username = authenticate_user(environ)
+        with eio.session(sid) as session:
+            session['username'] = username
+
+    @eio.on('message')
+    def on_message(sid, data):
+        with eio.session(sid) as session:
+            print('message from ', session['username'])
+
+For the ``asyncio`` server, an asynchronous context manager is used::
+
+    @eio.on('connect')
+    def on_connect(sid, environ):
+        username = authenticate_user(environ)
+        async with eio.session(sid) as session:
+            session['username'] = username
+
+    @eio.on('message')
+    def on_message(sid, data):
+        async with eio.session(sid) as session:
+            print('message from ', session['username'])
+
 Disconnecting a Client
 ----------------------
 
