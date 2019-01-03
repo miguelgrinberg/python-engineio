@@ -17,7 +17,9 @@ class Socket(object):
         self.queue = self.create_queue()
         self.last_ping = time.time()
         self.connected = False
+        self.upgrading = False
         self.upgraded = False
+        self.packet_backlog = []
         self.closing = False
         self.closed = False
         self.session = {}
@@ -85,7 +87,10 @@ class Socket(object):
         """Send a packet to the client."""
         if not self.check_ping_timeout():
             return
-        self.queue.put(pkt)
+        if self.upgrading:
+            self.packet_backlog.append(pkt)
+        else:
+            self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
                                 self.sid, packet.packet_names[pkt.packet_type],
                                 pkt.data if not isinstance(pkt.data, bytes)
@@ -155,6 +160,7 @@ class Socket(object):
 
         if self.connected:
             # the socket was already connected, so this is an upgrade
+            self.upgrading = True  # hold packet sends during the upgrade
             self.queue.join()  # flush the queue first
 
             pkt = ws.wait()
@@ -167,7 +173,7 @@ class Socket(object):
             ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
-            self.send(packet.Packet(packet.NOOP))
+            self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             pkt = ws.wait()
             decoded_pkt = packet.Packet(encoded_packet=pkt)
@@ -179,6 +185,12 @@ class Socket(object):
                     self.sid, pkt)
                 return []
             self.upgraded = True
+
+            # flush any packets that were sent during the upgrade
+            for pkt in self.packet_backlog:
+                self.queue.put(pkt)
+            self.packet_backlog = []
+            self.upgrading = False
         else:
             self.connected = True
             self.upgraded = True

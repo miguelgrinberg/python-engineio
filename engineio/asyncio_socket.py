@@ -71,11 +71,14 @@ class AsyncSocket(socket.Socket):
         """Send a packet to the client."""
         if not await self.check_ping_timeout():
             return
+        if self.upgrading:
+            self.packet_backlog.append(pkt)
+        else:
+            await self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
                                 self.sid, packet.packet_names[pkt.packet_type],
                                 pkt.data if not isinstance(pkt.data, bytes)
                                 else '<binary>')
-        await self.queue.put(pkt)
 
     async def handle_get_request(self, environ):
         """Handle a long-polling GET request from the client."""
@@ -134,6 +137,7 @@ class AsyncSocket(socket.Socket):
         """Engine.IO handler for websocket transport."""
         if self.connected:
             # the socket was already connected, so this is an upgrade
+            self.upgrading = True  # hold packet sends during the upgrade
             await self.queue.join()  # flush the queue first
 
             try:
@@ -149,7 +153,7 @@ class AsyncSocket(socket.Socket):
             await ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
-            await self.send(packet.Packet(packet.NOOP))
+            await self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             try:
                 pkt = await ws.wait()
@@ -164,6 +168,12 @@ class AsyncSocket(socket.Socket):
                     self.sid, pkt)
                 return
             self.upgraded = True
+
+            # flush any packets that were sent during the upgrade
+            for pkt in self.packet_backlog:
+                await self.queue.put(pkt)
+            self.packet_backlog = []
+            self.upgrading = False
         else:
             self.connected = True
             self.upgraded = True

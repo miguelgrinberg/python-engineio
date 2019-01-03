@@ -338,6 +338,29 @@ class TestSocket(unittest.TestCase):
         _run(s._websocket_handler(ws))
         self.assertTrue(s.upgraded)
 
+    def test_websocket_upgrade_with_backlog(self):
+        mock_server = self._get_mock_server()
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s.connected = True
+        s.queue.join = AsyncMock(return_value=None)
+        probe = six.text_type('probe')
+        foo = six.text_type('foo')
+        ws = mock.MagicMock()
+        ws.send = AsyncMock()
+        ws.wait = AsyncMock()
+        ws.wait.mock.side_effect = [
+            packet.Packet(packet.PING, data=probe).encode(
+                always_bytes=False),
+            packet.Packet(packet.UPGRADE, data=b'2').encode(
+                always_bytes=False)]
+        s.upgrading = True
+        _run(s.send(packet.Packet(packet.MESSAGE, data=foo)))
+        _run(s._websocket_handler(ws))
+        self.assertTrue(s.upgraded)
+        self.assertFalse(s.upgrading)
+        self.assertEqual(s.packet_backlog, [])
+        ws.send.mock.assert_called_with('4foo')
+
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')

@@ -324,6 +324,28 @@ class TestSocket(unittest.TestCase):
         self._join_bg_tasks()
         self.assertTrue(s.upgraded)
 
+    def test_websocket_upgrade_with_backlog(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.connected = True
+        s.queue.join = mock.MagicMock(return_value=None)
+        probe = six.text_type('probe')
+        foo = six.text_type('foo')
+        ws = mock.MagicMock()
+        ws.wait.side_effect = [
+            packet.Packet(packet.PING, data=probe).encode(
+                always_bytes=False),
+            packet.Packet(packet.UPGRADE, data=b'2').encode(
+                always_bytes=False)]
+        s.upgrading = True
+        s.send(packet.Packet(packet.MESSAGE, data=foo))
+        s._websocket_handler(ws)
+        self._join_bg_tasks()
+        self.assertTrue(s.upgraded)
+        self.assertFalse(s.upgrading)
+        self.assertEqual(s.packet_backlog, [])
+        ws.send.assert_called_with('4foo')
+
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
