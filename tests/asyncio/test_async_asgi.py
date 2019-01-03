@@ -10,7 +10,6 @@ else:
 
 if sys.version_info >= (3, 5):
     import asyncio
-    from asyncio import coroutine
     from engineio.async_drivers import asgi as async_asgi
 
 
@@ -18,8 +17,7 @@ def AsyncMock(*args, **kwargs):
     """Return a mock asynchronous function."""
     m = mock.MagicMock(*args, **kwargs)
 
-    @coroutine
-    def mock_coro(*args, **kwargs):
+    async def mock_coro(*args, **kwargs):
         return m(*args, **kwargs)
 
     mock_coro.mock = m

@@ -1,3 +1,4 @@
+import asyncio
 import gzip
 import json
 import logging
@@ -11,26 +12,18 @@ if six.PY3:
 else:
     import mock
 
+from engineio import asyncio_server
+from engineio.async_drivers import aiohttp as async_aiohttp
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
-if sys.version_info >= (3, 5):
-    import asyncio
-    from asyncio import coroutine
-    from engineio import asyncio_server
-    from engineio.async_drivers import aiohttp as async_aiohttp
-else:
-    # mock coroutine so that Python 2 doesn't complain
-    def coroutine(f):
-        return f
 
 
 def AsyncMock(*args, **kwargs):
     """Return a mock asynchronous function."""
     m = mock.MagicMock(*args, **kwargs)
 
-    @coroutine
-    def mock_coro(*args, **kwargs):
+    async def mock_coro(*args, **kwargs):
         return m(*args, **kwargs)
 
     mock_coro.mock = m
@@ -141,7 +134,7 @@ class TestAsyncServer(unittest.TestCase):
 
     def test_session(self):
         s = asyncio_server.AsyncServer()
-        s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        s.sockets['foo'] = self._get_mock_socket()
 
         async def _func():
             async with s.session('foo') as session:
@@ -366,8 +359,7 @@ class TestAsyncServer(unittest.TestCase):
 
         # this mock handler just closes the socket, as it would happen on a
         # real websocket exchange
-        @coroutine
-        def mock_handle(environ):
+        async def mock_handle(environ):
             s.sockets['123'].closed = True
 
         AsyncSocket().handle_get_request = mock_handle
@@ -553,12 +545,11 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
 
-        @coroutine
-        def mock_get_request(*args, **kwargs):
+        async def mock_get_request(*args, **kwargs):
             mock_socket.closed = True
             return 'resp'
 
-        mock_socket.handle_get_request.mock.return_value = mock_get_request()
+        mock_socket.handle_get_request = mock_get_request
         r = _run(s.handle_request('request'))
         self.assertEqual(r, 'resp')
         self.assertNotIn('foo', s.sockets)
@@ -571,11 +562,10 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
 
-        @coroutine
-        def mock_get_request(*args, **kwargs):
+        async def mock_get_request(*args, **kwargs):
             raise exceptions.QueueEmpty()
 
-        mock_socket.handle_get_request.mock.return_value = mock_get_request()
+        mock_socket.handle_get_request = mock_get_request
         _run(s.handle_request('request'))
         self.assertEqual(a._async['make_response'].call_args[0][0],
                          '400 BAD REQUEST')
@@ -599,11 +589,10 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
 
-        @coroutine
-        def mock_post_request(*args, **kwargs):
+        async def mock_post_request(*args, **kwargs):
             raise exceptions.ContentTooLongError()
 
-        mock_socket.handle_post_request.mock.return_value = mock_post_request()
+        mock_socket.handle_post_request = mock_post_request
         _run(s.handle_request('request'))
         self.assertEqual(a._async['make_response'].call_args[0][0],
                          '400 BAD REQUEST')
@@ -773,8 +762,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_background_tasks(self):
         r = []
 
-        @coroutine
-        def foo(arg):
+        async def foo(arg):
             r.append(arg)
 
         s = asyncio_server.AsyncServer()
@@ -802,8 +790,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_trigger_event_coroutine(self):
         result = []
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             result.append('ok')
             result.append(arg)
 
@@ -826,12 +813,10 @@ class TestAsyncServer(unittest.TestCase):
         self.assertIsNone(_run(s._trigger_event('message', 'bar')))
 
     def test_trigger_event_coroutine_error(self):
-        @coroutine
-        def connect_handler(arg):
+        async def connect_handler(arg):
             return 1 / 0
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             return 1 / 0
 
         s = asyncio_server.AsyncServer()
@@ -856,8 +841,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_trigger_event_coroutine_async(self):
         result = []
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             result.append('ok')
             result.append(arg)
 
@@ -885,8 +869,7 @@ class TestAsyncServer(unittest.TestCase):
     def test_trigger_event_coroutine_async_error(self):
         result = []
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             result.append(arg)
             return 1 / 0
 

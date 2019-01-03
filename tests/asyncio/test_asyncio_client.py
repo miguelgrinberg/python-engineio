@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import time
 import unittest
@@ -17,26 +18,18 @@ except ImportError:
     websockets.exceptions = _dummy()
     websockets.exceptions.InvalidURI = _dummy()
 
+from engineio import asyncio_client
 from engineio import client
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
-if sys.version_info >= (3, 5):
-    import asyncio
-    from asyncio import coroutine
-    from engineio import asyncio_client
-else:
-    # mock coroutine so that Python 2 doesn't complain
-    def coroutine(f):
-        return f
 
 
 def AsyncMock(*args, **kwargs):
     """Return a mock asynchronous function."""
     m = mock.MagicMock(*args, **kwargs)
 
-    @coroutine
-    def mock_coro(*args, **kwargs):
+    async def mock_coro(*args, **kwargs):
         return m(*args, **kwargs)
 
     mock_coro.mock = m
@@ -130,8 +123,7 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         done = []
 
-        @coroutine
-        def fake_read_look_task():
+        async def fake_read_look_task():
             done.append(True)
 
         c.read_loop_task = fake_read_look_task()
@@ -147,8 +139,7 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         saved_packets = []
 
-        @coroutine
-        def fake_send_packet(pkt):
+        async def fake_send_packet(pkt):
             saved_packets.append(pkt)
 
         c._send_packet = fake_send_packet
@@ -241,8 +232,7 @@ class TestAsyncClient(unittest.TestCase):
     def test_background_tasks(self):
         r = []
 
-        @coroutine
-        def foo(arg):
+        async def foo(arg):
             r.append(arg)
 
         c = asyncio_client.AsyncClient()
@@ -603,8 +593,7 @@ class TestAsyncClient(unittest.TestCase):
     def test_trigger_event_coroutine(self):
         result = []
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             result.append('ok')
             result.append(arg)
 
@@ -627,12 +616,10 @@ class TestAsyncClient(unittest.TestCase):
         self.assertIsNone(_run(c._trigger_event('message', 'bar')))
 
     def test_trigger_event_coroutine_error(self):
-        @coroutine
-        def connect_handler(arg):
+        async def connect_handler(arg):
             return 1 / 0
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             return 1 / 0
 
         c = asyncio_client.AsyncClient()
@@ -657,8 +644,7 @@ class TestAsyncClient(unittest.TestCase):
     def test_trigger_event_coroutine_async(self):
         result = []
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             result.append('ok')
             result.append(arg)
 
@@ -686,8 +672,7 @@ class TestAsyncClient(unittest.TestCase):
     def test_trigger_event_coroutine_async_error(self):
         result = []
 
-        @coroutine
-        def foo_handler(arg):
+        async def foo_handler(arg):
             result.append(arg)
             return 1 / 0
 
@@ -721,8 +706,7 @@ class TestAsyncClient(unittest.TestCase):
             ('disconnecting', True)
         ]
 
-        @coroutine
-        def fake_wait():
+        async def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
         c.ping_loop_event.wait = fake_wait
@@ -742,8 +726,7 @@ class TestAsyncClient(unittest.TestCase):
             ('connected', False)
         ]
 
-        @coroutine
-        def fake_wait():
+        async def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
         c.ping_loop_event.wait = fake_wait
@@ -765,8 +748,7 @@ class TestAsyncClient(unittest.TestCase):
             ('connected', False)
         ]
 
-        @coroutine
-        def fake_wait():
+        async def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
         c.ping_loop_event.wait = fake_wait
