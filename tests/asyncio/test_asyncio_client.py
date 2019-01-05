@@ -178,7 +178,8 @@ class TestAsyncClient(unittest.TestCase):
         _run(c.disconnect())
         c.ws.close.mock.assert_not_called()
         self.assertNotIn(c, client.connected_clients)
-        c._trigger_event.mock.assert_called_once_with('disconnect')
+        c._trigger_event.mock.assert_called_once_with('disconnect',
+                                                      run_async=False)
 
     def test_disconnect_websocket(self):
         c = asyncio_client.AsyncClient()
@@ -195,7 +196,8 @@ class TestAsyncClient(unittest.TestCase):
         _run(c.disconnect())
         c.ws.close.mock.assert_called_once_with()
         self.assertNotIn(c, client.connected_clients)
-        c._trigger_event.mock.assert_called_once_with('disconnect')
+        c._trigger_event.mock.assert_called_once_with('disconnect',
+                                                      run_async=False)
 
     def test_disconnect_polling_abort(self):
         c = asyncio_client.AsyncClient()
@@ -244,6 +246,18 @@ class TestAsyncClient(unittest.TestCase):
     def test_sleep(self):
         c = asyncio_client.AsyncClient()
         _run(c.sleep(0))
+
+    def test_create_queue(self):
+        c = asyncio_client.AsyncClient()
+        q = c.create_queue()
+        self.assertRaises(q.Empty, q.get_nowait)
+
+    def test_create_event(self):
+        c = asyncio_client.AsyncClient()
+        e = c.create_event()
+        self.assertFalse(e.is_set())
+        e.set()
+        self.assertTrue(e.is_set())
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_polling_connection_failed(self, _time):
@@ -560,18 +574,21 @@ class TestAsyncClient(unittest.TestCase):
         on_message = AsyncMock()
         c.on('message', on_message)
         _run(c._receive_packet(packet.Packet(packet.MESSAGE, {'foo': 'bar'})))
+        for i in range(10):
+            if on_message.mock.call_count == 0:
+                _run(asyncio.sleep(0.1))
         on_message.mock.assert_called_once_with({'foo': 'bar'})
 
     def test_send_packet_disconnected(self):
         c = asyncio_client.AsyncClient()
-        c.queue, c.queue_empty = c._create_queue()
+        c.queue = c.create_queue()
         c.state = 'disconnected'
         _run(c._send_packet(packet.Packet(packet.NOOP)))
         self.assertTrue(c.queue.empty())
 
     def test_send_packet(self):
         c = asyncio_client.AsyncClient()
-        c.queue, c.queue_empty = c._create_queue()
+        c.queue = c.create_queue()
         c.state = 'connected'
         _run(c._send_packet(packet.Packet(packet.NOOP)))
         self.assertFalse(c.queue.empty())
@@ -783,7 +800,8 @@ class TestAsyncClient(unittest.TestCase):
         c.queue.put.mock.assert_called_once_with(None)
         c._send_request.mock.assert_called_once_with(
             'GET', 'http://foo&t=123.456')
-        c._trigger_event.mock.assert_called_once_with('disconnect')
+        c._trigger_event.mock.assert_called_once_with('disconnect',
+                                                      run_async=False)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_bad_status(self, _time):
@@ -926,7 +944,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=RuntimeError)
         _run(c._write_loop())
         c.queue.get.mock.assert_called_once_with()
@@ -939,7 +957,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError
@@ -963,7 +981,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError
@@ -994,7 +1012,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError
@@ -1024,7 +1042,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
         ])
@@ -1049,7 +1067,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
         ])
@@ -1074,7 +1092,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError
@@ -1096,7 +1114,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError
@@ -1123,7 +1141,7 @@ class TestAsyncClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get = AsyncMock(side_effect=[
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError

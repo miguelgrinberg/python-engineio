@@ -75,9 +75,8 @@ class Client(object):
         self.read_loop_task = None
         self.write_loop_task = None
         self.ping_loop_task = None
-        self.ping_loop_event = self._create_event()
+        self.ping_loop_event = self.create_event()
         self.queue = None
-        self.queue_empty = None
         self.state = 'disconnected'
 
         if json is not None:
@@ -162,7 +161,7 @@ class Client(object):
             if not transports:
                 raise ValueError('No valid transports provided')
         self.transports = transports or valid_transports
-        self.queue, self.queue_empty = self._create_queue()
+        self.queue = self.create_queue()
         return getattr(self, '_connect_' + self.transports[0])(
             url, headers, engineio_path)
 
@@ -199,7 +198,7 @@ class Client(object):
             self._send_packet(packet.Packet(packet.CLOSE))
             self.queue.put(None)
             self.state = 'disconnecting'
-            self._trigger_event('disconnect')
+            self._trigger_event('disconnect', run_async=False)
             if self.current_transport == 'websocket':
                 self.ws.close()
             if not abort:
@@ -240,6 +239,16 @@ class Client(object):
     def sleep(self, seconds=0):
         """Sleep for the requested amount of time."""
         return time.sleep(seconds)
+
+    def create_queue(self, *args, **kwargs):
+        """Create a queue object."""
+        q = queue.Queue(*args, **kwargs)
+        q.Empty = queue.Empty
+        return q
+
+    def create_event(self, *args, **kwargs):
+        """Create an event object."""
+        return threading.Event(*args, **kwargs)
 
     def _reset(self):
         self.state = 'disconnected'
@@ -282,7 +291,7 @@ class Client(object):
 
         self.state = 'connected'
         connected_clients.append(self)
-        self._trigger_event('connect')
+        self._trigger_event('connect', run_async=False)
 
         for pkt in p.packets[1:]:
             self._receive_packet(pkt)
@@ -351,7 +360,7 @@ class Client(object):
 
             self.state = 'connected'
             connected_clients.append(self)
-            self._trigger_event('connect')
+            self._trigger_event('connect', run_async=False)
         self.ws = ws
 
         # start background tasks associated with this client
@@ -369,7 +378,7 @@ class Client(object):
             'Received packet %s data %s', packet_name,
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
         if pkt.packet_type == packet.MESSAGE:
-            self._trigger_event('message', pkt.data)
+            self._trigger_event('message', pkt.data, run_async=True)
         elif pkt.packet_type == packet.PONG:
             self.pong_received = True
         elif pkt.packet_type == packet.NOOP:
@@ -396,14 +405,6 @@ class Client(object):
             return self.http.request(method, url, headers=headers, body=body)
         except urllib3.exceptions.MaxRetryError:
             pass
-
-    def _create_queue(self):
-        """Create the client's send queue."""
-        return queue.Queue(), queue.Empty
-
-    def _create_event(self):
-        """Create an event."""
-        return threading.Event()
 
     def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -495,7 +496,7 @@ class Client(object):
         self.ping_loop_event.set()
         self.ping_loop_task.join()
         if self.state == 'connected':
-            self._trigger_event('disconnect')
+            self._trigger_event('disconnect', run_async=False)
             try:
                 connected_clients.remove(self)
             except ValueError:  # pragma: no cover
@@ -530,7 +531,7 @@ class Client(object):
         self.ping_loop_event.set()
         self.ping_loop_task.join()
         if self.state == 'connected':
-            self._trigger_event('disconnect')
+            self._trigger_event('disconnect', run_async=False)
             try:
                 connected_clients.remove(self)
             except ValueError:  # pragma: no cover
@@ -547,7 +548,7 @@ class Client(object):
             timeout = max(self.ping_interval, self.ping_timeout)
             try:
                 packets = [self.queue.get(timeout=timeout)]
-            except self.queue_empty:
+            except self.queue.Empty:
                 self.logger.error('packet queue is empty, aborting')
                 self._reset()
                 break
@@ -558,7 +559,7 @@ class Client(object):
                 while True:
                     try:
                         packets.append(self.queue.get(block=False))
-                    except self.queue_empty:
+                    except self.queue.Empty:
                         break
                     if packets[-1] is None:
                         packets = packets[:-1]

@@ -29,8 +29,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.handlers, {})
         for attr in ['base_url', 'transports', 'sid', 'upgrades',
                      'ping_interval', 'ping_timeout', 'http', 'ws',
-                     'read_loop_task', 'write_loop_task', 'queue',
-                     'queue_empty']:
+                     'read_loop_task', 'write_loop_task', 'queue']:
             self.assertIsNone(getattr(c, attr), attr + ' is not None')
         self.assertTrue(c.pong_received)
         self.assertEqual(c.state, 'disconnected')
@@ -191,7 +190,8 @@ class TestClient(unittest.TestCase):
         c.read_loop_task.join.assert_called_once_with()
         c.ws.mock.assert_not_called()
         self.assertNotIn(c, client.connected_clients)
-        c._trigger_event.assert_called_once_with('disconnect')
+        c._trigger_event.assert_called_once_with('disconnect',
+                                                 run_async=False)
 
     def test_disconnect_websocket(self):
         c = client.Client()
@@ -206,7 +206,8 @@ class TestClient(unittest.TestCase):
         c.read_loop_task.join.assert_called_once_with()
         c.ws.close.assert_called_once_with()
         self.assertNotIn(c, client.connected_clients)
-        c._trigger_event.assert_called_once_with('disconnect')
+        c._trigger_event.assert_called_once_with('disconnect',
+                                                 run_async=False)
 
     def test_disconnect_polling_abort(self):
         c = client.Client()
@@ -258,6 +259,18 @@ class TestClient(unittest.TestCase):
         t = time.time()
         c.sleep(0.1)
         self.assertTrue(time.time() - t > 0.1)
+
+    def test_create_queue(self):
+        c = client.Client()
+        q = c.create_queue()
+        self.assertRaises(q.Empty, q.get, timeout=0.01)
+
+    def test_create_event(self):
+        c = client.Client()
+        e = c.create_event()
+        self.assertFalse(e.is_set())
+        e.set()
+        self.assertTrue(e.is_set())
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.Client._send_request', return_value=None)
@@ -552,18 +565,21 @@ class TestClient(unittest.TestCase):
         on_message = mock.MagicMock()
         c.on('message', on_message)
         c._receive_packet(packet.Packet(packet.MESSAGE, {'foo': 'bar'}))
+        for i in range(10):
+            if on_message.call_count == 0:
+                time.sleep(0.1)
         on_message.assert_called_once_with({'foo': 'bar'})
 
     def test_send_packet_disconnected(self):
         c = client.Client()
-        c.queue, c.queue_empty = c._create_queue()
+        c.queue = c.create_queue()
         c.state = 'disconnected'
         c._send_packet(packet.Packet(packet.NOOP))
         self.assertTrue(c.queue.empty())
 
     def test_send_packet(self):
         c = client.Client()
-        c.queue, c.queue_empty = c._create_queue()
+        c.queue = c.create_queue()
         c.state = 'connected'
         c._send_packet(packet.Packet(packet.NOOP))
         self.assertFalse(c.queue.empty())
@@ -734,7 +750,8 @@ class TestClient(unittest.TestCase):
         c.write_loop_task.join.assert_called_once_with()
         c.ping_loop_task.join.assert_called_once_with()
         c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
-        c._trigger_event.assert_called_once_with('disconnect')
+        c._trigger_event.assert_called_once_with('disconnect',
+                                                 run_async=False)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_bad_status(self, _time):
@@ -874,7 +891,7 @@ class TestClient(unittest.TestCase):
         c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = RuntimeError
         c._write_loop()
         c.queue.get.assert_called_once_with(timeout=2)
@@ -887,7 +904,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -911,7 +928,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -940,7 +957,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -968,7 +985,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -992,7 +1009,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1015,7 +1032,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1034,7 +1051,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1057,7 +1074,7 @@ class TestClient(unittest.TestCase):
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        c.queue.Empty = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,

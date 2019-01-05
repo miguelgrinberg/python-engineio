@@ -68,7 +68,7 @@ class AsyncClient(client.Client):
             if not transports:
                 raise ValueError('No valid transports provided')
         self.transports = transports or valid_transports
-        self.queue, self.queue_empty = self._create_queue()
+        self.queue = self.create_queue()
         return await getattr(self, '_connect_' + self.transports[0])(
             url, headers, engineio_path)
 
@@ -111,7 +111,7 @@ class AsyncClient(client.Client):
             await self._send_packet(packet.Packet(packet.CLOSE))
             await self.queue.put(None)
             self.state = 'disconnecting'
-            await self._trigger_event('disconnect')
+            await self._trigger_event('disconnect', run_async=False)
             if self.current_transport == 'websocket':
                 await self.ws.close()
             if not abort:
@@ -147,6 +147,16 @@ class AsyncClient(client.Client):
         Note: this method is a coroutine.
         """
         return await asyncio.sleep(seconds)
+
+    def create_queue(self):
+        """Create a queue object."""
+        q = asyncio.Queue()
+        q.Empty = asyncio.QueueEmpty
+        return q
+
+    def create_event(self):
+        """Create an event object."""
+        return asyncio.Event()
 
     async def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
@@ -185,7 +195,7 @@ class AsyncClient(client.Client):
 
         self.state = 'connected'
         client.connected_clients.append(self)
-        await self._trigger_event('connect')
+        await self._trigger_event('connect', run_async=False)
 
         for pkt in p.packets[1:]:
             await self._receive_packet(pkt)
@@ -258,7 +268,7 @@ class AsyncClient(client.Client):
 
             self.state = 'connected'
             client.connected_clients.append(self)
-            await self._trigger_event('connect')
+            await self._trigger_event('connect', run_async=False)
 
         self.ws = ws
         self.ping_loop_task = self.start_background_task(self._ping_loop)
@@ -275,7 +285,7 @@ class AsyncClient(client.Client):
             'Received packet %s data %s', packet_name,
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
         if pkt.packet_type == packet.MESSAGE:
-            await self._trigger_event('message', pkt.data)
+            await self._trigger_event('message', pkt.data, run_async=True)
         elif pkt.packet_type == packet.PONG:
             self.pong_received = True
         elif pkt.packet_type == packet.NOOP:
@@ -303,14 +313,6 @@ class AsyncClient(client.Client):
             return await method(url, headers=headers, data=body)
         except aiohttp.ClientError:
             return
-
-    def _create_queue(self):
-        """Create the client's send queue."""
-        return asyncio.Queue(), asyncio.QueueEmpty
-
-    def _create_event(self):
-        """Create an event."""
-        return asyncio.Event()
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -407,7 +409,7 @@ class AsyncClient(client.Client):
         self.ping_loop_event.set()
         await self.ping_loop_task
         if self.state == 'connected':
-            await self._trigger_event('disconnect')
+            await self._trigger_event('disconnect', run_async=False)
             try:
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
@@ -442,7 +444,7 @@ class AsyncClient(client.Client):
         self.ping_loop_event.set()
         await self.ping_loop_task
         if self.state == 'connected':
-            await self._trigger_event('disconnect')
+            await self._trigger_event('disconnect', run_async=False)
             try:
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
@@ -459,7 +461,7 @@ class AsyncClient(client.Client):
             timeout = max(self.ping_interval, self.ping_timeout)
             try:
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
-            except (self.queue_empty, asyncio.TimeoutError,
+            except (self.queue.Empty, asyncio.TimeoutError,
                     asyncio.CancelledError):
                 self.logger.error('packet queue is empty, aborting')
                 self._reset()
@@ -471,7 +473,7 @@ class AsyncClient(client.Client):
                 while True:
                     try:
                         packets.append(self.queue.get_nowait())
-                    except self.queue_empty:
+                    except self.queue.Empty:
                         break
                     if packets[-1] is None:
                         packets = packets[:-1]

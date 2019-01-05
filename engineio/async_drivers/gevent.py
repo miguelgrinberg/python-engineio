@@ -1,8 +1,5 @@
 from __future__ import absolute_import
 
-import importlib
-import sys
-
 import gevent
 from gevent.queue import JoinableQueue
 from gevent.event import Event

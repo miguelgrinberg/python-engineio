@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import importlib
-import sys
 import six
 
 import gevent

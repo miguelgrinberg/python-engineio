@@ -1,12 +1,10 @@
 from __future__ import absolute_import
 
-import importlib
-import sys
-
 from eventlet.green.threading import Thread, Event
 from eventlet.queue import Queue
 from eventlet import sleep
 from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
+
 
 class WebSocketWSGI(_WebSocketWSGI):
     def __init__(self, *args, **kwargs):
