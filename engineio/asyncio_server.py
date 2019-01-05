@@ -290,6 +290,28 @@ class AsyncServer(server.Server):
         """
         return await asyncio.sleep(seconds)
 
+    def create_queue(self, *args, **kwargs):
+        """Create a queue object using the appropriate async model.
+
+        This is a utility function that applications can use to create a queue
+        without having to worry about using the correct call for the selected
+        async mode. For asyncio based async modes, this returns an instance of
+        ``asyncio.Queue``.
+        """
+        queue = asyncio.Queue(*args, **kwargs)
+        queue.Empty = asyncio.QueueEmpty
+        return queue
+
+    def create_event(self, *args, **kwargs):
+        """Create an event object using the appropriate async model.
+
+        This is a utility function that applications can use to create an
+        event without having to worry about using the correct call for the
+        selected async mode. For asyncio based async modes, this returns
+        an instance of ``asyncio.Event``.
+        """
+        return asyncio.Event(*args, **kwargs)
+
     async def _handle_connect(self, environ, transport, b64=False):
         """Handle a client connection request."""
         if self.start_service_task:

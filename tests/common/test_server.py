@@ -31,12 +31,9 @@ def _mock_import(module, *args, **kwargs):
 class TestServer(unittest.TestCase):
     _mock_async = mock.MagicMock()
     _mock_async._async = {
-        'threading': 't',
-        'thread_class': 'tc',
+        'thread': 't',
         'queue': 'q',
-        'queue_class': 'qc',
         'websocket': 'w',
-        'websocket_class': 'wc'
     }
 
     def _get_mock_socket(self):
@@ -100,12 +97,9 @@ class TestServer(unittest.TestCase):
         except ImportError:
             import Queue as queue
 
-        self.assertEqual(s._async['threading'], threading)
-        self.assertEqual(s._async['thread_class'], 'Thread')
-        self.assertEqual(s._async['queue'], queue)
-        self.assertEqual(s._async['queue_class'], 'Queue')
+        self.assertEqual(s._async['thread'], threading.Thread)
+        self.assertEqual(s._async['queue'], queue.Queue)
         self.assertEqual(s._async['websocket'], None)
-        self.assertEqual(s._async['websocket_class'], None)
 
     def test_async_mode_eventlet(self):
         s = server.Server(async_mode='eventlet')
@@ -115,44 +109,56 @@ class TestServer(unittest.TestCase):
         from eventlet import queue
         from engineio.async_drivers import eventlet as async_eventlet
 
-        self.assertEqual(s._async['threading'], threading)
-        self.assertEqual(s._async['thread_class'], 'Thread')
-        self.assertEqual(s._async['queue'], queue)
-        self.assertEqual(s._async['queue_class'], 'Queue')
-        self.assertEqual(s._async['websocket'], async_eventlet)
-        self.assertEqual(s._async['websocket_class'], 'WebSocketWSGI')
+        self.assertEqual(s._async['thread'], threading.Thread)
+        self.assertEqual(s._async['queue'], queue.Queue)
+        self.assertEqual(s._async['websocket'], async_eventlet.WebSocketWSGI)
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
+        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.event'] = mock.MagicMock()
+        sys.modules['gevent.event'].Event = 'bar'
         sys.modules['uwsgi'] = mock.MagicMock()
         s = server.Server(async_mode='gevent_uwsgi')
         self.assertEqual(s.async_mode, 'gevent_uwsgi')
 
         from engineio.async_drivers import gevent_uwsgi as async_gevent_uwsgi
 
-        self.assertEqual(s._async['threading'], async_gevent_uwsgi)
-        self.assertEqual(s._async['thread_class'], 'Thread')
-        self.assertEqual(s._async['queue'], 'gevent.queue')
-        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
-        self.assertEqual(s._async['websocket'], async_gevent_uwsgi)
-        self.assertEqual(s._async['websocket_class'], 'uWSGIWebSocket')
+        self.assertEqual(s._async['thread'], async_gevent_uwsgi.Thread)
+        self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['event'], 'bar')
+        self.assertEqual(s._async['websocket'],
+                         async_gevent_uwsgi.uWSGIWebSocket)
         del sys.modules['gevent']
+        del sys.modules['gevent.queue']
+        del sys.modules['gevent.event']
         del sys.modules['uwsgi']
         del sys.modules['engineio.async_drivers.gevent_uwsgi']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi_without_uwsgi(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
+        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.event'] = mock.MagicMock()
+        sys.modules['gevent.event'].Event = 'bar'
         sys.modules['uwsgi'] = None
         self.assertRaises(ValueError, server.Server,
                           async_mode='gevent_uwsgi')
         del sys.modules['gevent']
+        del sys.modules['gevent.queue']
+        del sys.modules['gevent.event']
         del sys.modules['uwsgi']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi_without_websocket(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
+        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.event'] = mock.MagicMock()
+        sys.modules['gevent.event'].Event = 'bar'
         sys.modules['uwsgi'] = mock.MagicMock()
         del sys.modules['uwsgi'].websocket_handshake
         s = server.Server(async_mode='gevent_uwsgi')
@@ -160,51 +166,59 @@ class TestServer(unittest.TestCase):
 
         from engineio.async_drivers import gevent_uwsgi as async_gevent_uwsgi
 
-        self.assertEqual(s._async['threading'], async_gevent_uwsgi)
-        self.assertEqual(s._async['thread_class'], 'Thread')
-        self.assertEqual(s._async['queue'], 'gevent.queue')
-        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
+        self.assertEqual(s._async['thread'], async_gevent_uwsgi.Thread)
+        self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['event'], 'bar')
         self.assertEqual(s._async['websocket'], None)
-        self.assertEqual(s._async['websocket_class'], None)
         del sys.modules['gevent']
+        del sys.modules['gevent.queue']
+        del sys.modules['gevent.event']
         del sys.modules['uwsgi']
         del sys.modules['engineio.async_drivers.gevent_uwsgi']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
+        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.event'] = mock.MagicMock()
+        sys.modules['gevent.event'].Event = 'bar'
         sys.modules['geventwebsocket'] = 'geventwebsocket'
         s = server.Server(async_mode='gevent')
         self.assertEqual(s.async_mode, 'gevent')
 
         from engineio.async_drivers import gevent as async_gevent
 
-        self.assertEqual(s._async['threading'], async_gevent)
-        self.assertEqual(s._async['thread_class'], 'Thread')
-        self.assertEqual(s._async['queue'], 'gevent.queue')
-        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
-        self.assertEqual(s._async['websocket'], async_gevent)
-        self.assertEqual(s._async['websocket_class'], 'WebSocketWSGI')
+        self.assertEqual(s._async['thread'], async_gevent.Thread)
+        self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['event'], 'bar')
+        self.assertEqual(s._async['websocket'], async_gevent.WebSocketWSGI)
         del sys.modules['gevent']
+        del sys.modules['gevent.queue']
+        del sys.modules['gevent.event']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_drivers.gevent']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_without_websocket(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
+        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.event'] = mock.MagicMock()
+        sys.modules['gevent.event'].Event = 'bar'
         sys.modules['geventwebsocket'] = None
         s = server.Server(async_mode='gevent')
         self.assertEqual(s.async_mode, 'gevent')
 
         from engineio.async_drivers import gevent as async_gevent
 
-        self.assertEqual(s._async['threading'], async_gevent)
-        self.assertEqual(s._async['thread_class'], 'Thread')
-        self.assertEqual(s._async['queue'], 'gevent.queue')
-        self.assertEqual(s._async['queue_class'], 'JoinableQueue')
+        self.assertEqual(s._async['thread'], async_gevent.Thread)
+        self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['event'], 'bar')
         self.assertEqual(s._async['websocket'], None)
-        self.assertEqual(s._async['websocket_class'], None)
         del sys.modules['gevent']
+        del sys.modules['gevent.queue']
+        del sys.modules['gevent.event']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_drivers.gevent']
 
@@ -890,6 +904,18 @@ class TestServer(unittest.TestCase):
         t = time.time()
         s.sleep(0.1)
         self.assertTrue(time.time() - t > 0.1)
+
+    def test_create_queue(self):
+        s = server.Server()
+        q = s.create_queue()
+        self.assertRaises(q.Empty, q.get, timeout=0.01)
+
+    def test_create_event(self):
+        s = server.Server()
+        e = s.create_event()
+        self.assertFalse(e.is_set())
+        e.set()
+        self.assertTrue(e.is_set())
 
     def test_service_task_started(self):
         s = server.Server(monitor_clients=True)

@@ -46,7 +46,6 @@ class TestAsyncServer(unittest.TestCase):
             'translate_request': mock.MagicMock(),
             'make_response': mock.MagicMock(),
             'websocket': 'w',
-            'websocket_class': 'wc'
         }
         a._async['translate_request'].return_value = environ
         a._async['make_response'].return_value = 'response'
@@ -99,8 +98,7 @@ class TestAsyncServer(unittest.TestCase):
                          async_aiohttp.translate_request)
         self.assertEqual(s._async['make_response'],
                          async_aiohttp.make_response)
-        self.assertEqual(s._async['websocket'], async_aiohttp)
-        self.assertEqual(s._async['websocket_class'], 'WebSocket')
+        self.assertEqual(s._async['websocket'].__name__, 'WebSocket')
 
     @mock.patch('importlib.import_module')
     def test_async_mode_auto_aiohttp(self, import_module):
@@ -880,6 +878,18 @@ class TestAsyncServer(unittest.TestCase):
             ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
             fut)
         self.assertEqual(result, ['bar'])
+
+    def test_create_queue(self):
+        s = asyncio_server.AsyncServer()
+        q = s.create_queue()
+        self.assertRaises(q.Empty, q.get_nowait)
+
+    def test_create_event(self):
+        s = asyncio_server.AsyncServer()
+        e = s.create_event()
+        self.assertFalse(e.is_set())
+        e.set()
+        self.assertTrue(e.is_set())
 
     @mock.patch('importlib.import_module')
     def test_service_task_started(self, import_module):

@@ -28,10 +28,8 @@ class TestSocket(unittest.TestCase):
         except ImportError:
             import Queue as queue
         import threading
-        mock_server._async = {'threading': threading,
-                              'thread_class': 'Thread',
-                              'queue': queue,
-                              'queue_class': 'Queue',
+        mock_server._async = {'threading': threading.Thread,
+                              'queue': queue.Queue,
                               'websocket': None}
 
         def bg_task(target, *args, **kwargs):
@@ -40,7 +38,13 @@ class TestSocket(unittest.TestCase):
             th.start()
             return th
 
+        def create_queue(*args, **kwargs):
+            q = queue.Queue(*args, **kwargs)
+            q.Empty = queue.Empty
+            return q
+
         mock_server.start_background_task = bg_task
+        mock_server.create_queue = create_queue
         return mock_server
 
     def _join_bg_tasks(self):
@@ -173,15 +177,14 @@ class TestSocket(unittest.TestCase):
     def test_upgrade(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = mock.MagicMock()
-        mock_server._async['websocket_class'] = 'WebSocket'
         mock_ws = mock.MagicMock()
-        mock_server._async['websocket'].WebSocket.return_value = mock_ws
+        mock_server._async['websocket'].return_value = mock_ws
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         environ = "foo"
         start_response = "bar"
         s._upgrade_websocket(environ, start_response)
-        mock_server._async['websocket'].WebSocket.assert_called_once_with(
+        mock_server._async['websocket'].assert_called_once_with(
             s._websocket_handler)
         mock_ws.assert_called_once_with(environ, start_response)
 
@@ -249,7 +252,6 @@ class TestSocket(unittest.TestCase):
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = None
-        mock_server._async['websocket_class'] = None
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         environ = "foo"

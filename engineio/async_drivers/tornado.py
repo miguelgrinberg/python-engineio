@@ -149,6 +149,6 @@ _async = {
     'asyncio': True,
     'translate_request': translate_request,
     'make_response': make_response,
-    'websocket': sys.modules[__name__],
-    'websocket_class': 'WebSocket'
+    'event': asyncio.Event,
+    'websocket': WebSocket,
 }

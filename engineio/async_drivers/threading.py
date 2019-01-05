@@ -1,17 +1,16 @@
-import importlib
+from __future__ import absolute_import
+import threading
 import time
 
 try:
-    queue = importlib.import_module('queue')
+    import queue
 except ImportError:  # pragma: no cover
-    queue = importlib.import_module('Queue')  # pragma: no cover
+    import Queue as queue
 
 _async = {
-    'threading': importlib.import_module('threading'),
-    'thread_class': 'Thread',
-    'queue': queue,
-    'queue_class': 'Queue',
+    'thread': threading.Thread,
+    'queue': queue.Queue,
+    'event': threading.Event,
     'websocket': None,
-    'websocket_class': None,
-    'sleep': time.sleep
+    'sleep': time.sleep,
 }

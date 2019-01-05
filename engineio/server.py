@@ -1,6 +1,7 @@
 import gzip
 import importlib
 import logging
+import sys
 import uuid
 import zlib
 
@@ -403,9 +404,7 @@ class Server(object):
         the Python standard library. The `start()` method on this object is
         already called by this function.
         """
-        th = getattr(self._async['threading'],
-                     self._async['thread_class'])(target=target, args=args,
-                                                  kwargs=kwargs)
+        th = self._async['thread'](target=target, args=args, kwargs=kwargs)
         th.start()
         return th  # pragma: no cover
 
@@ -418,6 +417,27 @@ class Server(object):
         selected async mode.
         """
         return self._async['sleep'](seconds)
+
+    def create_queue(self, *args, **kwargs):
+        """Create a queue object using the appropriate async model.
+
+        This is a utility function that applications can use to create a queue
+        without having to worry about using the correct call for the selected
+        async mode.
+        """
+        queue = self._async['queue'](*args, **kwargs)
+        queue.Empty = getattr(
+            sys.modules[queue.__class__.__module__], 'Empty')
+        return queue
+
+    def create_event(self, *args, **kwargs):
+        """Create an event object using the appropriate async model.
+
+        This is a utility function that applications can use to create an
+        event without having to worry about using the correct call for the
+        selected async mode.
+        """
+        return self._async['event'](*args, **kwargs)
 
     def _generate_id(self):
         """Generate a unique session id."""
@@ -466,8 +486,7 @@ class Server(object):
     def _upgrades(self, sid, transport):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self._async['websocket_class'] is None or \
-                transport == 'websocket':
+                self._async['websocket'] is None or transport == 'websocket':
             return []
         return ['websocket']
 

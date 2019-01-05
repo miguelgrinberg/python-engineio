@@ -48,11 +48,17 @@ class TestSocket(unittest.TestCase):
                               'create_route': mock.MagicMock(),
                               'translate_request': mock.MagicMock(),
                               'make_response': mock.MagicMock(),
-                              'websocket': 'w',
-                              'websocket_class': 'wc'}
+                              'websocket': 'w'}
         mock_server._async['translate_request'].return_value = 'request'
         mock_server._async['make_response'].return_value = 'response'
         mock_server._trigger_event = AsyncMock()
+
+        def create_queue(*args, **kwargs):
+            queue = asyncio.Queue(*args, **kwargs)
+            queue.Empty = asyncio.QueueEmpty
+            return queue
+
+        mock_server.create_queue = create_queue
         return mock_server
 
     def test_create(self):
@@ -184,14 +190,13 @@ class TestSocket(unittest.TestCase):
     def test_upgrade(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = mock.MagicMock()
-        mock_server._async['websocket_class'] = 'WebSocket'
         mock_ws = AsyncMock()
-        mock_server._async['websocket'].WebSocket.return_value = mock_ws
+        mock_server._async['websocket'].return_value = mock_ws
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         environ = "foo"
         _run(s._upgrade_websocket(environ))
-        mock_server._async['websocket'].WebSocket.assert_called_once_with(
+        mock_server._async['websocket'].assert_called_once_with(
             s._websocket_handler)
         mock_ws.mock.assert_called_once_with(environ)
 
@@ -246,7 +251,6 @@ class TestSocket(unittest.TestCase):
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = None
-        mock_server._async['websocket_class'] = None
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         environ = "foo"

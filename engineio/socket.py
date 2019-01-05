@@ -14,7 +14,7 @@ class Socket(object):
     def __init__(self, server, sid):
         self.server = server
         self.sid = sid
-        self.queue = self.create_queue()
+        self.queue = self.server.create_queue()
         self.last_ping = time.time()
         self.connected = False
         self.upgrading = False
@@ -24,16 +24,12 @@ class Socket(object):
         self.closed = False
         self.session = {}
 
-    def create_queue(self):
-        return getattr(self.server._async['queue'],
-                       self.server._async['queue_class'])()
-
     def poll(self):
         """Wait for packets to send to the client."""
         try:
             packets = [self.queue.get(timeout=self.server.ping_timeout)]
             self.queue.task_done()
-        except self.server._async['queue'].Empty:
+        except self.queue.Empty:
             raise exceptions.QueueEmpty()
         if packets == [None]:
             return []
@@ -41,7 +37,7 @@ class Socket(object):
             try:
                 packets.append(self.queue.get(block=False))
                 self.queue.task_done()
-            except self.server._async['queue'].Empty:
+            except self.queue.Empty:
                 break
         return packets
 
@@ -142,13 +138,10 @@ class Socket(object):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
             raise IOError('Socket has been upgraded already')
-        if self.server._async['websocket'] is None or \
-                self.server._async['websocket_class'] is None:
+        if self.server._async['websocket'] is None:
             # the selected async mode does not support websocket
             return self.server._bad_request()
-        websocket_class = getattr(self.server._async['websocket'],
-                                  self.server._async['websocket_class'])
-        ws = websocket_class(self._websocket_handler)
+        ws = self.server._async['websocket'](self._websocket_handler)
         return ws(environ, start_response)
 
     def _websocket_handler(self, ws):

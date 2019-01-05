@@ -10,9 +10,6 @@ from . import socket
 
 
 class AsyncSocket(socket.Socket):
-    def create_queue(self):
-        return asyncio.Queue()
-
     async def poll(self):
         """Wait for packets to send to the client."""
         try:
@@ -124,13 +121,10 @@ class AsyncSocket(socket.Socket):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
             raise IOError('Socket has been upgraded already')
-        if self.server._async['websocket'] is None or \
-                self.server._async['websocket_class'] is None:
+        if self.server._async['websocket'] is None:
             # the selected async mode does not support websocket
             return self.server._bad_request()
-        websocket_class = getattr(self.server._async['websocket'],
-                                  self.server._async['websocket_class'])
-        ws = websocket_class(self._websocket_handler)
+        ws = self.server._async['websocket'](self._websocket_handler)
         return await ws(environ)
 
     async def _websocket_handler(self, ws):

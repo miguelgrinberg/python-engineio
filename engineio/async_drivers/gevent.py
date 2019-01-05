@@ -4,6 +4,8 @@ import importlib
 import sys
 
 import gevent
+from gevent.queue import JoinableQueue
+from gevent.event import Event
 try:
     import geventwebsocket  # noqa
     _websocket_available = True
@@ -55,11 +57,9 @@ class WebSocketWSGI(object):  # pragma: no cover
 
 
 _async = {
-    'threading': sys.modules[__name__],
-    'thread_class': 'Thread',
-    'queue': importlib.import_module('gevent.queue'),
-    'queue_class': 'JoinableQueue',
-    'websocket': sys.modules[__name__] if _websocket_available else None,
-    'websocket_class': 'WebSocketWSGI' if _websocket_available else None,
-    'sleep': gevent.sleep
+    'thread': Thread,
+    'queue': JoinableQueue,
+    'event': Event,
+    'websocket': WebSocketWSGI if _websocket_available else None,
+    'sleep': gevent.sleep,
 }
