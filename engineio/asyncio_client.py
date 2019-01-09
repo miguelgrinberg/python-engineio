@@ -457,8 +457,11 @@ class AsyncClient(client.Client):
         pushed to the send queue.
         """
         while self.state == 'connected':
+            # to simplify the timeout handling, use the maximum of the
+            # ping interval and ping timeout as timeout, with an extra 5
+            # seconds grace period
+            timeout = max(self.ping_interval, self.ping_timeout) + 5
             packets = None
-            timeout = max(self.ping_interval, self.ping_timeout)
             try:
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
             except (self.queue.Empty, asyncio.TimeoutError,

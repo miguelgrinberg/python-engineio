@@ -110,7 +110,7 @@ class TestSocket(unittest.TestCase):
 
     def test_timeout(self):
         mock_server = self._get_mock_server()
-        mock_server.ping_interval = -0.1
+        mock_server.ping_interval = -6
         s = socket.Socket(mock_server, 'sid')
         s.last_ping = time.time() - 1
         s.close = mock.MagicMock()

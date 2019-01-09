@@ -883,7 +883,7 @@ class TestClient(unittest.TestCase):
         c.queue.get.return_value = None
         c._write_loop()
         c.queue.task_done.assert_called_once_with()
-        c.queue.get.assert_called_once_with(timeout=2)
+        c.queue.get.assert_called_once_with(timeout=7)
 
     def test_write_loop_empty_queue(self):
         c = client.Client()
@@ -894,7 +894,7 @@ class TestClient(unittest.TestCase):
         c.queue.Empty = RuntimeError
         c.queue.get.side_effect = RuntimeError
         c._write_loop()
-        c.queue.get.assert_called_once_with(timeout=2)
+        c.queue.get.assert_called_once_with(timeout=7)
 
     def test_write_loop_polling_one_packet(self):
         c = client.Client()
