@@ -5,8 +5,8 @@ python-engineio
 Engine.IO server.
 """
 import re
+import sys
 from setuptools import setup, find_packages
-import six
 
 
 with open('engineio/__init__.py', 'r') as f:
@@ -46,7 +46,7 @@ setup(
         'mock',
         'eventlet',
     ],
-    test_suite='tests' if six.PY3 else 'tests.common',
+    test_suite='tests' if sys.version_info >= (3, 0) else 'tests.common',
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
