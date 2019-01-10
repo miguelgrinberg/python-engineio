@@ -562,13 +562,10 @@ class TestClient(unittest.TestCase):
 
     def test_receive_message_packet(self):
         c = client.Client()
-        on_message = mock.MagicMock()
-        c.on('message', on_message)
+        c._trigger_event = mock.MagicMock()
         c._receive_packet(packet.Packet(packet.MESSAGE, {'foo': 'bar'}))
-        for i in range(10):
-            if on_message.call_count == 0:
-                time.sleep(0.1)
-        on_message.assert_called_once_with({'foo': 'bar'})
+        c._trigger_event.assert_called_once_with('message', {'foo': 'bar'},
+                                                 run_async=True)
 
     def test_send_packet_disconnected(self):
         c = client.Client()

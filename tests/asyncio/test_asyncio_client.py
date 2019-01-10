@@ -571,13 +571,10 @@ class TestAsyncClient(unittest.TestCase):
 
     def test_receive_message_packet(self):
         c = asyncio_client.AsyncClient()
-        on_message = AsyncMock()
-        c.on('message', on_message)
+        c._trigger_event = AsyncMock()
         _run(c._receive_packet(packet.Packet(packet.MESSAGE, {'foo': 'bar'})))
-        for i in range(10):
-            if on_message.mock.call_count == 0:
-                _run(asyncio.sleep(0.1))
-        on_message.mock.assert_called_once_with({'foo': 'bar'})
+        c._trigger_event.mock.assert_called_once_with(
+            'message', {'foo': 'bar'}, run_async=True)
 
     def test_send_packet_disconnected(self):
         c = asyncio_client.AsyncClient()
