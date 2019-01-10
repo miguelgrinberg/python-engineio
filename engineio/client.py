@@ -270,7 +270,8 @@ class Client(object):
                 'Connection refused by the server')
         if r.status != 200:
             raise exceptions.ConnectionError(
-                'Unexpected status code %s in server response', r.status)
+                'Unexpected status code {} in server response'.format(
+                    r.status))
         try:
             p = payload.Payload(encoded_payload=r.data)
         except ValueError:
