@@ -39,12 +39,11 @@ class TestSocket(unittest.TestCase):
             return th
 
         def create_queue(*args, **kwargs):
-            q = queue.Queue(*args, **kwargs)
-            q.Empty = queue.Empty
-            return q
+            return queue.Queue(*args, **kwargs)
 
         mock_server.start_background_task = bg_task
         mock_server.create_queue = create_queue
+        mock_server.get_queue_empty_exception.return_value = queue.Empty
         return mock_server
 
     def _join_bg_tasks(self):

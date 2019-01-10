@@ -298,9 +298,17 @@ class AsyncServer(server.Server):
         async mode. For asyncio based async modes, this returns an instance of
         ``asyncio.Queue``.
         """
-        queue = asyncio.Queue(*args, **kwargs)
-        queue.Empty = asyncio.QueueEmpty
-        return queue
+        return asyncio.Queue(*args, **kwargs)
+
+    def get_queue_empty_exception(self):
+        """Return the queue empty exception for the appropriate async model.
+
+        This is a utility function that applications can use to work with a
+        queue without having to worry about using the correct call for the
+        selected async mode. For asyncio based async modes, this returns an
+        instance of ``asyncio.QueueEmpty``.
+        """
+        return asyncio.QueueEmpty
 
     def create_event(self, *args, **kwargs):
         """Create an event object using the appropriate async model.

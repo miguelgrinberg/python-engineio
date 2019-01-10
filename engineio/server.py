@@ -1,7 +1,6 @@
 import gzip
 import importlib
 import logging
-import sys
 import uuid
 import zlib
 
@@ -425,10 +424,16 @@ class Server(object):
         without having to worry about using the correct call for the selected
         async mode.
         """
-        queue = self._async['queue'](*args, **kwargs)
-        queue.Empty = getattr(
-            sys.modules[queue.__class__.__module__], 'Empty')
-        return queue
+        return self._async['queue'](*args, **kwargs)
+
+    def get_queue_empty_exception(self):
+        """Return the queue empty exception for the appropriate async model.
+
+        This is a utility function that applications can use to work with a
+        queue without having to worry about using the correct call for the
+        selected async mode.
+        """
+        return self._async['queue_empty']
 
     def create_event(self, *args, **kwargs):
         """Create an event object using the appropriate async model.

@@ -33,6 +33,7 @@ class TestServer(unittest.TestCase):
     _mock_async._async = {
         'thread': 't',
         'queue': 'q',
+        'queue_empty': RuntimeError,
         'websocket': 'w',
     }
 
@@ -116,8 +117,10 @@ class TestServer(unittest.TestCase):
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
-        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent'].queue = mock.MagicMock()
+        sys.modules['gevent.queue'] = sys.modules['gevent'].queue
         sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
         sys.modules['uwsgi'] = mock.MagicMock()
@@ -128,6 +131,7 @@ class TestServer(unittest.TestCase):
 
         self.assertEqual(s._async['thread'], async_gevent_uwsgi.Thread)
         self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['queue_empty'], RuntimeError)
         self.assertEqual(s._async['event'], 'bar')
         self.assertEqual(s._async['websocket'],
                          async_gevent_uwsgi.uWSGIWebSocket)
@@ -140,8 +144,10 @@ class TestServer(unittest.TestCase):
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi_without_uwsgi(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
-        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent'].queue = mock.MagicMock()
+        sys.modules['gevent.queue'] = sys.modules['gevent'].queue
         sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
         sys.modules['uwsgi'] = None
@@ -155,8 +161,10 @@ class TestServer(unittest.TestCase):
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi_without_websocket(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
-        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent'].queue = mock.MagicMock()
+        sys.modules['gevent.queue'] = sys.modules['gevent'].queue
         sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
         sys.modules['uwsgi'] = mock.MagicMock()
@@ -168,6 +176,7 @@ class TestServer(unittest.TestCase):
 
         self.assertEqual(s._async['thread'], async_gevent_uwsgi.Thread)
         self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['queue_empty'], RuntimeError)
         self.assertEqual(s._async['event'], 'bar')
         self.assertEqual(s._async['websocket'], None)
         del sys.modules['gevent']
@@ -179,8 +188,10 @@ class TestServer(unittest.TestCase):
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
-        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent'].queue = mock.MagicMock()
+        sys.modules['gevent.queue'] = sys.modules['gevent'].queue
         sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
         sys.modules['geventwebsocket'] = 'geventwebsocket'
@@ -191,6 +202,7 @@ class TestServer(unittest.TestCase):
 
         self.assertEqual(s._async['thread'], async_gevent.Thread)
         self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['queue_empty'], RuntimeError)
         self.assertEqual(s._async['event'], 'bar')
         self.assertEqual(s._async['websocket'], async_gevent.WebSocketWSGI)
         del sys.modules['gevent']
@@ -202,8 +214,10 @@ class TestServer(unittest.TestCase):
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_without_websocket(self, import_module):
         sys.modules['gevent'] = mock.MagicMock()
-        sys.modules['gevent.queue'] = mock.MagicMock()
+        sys.modules['gevent'].queue = mock.MagicMock()
+        sys.modules['gevent.queue'] = sys.modules['gevent'].queue
         sys.modules['gevent.queue'].JoinableQueue = 'foo'
+        sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
         sys.modules['geventwebsocket'] = None
@@ -214,6 +228,7 @@ class TestServer(unittest.TestCase):
 
         self.assertEqual(s._async['thread'], async_gevent.Thread)
         self.assertEqual(s._async['queue'], 'foo')
+        self.assertEqual(s._async['queue_empty'], RuntimeError)
         self.assertEqual(s._async['event'], 'bar')
         self.assertEqual(s._async['websocket'], None)
         del sys.modules['gevent']
@@ -908,7 +923,8 @@ class TestServer(unittest.TestCase):
     def test_create_queue(self):
         s = server.Server()
         q = s.create_queue()
-        self.assertRaises(q.Empty, q.get, timeout=0.01)
+        empty = s.get_queue_empty_exception()
+        self.assertRaises(empty, q.get, timeout=0.01)
 
     def test_create_event(self):
         s = server.Server()

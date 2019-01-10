@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from eventlet.green.threading import Thread, Event
-from eventlet.queue import Queue
+from eventlet import queue
 from eventlet import sleep
 from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 
@@ -22,7 +22,8 @@ class WebSocketWSGI(_WebSocketWSGI):
 
 _async = {
     'thread': Thread,
-    'queue': Queue,
+    'queue': queue.Queue,
+    'queue_empty': queue.Empty,
     'event': Event,
     'websocket': WebSocketWSGI,
     'sleep': sleep,

@@ -124,6 +124,5 @@ _async = {
     'create_route': create_route,
     'translate_request': translate_request,
     'make_response': make_response,
-    'event': asyncio.Event,
     'websocket': WebSocket,
 }

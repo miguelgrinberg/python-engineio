@@ -1,4 +1,3 @@
-import asyncio
 import sys
 
 
@@ -219,6 +218,5 @@ _async = {
     'asyncio': True,
     'translate_request': translate_request,
     'make_response': make_response,
-    'event': asyncio.Event,
     'websocket': WebSocket,
 }

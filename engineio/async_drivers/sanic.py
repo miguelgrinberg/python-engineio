@@ -1,4 +1,3 @@
-import asyncio
 import sys
 from urllib.parse import urlsplit
 
@@ -141,6 +140,5 @@ _async = {
     'create_route': create_route,
     'translate_request': translate_request,
     'make_response': make_response,
-    'event': asyncio.Event,
     'websocket': WebSocket if WebSocketProtocol else None,
 }

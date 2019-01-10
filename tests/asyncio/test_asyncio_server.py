@@ -882,7 +882,8 @@ class TestAsyncServer(unittest.TestCase):
     def test_create_queue(self):
         s = asyncio_server.AsyncServer()
         q = s.create_queue()
-        self.assertRaises(q.Empty, q.get_nowait)
+        empty = s.get_queue_empty_exception()
+        self.assertRaises(empty, q.get_nowait)
 
     def test_create_event(self):
         s = asyncio_server.AsyncServer()

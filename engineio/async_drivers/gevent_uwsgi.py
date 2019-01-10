@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import six
 
 import gevent
-from gevent.queue import JoinableQueue
+from gevent import queue
 from gevent.event import Event
 import uwsgi
 _websocket_available = hasattr(uwsgi, 'websocket_handshake')
@@ -148,7 +148,8 @@ class uWSGIWebSocket(object):  # pragma: no cover
 
 _async = {
     'thread': Thread,
-    'queue': JoinableQueue,
+    'queue': queue.JoinableQueue,
+    'queue_empty': queue.Empty,
     'event': Event,
     'websocket': uWSGIWebSocket if _websocket_available else None,
     'sleep': gevent.sleep,

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import gevent
-from gevent.queue import JoinableQueue
+from gevent import queue
 from gevent.event import Event
 try:
     import geventwebsocket  # noqa
@@ -55,7 +55,8 @@ class WebSocketWSGI(object):  # pragma: no cover
 
 _async = {
     'thread': Thread,
-    'queue': JoinableQueue,
+    'queue': queue.JoinableQueue,
+    'queue_empty': queue.Empty,
     'event': Event,
     'websocket': WebSocketWSGI if _websocket_available else None,
     'sleep': gevent.sleep,

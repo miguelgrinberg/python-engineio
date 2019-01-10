@@ -10,6 +10,7 @@ except ImportError:  # pragma: no cover
 _async = {
     'thread': threading.Thread,
     'queue': queue.Queue,
+    'queue_empty': queue.Empty,
     'event': threading.Event,
     'websocket': None,
     'sleep': time.sleep,
