@@ -115,6 +115,7 @@ class TestAsyncServer(unittest.TestCase):
                           async_mode='gevent_uwsgi')
         self.assertRaises(ValueError, asyncio_server.AsyncServer,
                           async_mode='threading')
+        sys.modules.pop('engineio.async_drivers.gevent')
 
     @mock.patch('importlib.import_module')
     def test_attach(self, import_module):
