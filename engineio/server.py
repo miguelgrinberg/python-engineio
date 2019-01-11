@@ -108,10 +108,9 @@ class Server(object):
                 else:
                     self.logger.setLevel(logging.ERROR)
                 self.logger.addHandler(logging.StreamHandler())
-        if async_mode is None:
-            modes = self.async_modes()
-        else:
-            modes = [async_mode]
+        modes = self.async_modes()
+        if async_mode is not None:
+            modes = [async_mode] if async_mode in modes else []
         self._async = None
         self.async_mode = None
         for mode in modes:
@@ -121,7 +120,7 @@ class Server(object):
                 asyncio_based = self._async['asyncio'] \
                     if 'asyncio' in self._async else False
                 if asyncio_based != self.is_asyncio_based():
-                    continue
+                    continue  # pragma: no cover
                 self.async_mode = mode
                 break
             except ImportError:
