@@ -457,7 +457,6 @@ class Client(object):
                 if self.ws:
                     self.ws.close()
                 self.queue.put(None)
-                self._reset()
                 break
             self.pong_received = False
             self._send_packet(packet.Packet(packet.PING))

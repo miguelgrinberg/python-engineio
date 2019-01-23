@@ -365,7 +365,6 @@ class AsyncClient(client.Client):
                 if self.ws:
                     await self.ws.close()
                 await self.queue.put(None)
-                self._reset()
                 break
             self.pong_received = False
             await self._send_packet(packet.Packet(packet.PING))

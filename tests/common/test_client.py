@@ -695,7 +695,7 @@ class TestClient(unittest.TestCase):
 
         c.ping_loop_event.wait = fake_wait
         c._ping_loop()
-        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(c.state, 'connected')
         c.queue.put.assert_called_once_with(None)
 
     def test_ping_loop_missing_pong_websocket(self):
@@ -716,7 +716,7 @@ class TestClient(unittest.TestCase):
 
         c.ping_loop_event.wait = fake_wait
         c._ping_loop()
-        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(c.state, 'connected')
         c.queue.put.assert_called_once_with(None)
         c.ws.close.assert_called_once_with()
 
