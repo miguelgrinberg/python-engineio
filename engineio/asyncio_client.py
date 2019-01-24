@@ -202,6 +202,9 @@ class AsyncClient(client.Client):
             await self._receive_packet(pkt)
 
         if 'websocket' in self.upgrades and 'websocket' in self.transports:
+            # apply cookies to websocket connection's headers
+            headers['Cookie'] = r.getheaders().get('Set-Cookie')
+
             # attempt to upgrade to websocket
             if await self._connect_websocket(url, headers, engineio_path):
                 # upgrade to websocket succeeded, we're done here
