@@ -581,7 +581,6 @@ class Client(object):
                 if r is None:
                     self.logger.warning(
                         'Connection refused by the server, aborting')
-                    self._reset()
                     break
                 if r.status != 200:
                     self.logger.warning('Unexpected status code %s in server '
@@ -597,6 +596,5 @@ class Client(object):
                 except websocket.WebSocketConnectionClosedException:
                     self.logger.warning(
                         'WebSocket connection was closed, aborting')
-                    self._reset()
                     break
         self.logger.info('Exiting write loop task')

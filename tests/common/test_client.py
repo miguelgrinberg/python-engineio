@@ -996,7 +996,7 @@ class TestClient(unittest.TestCase):
         c._send_request.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
             headers={'Content-Type': 'application/octet-stream'})
-        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(c.state, 'connected')
 
     def test_write_loop_polling_bad_status(self):
         c = client.Client()
@@ -1080,7 +1080,7 @@ class TestClient(unittest.TestCase):
         c.ws = mock.MagicMock()
         c.ws.send.side_effect = websocket.WebSocketConnectionClosedException
         c._write_loop()
-        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(c.state, 'connected')
 
     @mock.patch('engineio.client.original_signal_handler')
     def test_signal_handler(self, original_handler):

@@ -307,7 +307,7 @@ class AsyncClient(client.Client):
 
     async def _send_request(
             self, method, url, headers=None, body=None):  # pragma: no cover
-        if self.http is None:
+        if self.http is None or self.http.closed:
             self.http = aiohttp.ClientSession()
         method = getattr(self.http, method.lower())
         try:
@@ -495,7 +495,6 @@ class AsyncClient(client.Client):
                 if r is None:
                     self.logger.warning(
                         'Connection refused by the server, aborting')
-                    self._reset()
                     break
                 if r.status != 200:
                     self.logger.warning('Unexpected status code %s in server '
@@ -512,6 +511,5 @@ class AsyncClient(client.Client):
                     self.logger.warning(
                         'Write loop: WebSocket connection was closed, '
                         'aborting')
-                    self._reset()
                     break
         self.logger.info('Exiting write loop task')

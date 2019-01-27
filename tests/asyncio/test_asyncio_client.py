@@ -1054,7 +1054,7 @@ class TestAsyncClient(unittest.TestCase):
         c._send_request.mock.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
             headers={'Content-Type': 'application/octet-stream'})
-        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(c.state, 'connected')
 
     def test_write_loop_polling_bad_status(self):
         c = asyncio_client.AsyncClient()
@@ -1150,4 +1150,4 @@ class TestAsyncClient(unittest.TestCase):
         c.ws.send = AsyncMock(
             side_effect=websockets.exceptions.ConnectionClosed(1, 'foo'))
         _run(c._write_loop())
-        self.assertEqual(c.state, 'disconnected')
+        self.assertEqual(c.state, 'connected')
