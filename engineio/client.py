@@ -338,17 +338,43 @@ class Client(object):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            ws.send(packet.Packet(packet.PING, data='probe').encode())
-            pkt = packet.Packet(encoded_packet=ws.recv())
+            p = packet.Packet(packet.PING, data='probe').encode()
+            try:
+                ws.send(p)
+            except Exception as e:  # pragma: no cover
+                self.logger.warning(
+                    'WebSocket upgrade failed: unexpected send exception: %s',
+                    str(e))
+                return False
+            try:
+                p = ws.recv()
+            except Exception as e:  # pragma: no cover
+                self.logger.warning(
+                    'WebSocket upgrade failed: unexpected recv exception: %s',
+                    str(e))
+                return False
+            pkt = packet.Packet(encoded_packet=p)
             if pkt.packet_type != packet.PONG or pkt.data != 'probe':
                 self.logger.warning(
                     'WebSocket upgrade failed: no PONG packet')
                 return False
-            ws.send(packet.Packet(packet.UPGRADE).encode())
+            p = packet.Packet(packet.UPGRADE).encode()
+            try:
+                ws.send(p)
+            except Exception as e:  # pragma: no cover
+                self.logger.warning(
+                    'WebSocket upgrade failed: unexpected send exception: %s',
+                    str(e))
+                return False
             self.current_transport = 'websocket'
             self.logger.info('WebSocket upgrade was successful')
         else:
-            open_packet = packet.Packet(encoded_packet=ws.recv())
+            try:
+                p = ws.recv()
+            except Exception as e:  # pragma: no cover
+                raise exceptions.ConnectionError(
+                    'Unexpected recv exception: ' + str(e))
+            open_packet = packet.Packet(encoded_packet=p)
             if open_packet.packet_type != packet.OPEN:
                 raise exceptions.ConnectionError('no OPEN packet')
             self.logger.info(
