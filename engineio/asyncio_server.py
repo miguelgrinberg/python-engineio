@@ -415,8 +415,8 @@ class AsyncServer(server.Server):
                     if not socket.closing and not socket.closed:
                         await socket.check_ping_timeout()
                     await self.sleep(sleep_interval)
-            except (KeyboardInterrupt, asyncio.CancelledError):
-                self.logger.debug('service task cancelled')
+            except (SystemExit, KeyboardInterrupt, asyncio.CancelledError):
+                self.logger.info('service task canceled')
                 break
             except:
                 # an unexpected exception has occurred, log it and continue

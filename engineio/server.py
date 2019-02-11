@@ -610,6 +610,7 @@ class Server(object):
                         s.check_ping_timeout()
                     self.sleep(sleep_interval)
             except (SystemExit, KeyboardInterrupt):
+                self.logger.info('service task canceled')
                 break
             except:
                 # an unexpected exception has occurred, log it and continue
