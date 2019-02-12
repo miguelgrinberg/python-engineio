@@ -252,6 +252,7 @@ class Client(object):
 
     def _reset(self):
         self.state = 'disconnected'
+        self.sid = None
 
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""

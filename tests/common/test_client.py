@@ -174,8 +174,10 @@ class TestClient(unittest.TestCase):
     def test_disconnect_not_connected(self):
         c = client.Client()
         c.state = 'foo'
+        c.sid = 'bar'
         c.disconnect()
         self.assertEqual(c.state, 'disconnected')
+        self.assertIsNone(c.sid)
 
     def test_disconnect_polling(self):
         c = client.Client()
