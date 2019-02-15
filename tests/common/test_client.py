@@ -286,21 +286,21 @@ class TestClient(unittest.TestCase):
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_404(self, _send_request):
-        _send_request.return_value.status = 404
+        _send_request.return_value.status_code = 404
         c = client.Client()
         self.assertRaises(exceptions.ConnectionError, c.connect, 'http://foo')
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_invalid_packet(self, _send_request):
-        _send_request.return_value.status = 200
-        _send_request.return_value.data = b'foo'
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = b'foo'
         c = client.Client()
         self.assertRaises(exceptions.ConnectionError, c.connect, 'http://foo')
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_no_open_packet(self, _send_request):
-        _send_request.return_value.status = 200
-        _send_request.return_value.data = payload.Payload(packets=[
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(packets=[
             packet.Packet(packet.CLOSE, {
                 'sid': '123', 'upgrades': [], 'pingInterval': 10,
                 'pingTimeout': 20
@@ -311,8 +311,8 @@ class TestClient(unittest.TestCase):
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_successful(self, _send_request):
-        _send_request.return_value.status = 200
-        _send_request.return_value.data = payload.Payload(packets=[
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(packets=[
             packet.Packet(packet.OPEN, {
                 'sid': '123', 'upgrades': [], 'pingInterval': 1000,
                 'pingTimeout': 2000
@@ -345,8 +345,8 @@ class TestClient(unittest.TestCase):
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_with_more_packets(self, _send_request):
-        _send_request.return_value.status = 200
-        _send_request.return_value.data = payload.Payload(packets=[
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(packets=[
             packet.Packet(packet.OPEN, {
                 'sid': '123', 'upgrades': [], 'pingInterval': 1000,
                 'pingTimeout': 2000
@@ -370,8 +370,8 @@ class TestClient(unittest.TestCase):
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_upgraded(self, _send_request):
-        _send_request.return_value.status = 200
-        _send_request.return_value.data = payload.Payload(packets=[
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(packets=[
             packet.Packet(packet.OPEN, {
                 'sid': '123', 'upgrades': ['websocket'], 'pingInterval': 1000,
                 'pingTimeout': 2000
@@ -397,8 +397,8 @@ class TestClient(unittest.TestCase):
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_not_upgraded(self, _send_request):
-        _send_request.return_value.status = 200
-        _send_request.return_value.data = payload.Payload(packets=[
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(packets=[
             packet.Packet(packet.OPEN, {
                 'sid': '123', 'upgrades': ['websocket'], 'pingInterval': 1000,
                 'pingTimeout': 2000
@@ -759,7 +759,7 @@ class TestClient(unittest.TestCase):
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
         c._send_request = mock.MagicMock()
-        c._send_request.return_value.status = 400
+        c._send_request.return_value.status_code = 400
         c.write_loop_task = mock.MagicMock()
         c.ping_loop_task = mock.MagicMock()
         c._read_loop_polling()
@@ -776,8 +776,8 @@ class TestClient(unittest.TestCase):
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
         c._send_request = mock.MagicMock()
-        c._send_request.return_value.status = 200
-        c._send_request.return_value.data = b'foo'
+        c._send_request.return_value.status_code = 200
+        c._send_request.return_value.content = b'foo'
         c.write_loop_task = mock.MagicMock()
         c.ping_loop_task = mock.MagicMock()
         c._read_loop_polling()
@@ -794,7 +794,7 @@ class TestClient(unittest.TestCase):
         c.queue = mock.MagicMock()
         c._send_request = mock.MagicMock()
         c._send_request.side_effect = [
-            mock.MagicMock(status=200, data=payload.Payload(packets=[
+            mock.MagicMock(status_code=200, content=payload.Payload(packets=[
                 packet.Packet(packet.PING),
                 packet.Packet(packet.NOOP)]).encode()),
             None
@@ -910,7 +910,7 @@ class TestClient(unittest.TestCase):
             RuntimeError
         ]
         c._send_request = mock.MagicMock()
-        c._send_request.return_value.status = 200
+        c._send_request.return_value.status_code = 200
         c._write_loop()
         self.assertEqual(c.queue.task_done.call_count, 1)
         p = payload.Payload(
@@ -936,7 +936,7 @@ class TestClient(unittest.TestCase):
             RuntimeError
         ]
         c._send_request = mock.MagicMock()
-        c._send_request.return_value.status = 200
+        c._send_request.return_value.status_code = 200
         c._write_loop()
         self.assertEqual(c.queue.task_done.call_count, 3)
         p = payload.Payload(packets=[
@@ -964,7 +964,7 @@ class TestClient(unittest.TestCase):
             RuntimeError
         ]
         c._send_request = mock.MagicMock()
-        c._send_request.return_value.status = 200
+        c._send_request.return_value.status_code = 200
         c._write_loop()
         self.assertEqual(c.queue.task_done.call_count, 3)
         p = payload.Payload(packets=[
@@ -1014,7 +1014,7 @@ class TestClient(unittest.TestCase):
             RuntimeError,
         ]
         c._send_request = mock.MagicMock()
-        c._send_request.return_value.status = 500
+        c._send_request.return_value.status_code = 500
         c._write_loop()
         self.assertEqual(c.queue.task_done.call_count, 1)
         p = payload.Payload(

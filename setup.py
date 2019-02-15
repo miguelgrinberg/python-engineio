@@ -34,7 +34,7 @@ setup(
     ],
     extras_require={
         'client': [
-            'urllib3>=1.24',
+            'requests>=2.21.0',
             'websocket-client>=0.54.0',
         ],
         'asyncio_client': [

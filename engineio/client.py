@@ -10,9 +10,9 @@ import time
 import six
 from six.moves import urllib
 try:
-    import urllib3
+    import requests
 except ImportError:  # pragma: no cover
-    urllib3 = None
+    requests = None
 try:
     import websocket
 except ImportError:  # pragma: no cover
@@ -256,10 +256,10 @@ class Client(object):
 
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
-        if urllib3 is None:  # pragma: no cover
+        if requests is None:  # pragma: no cover
             # not installed
-            self.logger.error('urllib3 is not installed -- cannot make HTTP '
-                              'requests!')
+            self.logger.error('requests package is not installed -- cannot '
+                              'send HTTP requests!')
             return
         self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
         self.logger.info('Attempting polling connection to ' + self.base_url)
@@ -269,12 +269,12 @@ class Client(object):
             self._reset()
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
-        if r.status != 200:
+        if r.status_code != 200:
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status))
+                    r.status_code))
         try:
-            p = payload.Payload(encoded_payload=r.data)
+            p = payload.Payload(encoded_payload=r.content)
         except ValueError:
             six.raise_from(exceptions.ConnectionError(
                 'Unexpected response from server'), None)
@@ -428,10 +428,10 @@ class Client(object):
     def _send_request(
             self, method, url, headers=None, body=None):  # pragma: no cover
         if self.http is None:
-            self.http = urllib3.PoolManager()
+            self.http = requests.Session()
         try:
-            return self.http.request(method, url, headers=headers, body=body)
-        except urllib3.exceptions.MaxRetryError:
+            return self.http.request(method, url, headers=headers, data=body)
+        except requests.exceptions.ConnectionError:
             pass
 
     def _trigger_event(self, event, *args, **kwargs):
@@ -502,13 +502,13 @@ class Client(object):
                     'Connection refused by the server, aborting')
                 self.queue.put(None)
                 break
-            if r.status != 200:
+            if r.status_code != 200:
                 self.logger.warning('Unexpected status code %s in server '
-                                    'response, aborting', r.status)
+                                    'response, aborting', r.status_code)
                 self.queue.put(None)
                 break
             try:
-                p = payload.Payload(encoded_payload=r.data)
+                p = payload.Payload(encoded_payload=r.content)
             except ValueError:
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
@@ -609,9 +609,9 @@ class Client(object):
                     self.logger.warning(
                         'Connection refused by the server, aborting')
                     break
-                if r.status != 200:
+                if r.status_code != 200:
                     self.logger.warning('Unexpected status code %s in server '
-                                        'response, aborting', r.status)
+                                        'response, aborting', r.status_code)
                     self._reset()
                     break
             else:
