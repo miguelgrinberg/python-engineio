@@ -14,6 +14,15 @@ def get_tornado_handler(engineio_server):
     class Handler(tornado.websocket.WebSocketHandler):  # pragma: no cover
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
+            if isinstance(engineio_server.cors_allowed_origins,
+                          six.string_types):
+                if engineio_server.cors_allowed_origins == '*':
+                    self.allowed_origins = None
+                else:
+                    self.allowed_origins = [
+                        engineio_server.cors_allowed_origins]
+            else:
+                self.allowed_origins = engineio_server.cors_allowed_origins
             self.receive_queue = asyncio.Queue()
 
         async def get(self):
@@ -35,6 +44,11 @@ def get_tornado_handler(engineio_server):
 
         def on_close(self):
             self.receive_queue.put_nowait(None)
+
+        def check_origin(self, origin):
+            if self.allowed_origins is None or origin in self.allowed_origins:
+                return True
+            return super().check_origin(origin)
 
     return Handler
 
