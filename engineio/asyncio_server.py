@@ -419,5 +419,10 @@ class AsyncServer(server.Server):
                 self.logger.info('service task canceled')
                 break
             except:
+                if asyncio.get_event_loop().is_closed():
+                    self.logger.info('event loop is closed, exiting service '
+                                     'task')
+                    break
+
                 # an unexpected exception has occurred, log it and continue
                 self.logger.exception('service task exception')
