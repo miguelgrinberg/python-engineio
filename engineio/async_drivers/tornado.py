@@ -27,7 +27,7 @@ def get_tornado_handler(engineio_server):
 
         async def get(self):
             if self.request.headers.get('Upgrade', '').lower() == 'websocket':
-                super().get()
+                await super().get()
             await engineio_server.handle_request(self)
 
         async def post(self):
