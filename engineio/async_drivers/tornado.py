@@ -25,15 +25,15 @@ def get_tornado_handler(engineio_server):
                 self.allowed_origins = engineio_server.cors_allowed_origins
             self.receive_queue = asyncio.Queue()
 
-        async def get(self):
+        async def get(self, *args, **kwargs):
             if self.request.headers.get('Upgrade', '').lower() == 'websocket':
-                await super().get()
+                super().get(*args, **kwargs)
             await engineio_server.handle_request(self)
 
-        async def post(self):
+        async def post(self, *args, **kwargs):
             await engineio_server.handle_request(self)
 
-        async def options(self):
+        async def options(self, *args, **kwargs):
             await engineio_server.handle_request(self)
 
         async def on_message(self, message):
