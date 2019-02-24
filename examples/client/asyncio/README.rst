@@ -1,8 +1,8 @@
-Engine.IO Threading Examples
-============================
+Engine.IO Asyncio Examples
+==========================
 
 This directory contains example Engine.IO clients that work with the
-`threading` package of the Python standard library.
+`asyncio` package of the Python standard library.
 
 simple_client.py
 ----------------
