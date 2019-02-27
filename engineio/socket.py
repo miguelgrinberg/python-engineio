@@ -23,6 +23,7 @@ class Socket(object):
         self.closing = False
         self.closed = False
         self.session = {}
+        self.jsonp_index = None
 
     def poll(self):
         """Wait for packets to send to the client."""

@@ -311,66 +311,84 @@ class Server(object):
         """
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
+
+        sid = query['sid'][0] if 'sid' in query else None
+        b64 = False
+        jsonp = False
+        jsonp_index = None
+
+        if 'b64' in query:
+            if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
+                b64 = True
         if 'j' in query:
-            self.logger.warning('JSONP requests are not supported')
-            r = self._bad_request()
-        else:
-            sid = query['sid'][0] if 'sid' in query else None
-            b64 = False
-            if 'b64' in query:
-                if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
-                    b64 = True
-            if method == 'GET':
-                if sid is None:
-                    transport = query.get('transport', ['polling'])[0]
-                    if transport != 'polling' and transport != 'websocket':
-                        self.logger.warning('Invalid transport %s', transport)
-                        r = self._bad_request()
-                    else:
-                        r = self._handle_connect(environ, start_response,
-                                                 transport, b64)
+            jsonp = True
+            try:
+                jsonp_index = int(query['j'][0])
+            except (ValueError, KeyError, IndexError):
+                # Invalid JSONP index number
+                pass
+
+        if method == 'GET':
+            if sid is None:
+                transport = query.get('transport', ['polling'])[0]
+                if transport != 'polling' and transport != 'websocket':
+                    self.logger.warning('Invalid transport %s', transport)
+                    r = self._bad_request()
+                elif jsonp is True and jsonp_index is None:
+                    self.logger.warning('Invalid JSONP index number')
+                    r = self._bad_request()
                 else:
-                    if sid not in self.sockets:
-                        self.logger.warning('Invalid session %s', sid)
-                        r = self._bad_request()
-                    else:
-                        socket = self._get_socket(sid)
-                        try:
-                            packets = socket.handle_get_request(
-                                environ, start_response)
-                            if isinstance(packets, list):
-                                r = self._ok(packets, b64=b64)
-                            else:
-                                r = packets
-                        except exceptions.EngineIOError:
-                            if sid in self.sockets:  # pragma: no cover
-                                self.disconnect(sid)
-                            r = self._bad_request()
-                        if sid in self.sockets and self.sockets[sid].closed:
-                            del self.sockets[sid]
-            elif method == 'POST':
-                if sid is None or sid not in self.sockets:
+                    r = self._handle_connect(environ, start_response,
+                                             transport, b64, jsonp_index)
+            else:
+                if sid not in self.sockets:
                     self.logger.warning('Invalid session %s', sid)
+                    r = self._bad_request()
+                elif jsonp is True and jsonp_index is None:
+                    self.logger.warning('Invalid JSONP index number')
                     r = self._bad_request()
                 else:
                     socket = self._get_socket(sid)
                     try:
-                        socket.handle_post_request(environ)
-                        r = self._ok()
+                        packets = socket.handle_get_request(
+                            environ, start_response)
+                        if isinstance(packets, list):
+                            r = self._ok(packets, b64=b64, jsonp_index=jsonp_index)
+                        else:
+                            r = packets
                     except exceptions.EngineIOError:
                         if sid in self.sockets:  # pragma: no cover
                             self.disconnect(sid)
                         r = self._bad_request()
-                    except:  # pragma: no cover
-                        # for any other unexpected errors, we log the error
-                        # and keep going
-                        self.logger.exception('post request handler error')
-                        r = self._ok()
-            elif method == 'OPTIONS':
-                r = self._ok()
+                    if sid in self.sockets and self.sockets[sid].closed:
+                        del self.sockets[sid]
+        elif method == 'POST':
+            if sid is None or sid not in self.sockets:
+                self.logger.warning('Invalid session %s', sid)
+                r = self._bad_request()
+            elif jsonp is True and jsonp_index is None:
+                self.logger.warning('Invalid JSONP index number')
+                r = self._bad_request()
             else:
-                self.logger.warning('Method %s not supported', method)
-                r = self._method_not_found()
+                socket = self._get_socket(sid)
+                try:
+                    socket.handle_post_request(environ)
+                    r = self._ok(jsonp_index=jsonp_index)
+                except exceptions.EngineIOError:
+                    if sid in self.sockets:  # pragma: no cover
+                        self.disconnect(sid)
+                    r = self._bad_request()
+                except:  # pragma: no cover
+                    # for any other unexpected errors, we log the error
+                    # and keep going
+                    self.logger.exception('post request handler error')
+                    r = self._ok(jsonp_index=jsonp_index)
+        elif method == 'OPTIONS':
+            r = self._ok()
+        else:
+            self.logger.warning('Method %s not supported', method)
+            r = self._method_not_found()
+
         if not isinstance(r, dict):
             return r or []
         if self.http_compression and \
@@ -447,7 +465,7 @@ class Server(object):
         """Generate a unique session id."""
         return uuid.uuid4().hex
 
-    def _handle_connect(self, environ, start_response, transport, b64=False):
+    def _handle_connect(self, environ, start_response, transport, b64=False, jsonp_index=None):
         """Handle a client connection request."""
         if self.start_service_task:
             # start the service task to monitor connected clients
@@ -456,6 +474,7 @@ class Server(object):
 
         sid = self._generate_id()
         s = socket.Socket(self, sid)
+        s.jsonp_index = jsonp_index
         self.sockets[sid] = s
 
         pkt = packet.Packet(
@@ -483,7 +502,7 @@ class Server(object):
             if self.cookie:
                 headers = [('Set-Cookie', self.cookie + '=' + sid)]
             try:
-                return self._ok(s.poll(), headers=headers, b64=b64)
+                return self._ok(s.poll(), headers=headers, b64=b64, jsonp_index=jsonp_index)
             except exceptions.QueueEmpty:
                 return self._bad_request()
 
@@ -521,7 +540,7 @@ class Server(object):
             raise KeyError('Session is disconnected')
         return s
 
-    def _ok(self, packets=None, headers=None, b64=False):
+    def _ok(self, packets=None, headers=None, b64=False, jsonp_index=None):
         """Generate a successful HTTP response."""
         if packets is not None:
             if headers is None:
@@ -532,7 +551,7 @@ class Server(object):
                 headers += [('Content-Type', 'application/octet-stream')]
             return {'status': '200 OK',
                     'headers': headers,
-                    'response': payload.Payload(packets=packets).encode(b64)}
+                    'response': payload.Payload(packets=packets).encode(b64, jsonp_index)}
         else:
             return {'status': '200 OK',
                     'headers': [('Content-Type', 'text/plain')],
