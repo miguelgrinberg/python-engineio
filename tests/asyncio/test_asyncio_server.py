@@ -176,6 +176,23 @@ class TestAsyncServer(unittest.TestCase):
                          '400 BAD REQUEST')
 
     @mock.patch('importlib.import_module')
+    def test_jsonp_index(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
+                                 'QUERY_STRING': 'j=233'})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        response = _run(s.handle_request('request'))
+        self.assertEqual(response, 'response')
+        a._async['translate_request'].assert_called_once_with('request')
+        self.assertEqual(a._async['make_response'].call_count, 1)
+        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
+        print('***', a._async['make_response'].call_args[0][2])
+        self.assertTrue(a._async['make_response'].call_args[0][2].startswith(
+            b'___eio[233]("'))
+        self.assertTrue(a._async['make_response'].call_args[0][2].endswith(
+            b'");'))
+
+    @mock.patch('importlib.import_module')
     def test_connect(self, import_module):
         a = self.get_async_mock()
         import_module.side_effect = [a]

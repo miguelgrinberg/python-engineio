@@ -46,6 +46,19 @@ class TestPayload(unittest.TestCase):
         p = payload.Payload(encoded_payload=b'6:b4AAEC')
         self.assertEqual(p.encode(), b'\x01\x04\xff\x04\x00\x01\x02')
 
+    def test_encode_jsonp_payload(self):
+        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
+        p = payload.Payload([pkt])
+        self.assertEqual(p.packets, [pkt])
+        self.assertEqual(p.encode(jsonp_index=233),
+                         b'___eio[233]("\x00\x04\xff4abc");')
+        self.assertEqual(p.encode(jsonp_index=233, b64=True),
+                         b'___eio[233]("4:4abc");')
+
+    def test_decode_jsonp_payload(self):
+        p = payload.Payload(encoded_payload=b'd=4:4abc')
+        self.assertEqual(p.encode(), b'\x00\x04\xff4abc')
+
     def test_decode_invalid_payload(self):
         self.assertRaises(ValueError, payload.Payload,
                           encoded_payload=b'bad payload')

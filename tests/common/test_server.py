@@ -390,13 +390,23 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'].closed = True
         self.assertRaises(KeyError, s._get_socket, 'foo')
 
-    def test_jsonp_not_supported(self):
+    def test_jsonp_with_bad_index(self):
         s = server.Server()
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'j=abc'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         self.assertEqual(start_response.call_args[0][0],
                          '400 BAD REQUEST')
+
+    def test_jsonp_index(self):
+        s = server.Server()
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'j=233'}
+        start_response = mock.MagicMock()
+        r = s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
+        self.assertTrue(r[0].startswith(b'___eio[233]("'))
+        self.assertTrue(r[0].endswith(b'");'))
 
     def test_connect(self):
         s = server.Server()
