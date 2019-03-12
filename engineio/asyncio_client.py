@@ -158,6 +158,11 @@ class AsyncClient(client.Client):
         """Create an event object."""
         return asyncio.Event()
 
+    def _reset(self):
+        if self.http:  # pragma: no cover
+            asyncio.ensure_future(self.http.close())
+        super()._reset()
+
     async def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
         if aiohttp is None:  # pragma: no cover
