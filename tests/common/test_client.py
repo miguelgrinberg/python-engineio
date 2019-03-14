@@ -1,3 +1,4 @@
+from collections import namedtuple
 import json
 import logging
 import time
@@ -8,6 +9,7 @@ if six.PY3:
     from unittest import mock
 else:
     import mock
+import requests
 import websocket
 
 from engineio import client
@@ -433,7 +435,7 @@ class TestClient(unittest.TestCase):
                           transports=['websocket'], headers={'Foo': 'Bar'})
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            header={'Foo': 'Bar'})
+            header={'Foo': 'Bar'}, cookie=None)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.websocket.create_connection',
@@ -444,7 +446,7 @@ class TestClient(unittest.TestCase):
         self.assertFalse(c.connect('http://foo', transports=['websocket']))
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
-            header={})
+            header={}, cookie=None)
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_no_open_packet(self, create_connection):
@@ -486,6 +488,37 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'websocket')
         self.assertEqual(c.ws, create_connection.return_value)
+        create_connection.assert_called_once()
+        url = create_connection.call_args[0][0]
+        create_connection.assert_called_once_with(
+            url, header={}, cookie=None)
+
+    @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_connection_with_cookies(self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode()
+
+        Cookie = namedtuple('Cookie', ['name', 'value'])
+
+        c = client.Client()
+        c.http = mock.Mock(spec=requests.Session())
+        c.http.cookies = [Cookie('key', 'value'), Cookie('key2', 'value2')]
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('ws://foo', transports=['websocket'])
+        time.sleep(0.1)
+
+        create_connection.assert_called_once()
+        url = create_connection.call_args[0][0]
+        create_connection.assert_called_once_with(
+            url, header={}, cookie="key=value; key2=value2")
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_no_pong(self, create_connection):

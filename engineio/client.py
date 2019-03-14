@@ -329,8 +329,11 @@ class Client(object):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
         try:
+            cookies = None
+            if self.http:
+                cookies = '; '.join(["{}={}".format(x.name, x.value) for x in self.http.cookies])
             ws = websocket.create_connection(
-                websocket_url + self._get_url_timestamp(), header=headers)
+                websocket_url + self._get_url_timestamp(), header=headers, cookie=cookies)
         except ConnectionError:
             if upgrade:
                 self.logger.warning(
