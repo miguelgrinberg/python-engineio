@@ -455,8 +455,9 @@ class TestAsyncClient(unittest.TestCase):
             exceptions.ConnectionError, _run,
             c.connect('http://foo', transports=['websocket']))
 
+    @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
-    def test_websocket_connection_successful(self):
+    def test_websocket_connection_successful(self, _time):
         ws = asyncio_client.websockets.connect.mock.return_value
         ws.recv = AsyncMock(return_value=packet.Packet(
             packet.OPEN, {
@@ -488,6 +489,37 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'websocket')
         self.assertEqual(c.ws, ws)
+        asyncio_client.websockets.connect.mock.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            extra_headers={})
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
+    def test_websocket_connection_with_cookies(self, _time):
+        ws = asyncio_client.websockets.connect.mock.return_value
+        ws.recv = AsyncMock(return_value=packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode())
+        c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock()
+        c.http._cookie_jar = [mock.MagicMock(), mock.MagicMock()]
+        c.http._cookie_jar[0].key = 'key'
+        c.http._cookie_jar[0].value = 'value'
+        c.http._cookie_jar[1].key = 'key2'
+        c.http._cookie_jar[1].value = 'value2'
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        _run(c.connect('ws://foo', transports=['websocket']))
+        time.sleep(0.1)
+        asyncio_client.websockets.connect.mock.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            extra_headers={'Cookie': 'key=value; key2=value2'})
 
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_upgrade_no_pong(self):
