@@ -488,7 +488,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'websocket')
         self.assertEqual(c.ws, create_connection.return_value)
-        create_connection.assert_called_once()
+        self.assertEqual(len(create_connection.call_args_list), 1)
         url = create_connection.call_args[0][0]
         create_connection.assert_called_once_with(
             url, header={}, cookie=None)
@@ -515,7 +515,7 @@ class TestClient(unittest.TestCase):
         c.connect('ws://foo', transports=['websocket'])
         time.sleep(0.1)
 
-        create_connection.assert_called_once()
+        self.assertEqual(len(create_connection.call_args_list), 1)
         url = create_connection.call_args[0][0]
         create_connection.assert_called_once_with(
             url, header={}, cookie="key=value; key2=value2")
