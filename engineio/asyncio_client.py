@@ -234,6 +234,16 @@ class AsyncClient(client.Client):
             self.base_url = websocket_url
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
+
+        # get the cookies from the long-polling connection so that they can
+        # also be sent the the WebSocket route
+        cookies = None
+        if self.http:
+            cookies = '; '.join(["{}={}".format(cookie.key, cookie.value)
+                                 for cookie in self.http._cookie_jar])
+            headers = headers.copy()
+            headers['Cookie'] = cookies
+
         try:
             ws = await websockets.connect(
                 websocket_url + self._get_url_timestamp(),

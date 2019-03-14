@@ -328,9 +328,17 @@ class Client(object):
             self.base_url = websocket_url
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
+
+        # get the cookies from the long-polling connection so that they can
+        # also be sent the the WebSocket route
+        cookies = None
+        if self.http:
+            cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
+                                 for cookie in self.http.cookies])
         try:
             ws = websocket.create_connection(
-                websocket_url + self._get_url_timestamp(), header=headers)
+                websocket_url + self._get_url_timestamp(), header=headers,
+                cookie=cookies)
         except ConnectionError:
             if upgrade:
                 self.logger.warning(
