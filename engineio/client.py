@@ -347,7 +347,8 @@ class Client(object):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            p = packet.Packet(packet.PING, data=six.text_type('probe')).encode()
+            p = packet.Packet(packet.PING,
+                              data=six.text_type('probe')).encode()
             try:
                 ws.send(p)
             except Exception as e:  # pragma: no cover

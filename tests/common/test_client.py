@@ -571,7 +571,8 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.ws, create_connection.return_value)
         self.assertEqual(
             create_connection.return_value.send.call_args_list[0],
-            ((packet.Packet(packet.PING, six.text_type('probe')).encode(),),))  # ping
+            ((packet.Packet(packet.PING, six.text_type('probe')).encode(),),)
+        )  # ping
         self.assertEqual(
             create_connection.return_value.send.call_args_list[1],
             ((packet.Packet(packet.UPGRADE).encode(),),))  # upgrade
