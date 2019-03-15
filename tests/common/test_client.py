@@ -545,7 +545,7 @@ class TestClient(unittest.TestCase):
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_successful(self, create_connection):
         create_connection.return_value.recv.return_value = packet.Packet(
-            packet.PONG, 'probe').encode()
+            packet.PONG, six.text_type('probe')).encode()
         c = client.Client()
         c.sid = '123'
         c.base_url = 'http://foo'
@@ -571,7 +571,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.ws, create_connection.return_value)
         self.assertEqual(
             create_connection.return_value.send.call_args_list[0],
-            ((packet.Packet(packet.PING, 'probe').encode(),),))  # ping
+            ((packet.Packet(packet.PING, six.text_type('probe')).encode(),),))  # ping
         self.assertEqual(
             create_connection.return_value.send.call_args_list[1],
             ((packet.Packet(packet.UPGRADE).encode(),),))  # upgrade
