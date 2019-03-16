@@ -132,7 +132,6 @@ class AsyncSocket(socket.Socket):
         if self.connected:
             # the socket was already connected, so this is an upgrade
             self.upgrading = True  # hold packet sends during the upgrade
-            await self.queue.join()  # flush the queue first
 
             try:
                 pkt = await ws.wait()

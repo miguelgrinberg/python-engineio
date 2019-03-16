@@ -155,7 +155,6 @@ class Socket(object):
         if self.connected:
             # the socket was already connected, so this is an upgrade
             self.upgrading = True  # hold packet sends during the upgrade
-            self.queue.join()  # flush the queue first
 
             pkt = ws.wait()
             decoded_pkt = packet.Packet(encoded_packet=pkt)
