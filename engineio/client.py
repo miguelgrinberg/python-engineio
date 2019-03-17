@@ -440,7 +440,7 @@ class Client(object):
             self.http = requests.Session()
         try:
             return self.http.request(method, url, headers=headers, data=body)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.RequestException:
             pass
 
     def _trigger_event(self, event, *args, **kwargs):
