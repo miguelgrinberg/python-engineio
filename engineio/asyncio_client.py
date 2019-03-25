@@ -400,7 +400,7 @@ class AsyncClient(client.Client):
         self.ping_loop_event.clear()
         while self.state == 'connected':
             if not self.pong_received:
-                self.logger.warning(
+                self.logger.info(
                     'PONG response has not been received, aborting')
                 if self.ws:
                     await self.ws.close()
@@ -464,7 +464,7 @@ class AsyncClient(client.Client):
             try:
                 p = await self.ws.recv()
             except websockets.exceptions.ConnectionClosed:
-                self.logger.warning(
+                self.logger.info(
                     'Read loop: WebSocket connection was closed, aborting')
                 await self.queue.put(None)
                 break
@@ -548,7 +548,7 @@ class AsyncClient(client.Client):
                         await self.ws.send(pkt.encode(always_bytes=False))
                         self.queue.task_done()
                 except websockets.exceptions.ConnectionClosed:
-                    self.logger.warning(
+                    self.logger.info(
                         'Write loop: WebSocket connection was closed, '
                         'aborting')
                     break
