@@ -488,7 +488,7 @@ class Client(object):
         self.ping_loop_event.clear()
         while self.state == 'connected':
             if not self.pong_received:
-                self.logger.warning(
+                self.logger.info(
                     'PONG response has not been received, aborting')
                 if self.ws:
                     self.ws.close()
