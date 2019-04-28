@@ -43,20 +43,18 @@ class ASGIApp:
     async def __call__(self, scope, receive, send):
         if scope['type'] in ['http', 'websocket'] and \
                 scope['path'].startswith('/{0}/'.format(self.engineio_path)):
-            await self.engineio_asgi_app(scope, receive, send)
+            await self.engineio_server.handle_request(scope, receive, send)
         elif scope['type'] == 'http' and scope['path'] in self.static_files:
             await self.serve_static_file(scope, receive, send)
         elif self.other_asgi_app is not None:
             await self.other_asgi_app(scope, receive, send)
         elif scope['type'] == 'lifespan':
-            await self.lifespan(scope, receive, send)
+            await self.lifespan(receive, send)
         else:
-            await self.not_found(scope, receive, send)
+            await self.not_found(receive, send)
 
-    async def engineio_asgi_app(self, scope, receive, send):
-        await self.engineio_server.handle_request(scope, receive, send)
-
-    async def serve_static_file(self, scope, receive, send):
+    async def serve_static_file(self, scope, receive,
+                                send):  # pragma: no cover
         event = await receive()
         if event['type'] == 'http.request':
             if scope['path'] in self.static_files:
@@ -76,14 +74,14 @@ class ASGIApp:
             await send({'type': 'http.response.body',
                         'body': payload})
 
-    async def lifespan(self, scope, receive, send):
+    async def lifespan(self, receive, send):
         event = await receive()
         if event['type'] == 'lifespan.startup':
             await send({'type': 'lifespan.startup.complete'})
         elif event['type'] == 'lifespan.shutdown':
             await send({'type': 'lifespan.shutdown.complete'})
 
-    async def not_found(self, scope, receive, send):
+    async def not_found(self, receive, send):
         """Return a 404 Not Found error to the client."""
         await send({'type': 'http.response.start',
                     'status': 404,
