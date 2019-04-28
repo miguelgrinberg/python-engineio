@@ -40,54 +40,50 @@ class ASGIApp:
         self.engineio_path = engineio_path.strip('/')
         self.static_files = static_files or {}
 
-    def __call__(self, scope):
+    async def __call__(self, scope, receive, send):
         if scope['type'] in ['http', 'websocket'] and \
                 scope['path'].startswith('/{0}/'.format(self.engineio_path)):
-            return self.engineio_asgi_app(scope)
+            await self.engineio_asgi_app(scope, receive, send)
         elif scope['type'] == 'http' and scope['path'] in self.static_files:
-            return self.serve_static_file(scope)
+            await self.serve_static_file(scope, receive, send)
         elif self.other_asgi_app is not None:
-            return self.other_asgi_app(scope)
+            await self.other_asgi_app(scope, receive, send)
         elif scope['type'] == 'lifespan':
-            return self.lifespan
+            await self.lifespan(scope, receive, send)
         else:
-            return self.not_found
+            await self.not_found(scope, receive, send)
 
-    def engineio_asgi_app(self, scope):
-        async def _app(receive, send):
-            await self.engineio_server.handle_request(scope, receive, send)
-        return _app
+    async def engineio_asgi_app(self, scope, receive, send):
+        await self.engineio_server.handle_request(scope, receive, send)
 
-    def serve_static_file(self, scope):
-        async def _send_static_file(receive, send):  # pragma: no cover
-            event = await receive()
-            if event['type'] == 'http.request':
-                if scope['path'] in self.static_files:
-                    content_type = self.static_files[scope['path']][
-                        'content_type'].encode('utf-8')
-                    filename = self.static_files[scope['path']]['filename']
-                    status_code = 200
-                    with open(filename, 'rb') as f:
-                        payload = f.read()
-                else:
-                    content_type = b'text/plain'
-                    status_code = 404
-                    payload = b'not found'
-                await send({'type': 'http.response.start',
-                            'status': status_code,
-                            'headers': [(b'Content-Type', content_type)]})
-                await send({'type': 'http.response.body',
-                            'body': payload})
-        return _send_static_file
+    async def serve_static_file(self, scope, receive, send):
+        event = await receive()
+        if event['type'] == 'http.request':
+            if scope['path'] in self.static_files:
+                content_type = self.static_files[scope['path']][
+                    'content_type'].encode('utf-8')
+                filename = self.static_files[scope['path']]['filename']
+                status_code = 200
+                with open(filename, 'rb') as f:
+                    payload = f.read()
+            else:
+                content_type = b'text/plain'
+                status_code = 404
+                payload = b'not found'
+            await send({'type': 'http.response.start',
+                        'status': status_code,
+                        'headers': [(b'Content-Type', content_type)]})
+            await send({'type': 'http.response.body',
+                        'body': payload})
 
-    async def lifespan(self, receive, send):
+    async def lifespan(self, scope, receive, send):
         event = await receive()
         if event['type'] == 'lifespan.startup':
             await send({'type': 'lifespan.startup.complete'})
         elif event['type'] == 'lifespan.shutdown':
             await send({'type': 'lifespan.shutdown.complete'})
 
-    async def not_found(self, receive, send):
+    async def not_found(self, scope, receive, send):
         """Return a 404 Not Found error to the client."""
         await send({'type': 'http.response.start',
                     'status': 404,

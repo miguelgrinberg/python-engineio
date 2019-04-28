@@ -45,17 +45,16 @@ class AsgiTests(unittest.TestCase):
         mock_server.handle_request = AsyncMock()
         app = async_asgi.ASGIApp(mock_server)
         scope = {'type': 'http', 'path': '/engine.io/'}
-        handler = app(scope)
-        _run(handler('receive', 'send'))
+        _run(app(scope, 'receive', 'send'))
         mock_server.handle_request.mock.assert_called_once_with(
             scope, 'receive', 'send')
 
     def test_other_app_routing(self):
-        other_app = mock.MagicMock()
+        other_app = AsyncMock()
         app = async_asgi.ASGIApp('eio', other_app)
         scope = {'type': 'http', 'path': '/foo'}
-        app(scope)
-        other_app.assert_called_once_with(scope)
+        _run(app(scope, 'receive', 'send'))
+        other_app.mock.assert_called_once_with(scope, 'receive', 'send')
 
     def test_static_file_routing(self):
         root_dir = os.path.dirname(__file__)
@@ -63,45 +62,45 @@ class AsgiTests(unittest.TestCase):
             '/foo': {'content_type': 'text/html',
                      'filename': root_dir + '/index.html'}
         })
-        handler = app({'type': 'http', 'path': '/foo'})
+        scope = {'type': 'http', 'path': '/foo'}
         receive = AsyncMock(return_value={'type': 'http.request'})
         send = AsyncMock()
-        _run(handler(receive, send))
+        _run(app(scope, receive, send))
         send.mock.assert_called_with({'type': 'http.response.body',
                                       'body': b'<html></html>\n'})
 
     def test_lifespan_startup(self):
         app = async_asgi.ASGIApp('eio')
-        handler = app({'type': 'lifespan'})
+        scope = {'type': 'lifespan'}
         receive = AsyncMock(return_value={'type': 'lifespan.startup'})
         send = AsyncMock()
-        _run(handler(receive, send))
+        _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
             {'type': 'lifespan.startup.complete'})
 
     def test_lifespan_shutdown(self):
         app = async_asgi.ASGIApp('eio')
-        handler = app({'type': 'lifespan'})
+        scope = {'type': 'lifespan'}
         receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
         send = AsyncMock()
-        _run(handler(receive, send))
+        _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
             {'type': 'lifespan.shutdown.complete'})
 
     def test_lifespan_invalid(self):
         app = async_asgi.ASGIApp('eio')
-        handler = app({'type': 'lifespan'})
+        scope = {'type': 'lifespan'}
         receive = AsyncMock(return_value={'type': 'lifespan.foo'})
         send = AsyncMock()
-        _run(handler(receive, send))
+        _run(app(scope, receive, send))
         send.mock.assert_not_called()
 
     def test_not_found(self):
         app = async_asgi.ASGIApp('eio')
-        handler = app({'type': 'http', 'path': '/foo'})
+        scope = {'type': 'http', 'path': '/foo'}
         receive = AsyncMock(return_value={'type': 'http.request'})
         send = AsyncMock()
-        _run(handler(receive, send))
+        _run(app(scope, receive, send))
         send.mock.assert_any_call(
             {'type': 'http.response.start', 'status': 404,
              'headers': [(b'Content-Type', b'text/plain')]})
