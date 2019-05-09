@@ -130,7 +130,7 @@ def make_response(status, headers, payload, environ):
         tornado_handler.write(payload)
         tornado_handler.finish()
     except RuntimeError as error:
-        if not "Method not supported for Web Sockets" in str(error):
+        if "Method not supported for Web Sockets" not in str(error):
             raise
 
 
