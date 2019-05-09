@@ -215,6 +215,13 @@ class AsyncServer(server.Server):
                             if sid in self.sockets:  # pragma: no cover
                                 await self.disconnect(sid)
                             r = self._bad_request()
+                        except Exception as error:
+                            if "WebSocketClosedError" in str(type(error)):
+                                if sid in self.sockets:  # pragma: no cover
+                                    await self.disconnect(sid)
+                                r = self._bad_request()
+                            else:
+                                raise
                         if sid in self.sockets and self.sockets[sid].closed:
                             del self.sockets[sid]
             elif method == 'POST':

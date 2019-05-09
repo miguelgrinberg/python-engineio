@@ -27,7 +27,7 @@ def get_tornado_handler(engineio_server):
 
         async def get(self, *args, **kwargs):
             if self.request.headers.get('Upgrade', '').lower() == 'websocket':
-                await super().get(*args, **kwargs)
+                await asyncio.coroutine(super().get)(*args, **kwargs)
             await engineio_server.handle_request(self)
 
         async def post(self, *args, **kwargs):
@@ -122,12 +122,16 @@ def make_response(status, headers, payload, environ):
     """This function generates an appropriate response object for this async
     mode.
     """
-    tornado_handler = environ['tornado.handler']
-    tornado_handler.set_status(int(status.split()[0]))
-    for header, value in headers:
-        tornado_handler.set_header(header, value)
-    tornado_handler.write(payload)
-    tornado_handler.finish()
+    try:
+        tornado_handler = environ['tornado.handler']
+        tornado_handler.set_status(int(status.split()[0]))
+        for header, value in headers:
+            tornado_handler.set_header(header, value)
+        tornado_handler.write(payload)
+        tornado_handler.finish()
+    except RuntimeError as error:
+        if not "Method not supported for Web Sockets" in str(error):
+            raise
 
 
 class WebSocket(object):  # pragma: no cover
