@@ -1,6 +1,7 @@
 import asyncio
 import sys
 from urllib.parse import urlsplit
+from .. import exceptions
 
 try:
     import tornado.web
@@ -152,8 +153,11 @@ class WebSocket(object):  # pragma: no cover
         self.tornado_handler.close()
 
     async def send(self, message):
-        self.tornado_handler.write_message(
-            message, binary=isinstance(message, bytes))
+        try:
+            self.tornado_handler.write_message(
+                message, binary=isinstance(message, bytes))
+        except tornado.websocket.WebSocketClosedError:
+            raise exceptions.EngineIOError()
 
     async def wait(self):
         msg = await self.tornado_handler.get_next_message()
