@@ -1,6 +1,7 @@
 import asyncio
 import sys
 from urllib.parse import urlsplit
+from .. import exceptions
 
 try:
     import tornado.web
@@ -27,8 +28,15 @@ def get_tornado_handler(engineio_server):
 
         async def get(self, *args, **kwargs):
             if self.request.headers.get('Upgrade', '').lower() == 'websocket':
-                super().get(*args, **kwargs)
-            await engineio_server.handle_request(self)
+                ret = super().get(*args, **kwargs)
+                if asyncio.iscoroutine(ret):
+                    await ret
+            else:
+                await engineio_server.handle_request(self)
+
+        async def open(self, *args, **kwargs):
+            # this is the handler for the websocket request
+            asyncio.ensure_future(engineio_server.handle_request(self))
 
         async def post(self, *args, **kwargs):
             await engineio_server.handle_request(self)
@@ -49,6 +57,10 @@ def get_tornado_handler(engineio_server):
             if self.allowed_origins is None or origin in self.allowed_origins:
                 return True
             return super().check_origin(origin)
+
+        def get_compression_options(self):
+            # enable compression
+            return {}
 
     return Handler
 
@@ -148,8 +160,11 @@ class WebSocket(object):  # pragma: no cover
         self.tornado_handler.close()
 
     async def send(self, message):
-        self.tornado_handler.write_message(
-            message, binary=isinstance(message, bytes))
+        try:
+            self.tornado_handler.write_message(
+                message, binary=isinstance(message, bytes))
+        except tornado.websocket.WebSocketClosedError:
+            raise exceptions.EngineIOError()
 
     async def wait(self):
         msg = await self.tornado_handler.get_next_message()
