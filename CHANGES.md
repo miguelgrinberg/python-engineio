@@ -1,8 +1,16 @@
 # python-engineio change log
 
+**Release 3.6.0** - 2019-05-25
+
+- Tornado 6 support ([commit](https://github.com/miguelgrinberg/python-engineio/commit/99359e43188f05e1844b68fef862f3af99919044)) (thanks **Michel Llorens**!)
+- added note on CORS support for sanic ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a3a4cb82059e2229d1b5e9ed9404dacc1b9afc34))
+- added python 3.7 build ([commit](https://github.com/miguelgrinberg/python-engineio/commit/805aa9fd7156425a2dce6b782b96f0e805ee4501))
+- auto-generate change log during release ([commit](https://github.com/miguelgrinberg/python-engineio/commit/be2c76e3e5b803284a6f2a9e4abed3314b9af7b6))
+- added change log ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f8b15d1c06439581ca6b0d697f67cd034fb5bbf5))
+- helper release script ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d36548cade90ddf8c6ab68178cb9747d5ac0d51f))
+
 **Release 3.5.2** - 2019-05-19
 
-- Support for Tornado 6 ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3d0fd9ebc7ef671a9179746455e1ad55e66a7508)) (thanks **Michel Llorens**!)
 - migrate to ASGI3 [#108](https://github.com/miguelgrinberg/python-engineio/issues/108) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5a7f9e719b6fb3bfc9da07b882c4b77b102aef0d)) (thanks **Florimond Manca**!)
 - updated asgi examples to latest uvicorn ([commit](https://github.com/miguelgrinberg/python-engineio/commit/261fd67103cb5d9a44369415748e66fdf62de6fb))
 - remove security alert in requirements ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1b044aaac9657ff947c6666638cf89315303bf6c))
