@@ -83,6 +83,11 @@ In the case of the ``asyncio`` client, the method is a coroutine::
 
     await eio.connect('http://localhost:5000')
 
+Upon connection, the server assigns the client a unique session identifier.
+The applicaction can find this identifier in the ``sid`` attribute::
+
+    print('my sid is', eio.sid)
+
 Sending Messages
 ----------------
 
