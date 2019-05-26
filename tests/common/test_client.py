@@ -600,6 +600,12 @@ class TestClient(unittest.TestCase):
         c._trigger_event.assert_called_once_with('message', {'foo': 'bar'},
                                                  run_async=True)
 
+    def test_receive_close_packet(self):
+        c = client.Client()
+        c.disconnect = mock.MagicMock()
+        c._receive_packet(packet.Packet(packet.CLOSE))
+        c.disconnect.assert_called_once_with(abort=True)
+
     def test_send_packet_disconnected(self):
         c = client.Client()
         c.queue = c.create_queue()

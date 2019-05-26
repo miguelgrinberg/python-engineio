@@ -329,6 +329,8 @@ class AsyncClient(client.Client):
             await self._trigger_event('message', pkt.data, run_async=True)
         elif pkt.packet_type == packet.PONG:
             self.pong_received = True
+        elif pkt.packet_type == packet.CLOSE:
+            await self.disconnect(abort=True)
         elif pkt.packet_type == packet.NOOP:
             pass
         else:
