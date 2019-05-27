@@ -629,7 +629,10 @@ class Client(object):
                 # websocket
                 try:
                     for pkt in packets:
-                        self.ws.send(pkt.encode())
+                        if isinstance(pkt.data, six.binary_type):
+                            self.ws.send(pkt.encode(b64=True))
+                        else:
+                            self.ws.send(pkt.encode())
                         self.queue.task_done()
                 except websocket.WebSocketConnectionClosedException:
                     self.logger.warning(
