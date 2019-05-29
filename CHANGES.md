@@ -1,5 +1,12 @@
 # python-engineio change log
 
+**Release 3.7.0** - 2019-05-29
+
+- Add JSONP support in the server [#98](https://github.com/miguelgrinberg/python-engineio/issues/98) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/36a15987a677ba5a61675250f9b4a9e7c6cbaa74)) (thanks **StoneMoe**!)
+- Send binary packets as such in the sync client [#112](https://github.com/miguelgrinberg/python-engineio/issues/112) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/076232e86fa923c2f44472f8eb358b141c61783a))
+- Handle CLOSE packet in the client [#100](https://github.com/miguelgrinberg/python-engineio/issues/100) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/612815f793f4c749c9a9459ff08804ddd629da31))
+- Document how to access the sid for the connection ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3de448881989485e0f986441896a1871354ba36a))
+
 **Release 3.6.0** - 2019-05-25
 
 - Tornado 6 support ([commit](https://github.com/miguelgrinberg/python-engineio/commit/99359e43188f05e1844b68fef862f3af99919044)) (thanks **Michel Llorens**!)
