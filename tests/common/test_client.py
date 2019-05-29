@@ -1078,7 +1078,8 @@ class TestClient(unittest.TestCase):
         c._write_loop()
         self.assertEqual(c.queue.task_done.call_count, 1)
         self.assertEqual(c.ws.send.call_count, 1)
-        c.ws.send.assert_called_once_with(b'4{"foo":"bar"}')
+        self.assertEqual(c.ws.send_binary.call_count, 0)
+        c.ws.send.assert_called_once_with('4{"foo":"bar"}')
 
     def test_write_loop_websocket_three_packets(self):
         c = client.Client()
@@ -1099,9 +1100,30 @@ class TestClient(unittest.TestCase):
         c._write_loop()
         self.assertEqual(c.queue.task_done.call_count, 3)
         self.assertEqual(c.ws.send.call_count, 3)
-        self.assertEqual(c.ws.send.call_args_list[0][0][0], b'4{"foo":"bar"}')
-        self.assertEqual(c.ws.send.call_args_list[1][0][0], b'2')
-        self.assertEqual(c.ws.send.call_args_list[2][0][0], b'6')
+        self.assertEqual(c.ws.send_binary.call_count, 0)
+        self.assertEqual(c.ws.send.call_args_list[0][0][0], '4{"foo":"bar"}')
+        self.assertEqual(c.ws.send.call_args_list[1][0][0], '2')
+        self.assertEqual(c.ws.send.call_args_list[2][0][0], '6')
+
+    def test_write_loop_websocket_one_packet_binary(self):
+        c = client.Client()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'websocket'
+        c.queue = mock.MagicMock()
+        c.queue.Empty = RuntimeError
+        c.queue.get.side_effect = [
+            packet.Packet(packet.MESSAGE, b'foo'),
+            RuntimeError,
+            RuntimeError
+        ]
+        c.ws = mock.MagicMock()
+        c._write_loop()
+        self.assertEqual(c.queue.task_done.call_count, 1)
+        self.assertEqual(c.ws.send.call_count, 0)
+        self.assertEqual(c.ws.send_binary.call_count, 1)
+        c.ws.send_binary.assert_called_once_with(b'\x04foo')
 
     def test_write_loop_websocket_bad_connection(self):
         c = client.Client()
