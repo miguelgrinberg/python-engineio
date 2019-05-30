@@ -34,17 +34,29 @@ class TestWSGIApp(unittest.TestCase):
     def test_static_files(self):
         root_dir = os.path.dirname(__file__)
         m = engineio.WSGIApp('foo', None, static_files={
-            '/': {'content_type': 'text/html',
-                  'filename': root_dir + '/index.html'},
-            '/foo': {'content_type': 'text/html',
+            '/': root_dir + '/index.html',
+            '/foo': {'content_type': 'text/plain',
                      'filename': root_dir + '/index.html'},
+            '/static': root_dir,
+            '/static/test/': root_dir + '/',
         })
-        environ = {'PATH_INFO': '/'}
-        start_response = mock.MagicMock()
-        r = m(environ, start_response)
-        self.assertEqual(r, [b'<html></html>\n'])
-        start_response.assert_called_once_with(
-            "200 OK", [('Content-Type', 'text/html')])
+
+        def check_path(path, status_code, content_type, body):
+            environ = {'PATH_INFO': path}
+            start_response = mock.MagicMock()
+            r = m(environ, start_response)
+            self.assertEqual(r, [body.encode('utf-8')])
+            start_response.assert_called_once_with(
+                status_code, [('Content-Type', content_type)])
+
+        check_path('/', '200 OK', 'text/html', '<html></html>\n')
+        check_path('/foo', '200 OK', 'text/plain', '<html></html>\n')
+        check_path('/static/index.html', '200 OK', 'text/html',
+                   '<html></html>\n')
+        check_path('/static/foo.bar', '404 Not Found', 'text/plain',
+                   'Not Found')
+        check_path('/static/test/index.html', '200 OK', 'text/html',
+                   '<html></html>\n')
 
     def test_404(self):
         mock_wsgi_app = None
@@ -53,9 +65,9 @@ class TestWSGIApp(unittest.TestCase):
         environ = {'PATH_INFO': '/foo/bar'}
         start_response = mock.MagicMock()
         r = m(environ, start_response)
-        self.assertEqual(r, ['Not Found'])
+        self.assertEqual(r, [b'Not Found'])
         start_response.assert_called_once_with(
-            "404 Not Found", [('Content-type', 'text/plain')])
+            "404 Not Found", [('Content-Type', 'text/plain')])
 
     def test_custom_eio_path(self):
         mock_wsgi_app = None
@@ -65,9 +77,9 @@ class TestWSGIApp(unittest.TestCase):
         environ = {'PATH_INFO': '/engine.io/'}
         start_response = mock.MagicMock()
         r = m(environ, start_response)
-        self.assertEqual(r, ['Not Found'])
+        self.assertEqual(r, [b'Not Found'])
         start_response.assert_called_once_with(
-            "404 Not Found", [('Content-type', 'text/plain')])
+            "404 Not Found", [('Content-Type', 'text/plain')])
 
         environ = {'PATH_INFO': '/foo/'}
         m(environ, start_response)

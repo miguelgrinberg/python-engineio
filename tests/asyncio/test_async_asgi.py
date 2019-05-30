@@ -59,15 +59,32 @@ class AsgiTests(unittest.TestCase):
     def test_static_file_routing(self):
         root_dir = os.path.dirname(__file__)
         app = async_asgi.ASGIApp('eio', static_files={
-            '/foo': {'content_type': 'text/html',
-                     'filename': root_dir + '/index.html'}
+            '/': root_dir + '/index.html',
+            '/foo': {'content_type': 'text/plain',
+                     'filename': root_dir + '/index.html'},
+            '/static': root_dir,
+            '/static/test/': root_dir + '/',
         })
-        scope = {'type': 'http', 'path': '/foo'}
-        receive = AsyncMock(return_value={'type': 'http.request'})
-        send = AsyncMock()
-        _run(app(scope, receive, send))
-        send.mock.assert_called_with({'type': 'http.response.body',
-                                      'body': b'<html></html>\n'})
+
+        def check_path(path, status_code, content_type, body):
+            scope = {'type': 'http', 'path': path}
+            receive = AsyncMock(return_value={'type': 'http.request'})
+            send = AsyncMock()
+            _run(app(scope, receive, send))
+            send.mock.assert_any_call({
+                'type': 'http.response.start',
+                'status': status_code,
+                'headers': [(b'Content-Type', content_type.encode('utf-8'))]})
+            send.mock.assert_any_call({
+                'type': 'http.response.body',
+                'body': body.encode('utf-8')})
+
+        check_path('/', 200, 'text/html', '<html></html>\n')
+        check_path('/foo', 200, 'text/plain', '<html></html>\n')
+        check_path('/static/index.html', 200, 'text/html', '<html></html>\n')
+        check_path('/static/foo.bar', 404, 'text/plain', 'Not Found')
+        check_path('/static/test/index.html', 200, 'text/html',
+                   '<html></html>\n')
 
     def test_lifespan_startup(self):
         app = async_asgi.ASGIApp('eio')
@@ -105,7 +122,7 @@ class AsgiTests(unittest.TestCase):
             {'type': 'http.response.start', 'status': 404,
              'headers': [(b'Content-Type', b'text/plain')]})
         send.mock.assert_any_call({'type': 'http.response.body',
-                                   'body': b'not found'})
+                                   'body': b'Not Found'})
 
     def test_translate_request(self):
         receive = AsyncMock(return_value={'type': 'http.request',

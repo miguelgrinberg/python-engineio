@@ -5,9 +5,8 @@ import engineio
 
 eio = engineio.AsyncServer(async_mode='asgi')
 app = engineio.ASGIApp(eio, static_files={
-    '/': {'content_type': 'text/html', 'filename': 'simple.html'},
-    '/static/engine.io.js': {'content_type': 'application/javascript',
-                             'filename': 'static/engine.io.js'}
+    '/': 'simple.html',
+    '/static': 'static',
 })
 
 

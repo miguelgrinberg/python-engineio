@@ -25,16 +25,108 @@ in the :ref:`deployment-strategies` section.
 Creating a Server Instance
 --------------------------
 
-To instantiate an Engine.IO server, simply create an instance of the
-appropriate client class::
+An Engine.IO server is an instance of class :class:`engineio.Server`. This
+instance can be transformed into a standard WSGI application by wrapping it
+with the :class:`engineio.WSGIApp` class::
 
-    import engineio
+   import engineio
 
-    # standard Python
-    eio = engineio.Server()
+   # create a Engine.IO server
+   eio = engineio.Server()
 
-    # asyncio
+   # wrap with a WSGI application
+   app = engineio.WSGIApp(eio)
+
+For asyncio based servers, the :class:`engineio.AsyncServer` class provides
+the same functionality, but in a coroutine friendly format. If desired, The
+:class:`engineio.ASGIApp` class can transform the server into a standard
+ASGI application::
+
+    # create a Engine.IO server
     eio = engineio.AsyncServer()
+
+    # wrap with ASGI application
+    app = engineio.ASGIApp(eio)
+
+These two wrappers can also act as middlewares, forwarding any traffic that is
+not intended to the Engine.IO server to another application. This allows
+Engine.IO servers to integrate easily into existing WSGI or ASGI applications::
+
+   from wsgi import app  # a Flask, Django, etc. application
+   app = engineio.WSGIApp(eio, app)
+
+Serving Static Files
+--------------------
+
+This package offers the option to configure the serving of static files. This
+is particularly useful to deliver HTML, CSS and JavaScript files to clients
+when this package is used without a companion web framework.
+
+Static files are configured with a Python dictionary in which each key/value
+pair is a static file mapping rule. In its simplest form, this dictionary has
+one or more static file URLs as keys, and the corresponding files in the server
+as values::
+
+    static_files = {
+        '/': 'latency.html',
+        '/static/engine.io.js': 'static/engine.io.js',
+        '/static/style.css': 'static/style.css',
+    }
+
+With this example configuration, when the server receives a request for ``/``
+(the root URL) it will return the contents of the file ``latency.html`` in the
+current directory, and will assign a content type based on the file extension,
+in this case ``text/html``.
+
+Files with the ``.html``, ``.css``, ``.js``, ``.json``, ``.jpg``, ``.png``,
+``.gif`` and ``.txt`` file extensions are automatically recognized and
+assigned the correct content type. For files with other file extensions or
+with no file extension, the ``application/octet-stream`` content type is used
+as a default.
+
+If desired, an explicit content type for a static file can be given as follows::
+
+    static_files = {
+        '/': {'filename': 'latency.html', 'content_type': 'text/plain'},
+    }
+
+Finally, it is also possible to configure an entire directory in a single rule,
+so that all the files in it are served as static files::
+
+    static_files = {
+        '/static': './public',
+        '/': './public/index.html',
+    }
+
+In this example any files with URLs starting with ``/static`` will be served
+directly from the ``public`` folder in the current directory, so for example,
+the URL ``/static/index.html`` will return local file ``./public/index.html``
+and the URL ``/static/css/styles.css`` will return local file
+``./public/css/styles.css``. The second rule creates a default mapping for the
+``index.html`` file when the root URL is requested.
+
+The static file configuration dictionary is given as the ``static_files``
+argument to the ``engineio.WSGIApp`` or ``engineio.ASGIApp`` classes::
+
+    # for standard WSGI applications
+    eio = engineio.Server()
+    app = engineio.WSGIApp(eio, static_files=static_files)
+
+    # for asyncio-based ASGI applications
+    eio = engineio.AsyncServer()
+    app = engineio.ASGIApp(eio, static_files=static_files)
+
+The routing precedence in these two classes is as follows:
+
+- First, the path is checked against the Engine.IO path.
+- Next, the path is checked against the static file configuration, if present.
+- If the path did not match the Engine.IO path or any static file, control is
+  passed to the secondary application if configured, else a 404 error is
+  returned.
+
+Note: static file serving is intended for development use only, and as such
+it lacks important features such as caching. Do not use in a production
+environment.
 
 Defining Event Handlers
 -----------------------
@@ -337,10 +429,10 @@ explicitly, the ``async_mode`` option can be given in the constructor::
 
     eio = engineio.Server(async_mode='eventlet')
 
-A server configured for eventlet is deployed as a regular WSGI application,
-using the provided ``engineio.Middleware``::
+A server configured for eventlet is deployed as a regular WSGI application
+using the provided ``engineio.WSGIApp``::
 
-    app = engineio.Middleware(eio)
+    app = engineio.WSGIApp(eio)
     import eventlet
     eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
 
@@ -384,11 +476,11 @@ option can be given in the constructor::
     # gevent alone or with gevent-websocket
     eio = engineio.Server(async_mode='gevent')
 
-A server configured for gevent is deployed as a regular WSGI application,
-using the provided ``engineio.Middleware``::
+A server configured for gevent is deployed as a regular WSGI application
+using the provided ``engineio.WSGIApp``::
 
     from gevent import pywsgi
-    app = engineio.Middleware(eio)
+    app = engineio.WSGIApp(eio)
     pywsgi.WSGIServer(('', 8000), app).serve_forever()
 
 If the WebSocket transport is installed, then the server must be started as
@@ -396,7 +488,7 @@ follows::
 
     from gevent import pywsgi
     from geventwebsocket.handler import WebSocketHandler
-    app = engineio.Middleware(eio)
+    app = engineio.WSGIApp(eio)
     pywsgi.WSGIServer(('', 8000), app,
                       handler_class=WebSocketHandler).serve_forever()
 
@@ -469,7 +561,7 @@ development web server based on Werkzeug::
 
     eio = engineio.Server(async_mode='threading')
     app = Flask(__name__)
-    app.wsgi_app = engineio.Middleware(eio, app.wsgi_app)
+    app.wsgi_app = engineio.WSGIApp(eio, app.wsgi_app)
 
     # ... Engine.IO and Flask handler functions ...
 

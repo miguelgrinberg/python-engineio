@@ -1,4 +1,7 @@
+import os
 import sys
+
+from engineio.static_files import get_static_file
 
 
 class ASGIApp:
@@ -10,11 +13,8 @@ class ASGIApp:
 
     :param engineio_server: The Engine.IO server. Must be an instance of the
                             ``engineio.AsyncServer`` class.
-    :param static_files: A dictionary where the keys are URLs that should be
-                         served as static files. For each URL, the value is
-                         a dictionary with ``content_type`` and ``filename``
-                         keys. This option is intended to be used for serving
-                         client files during development.
+    :param static_files: A dictionary with static file mapping rules. See the
+                         documentation for details on this argument.
     :param other_asgi_app: A separate ASGI app that receives all other traffic.
     :param engineio_path: The endpoint where the Engine.IO application should
                           be installed. The default value is appropriate for
@@ -44,35 +44,33 @@ class ASGIApp:
         if scope['type'] in ['http', 'websocket'] and \
                 scope['path'].startswith('/{0}/'.format(self.engineio_path)):
             await self.engineio_server.handle_request(scope, receive, send)
-        elif scope['type'] == 'http' and scope['path'] in self.static_files:
-            await self.serve_static_file(scope, receive, send)
-        elif self.other_asgi_app is not None:
-            await self.other_asgi_app(scope, receive, send)
-        elif scope['type'] == 'lifespan':
-            await self.lifespan(receive, send)
         else:
-            await self.not_found(receive, send)
+            static_file = get_static_file(scope['path'], self.static_files) \
+                if scope['type'] == 'http' else None
+            if static_file:
+                await self.serve_static_file(static_file, receive, send)
+            elif self.other_asgi_app is not None:
+                await self.other_asgi_app(scope, receive, send)
+            elif scope['type'] == 'lifespan':
+                await self.lifespan(receive, send)
+            else:
+                await self.not_found(receive, send)
 
-    async def serve_static_file(self, scope, receive,
+    async def serve_static_file(self, static_file, receive,
                                 send):  # pragma: no cover
         event = await receive()
         if event['type'] == 'http.request':
-            if scope['path'] in self.static_files:
-                content_type = self.static_files[scope['path']][
-                    'content_type'].encode('utf-8')
-                filename = self.static_files[scope['path']]['filename']
-                status_code = 200
-                with open(filename, 'rb') as f:
+            if os.path.exists(static_file['filename']):
+                with open(static_file['filename'], 'rb') as f:
                     payload = f.read()
+                await send({'type': 'http.response.start',
+                            'status': 200,
+                            'headers': [(b'Content-Type', static_file[
+                                'content_type'].encode('utf-8'))]})
+                await send({'type': 'http.response.body',
+                            'body': payload})
             else:
-                content_type = b'text/plain'
-                status_code = 404
-                payload = b'not found'
-            await send({'type': 'http.response.start',
-                        'status': status_code,
-                        'headers': [(b'Content-Type', content_type)]})
-            await send({'type': 'http.response.body',
-                        'body': payload})
+                await self.not_found(receive, send)
 
     async def lifespan(self, receive, send):
         event = await receive()
@@ -87,7 +85,7 @@ class ASGIApp:
                     'status': 404,
                     'headers': [(b'Content-Type', b'text/plain')]})
         await send({'type': 'http.response.body',
-                    'body': b'not found'})
+                    'body': b'Not Found'})
 
 
 async def translate_request(scope, receive, send):
