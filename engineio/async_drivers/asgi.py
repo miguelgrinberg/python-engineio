@@ -46,7 +46,7 @@ class ASGIApp:
             await self.engineio_server.handle_request(scope, receive, send)
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
-                if scope['type'] == 'http' else None
+                if scope['type'] == 'http' and self.static_files else None
             if static_file:
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:

@@ -59,7 +59,8 @@ class WSGIApp(object):
                 path.startswith('/{0}/'.format(self.engineio_path)):
             return self.engineio_app.handle_request(environ, start_response)
         else:
-            static_file = get_static_file(path, self.static_files)
+            static_file = get_static_file(path, self.static_files) \
+                if self.static_files else None
             if static_file:
                 if os.path.exists(static_file['filename']):
                     start_response(

@@ -57,8 +57,9 @@ class TestWSGIApp(unittest.TestCase):
                    'Not Found')
         check_path('/static/test/index.html', '200 OK', 'text/html',
                    '<html></html>\n')
-        check_path('/static/test/', '200 OK', 'text/html',
-                   '<html></html>\n')
+        check_path('/static/test/', '200 OK', 'text/html', '<html></html>\n')
+        check_path('/bar/foo', '404 Not Found', 'text/plain', 'Not Found')
+        check_path('', '404 Not Found', 'text/plain', 'Not Found')
 
         m.static_files[''] = 'index.html'
         check_path('/static/test/', '200 OK', 'text/html',
@@ -75,6 +76,10 @@ class TestWSGIApp(unittest.TestCase):
 
         m.static_files[''] = {'filename': 'test.gif'}
         check_path('/static/test/', '404 Not Found', 'text/plain',
+                   'Not Found')
+
+        m.static_files = {}
+        check_path('/static/test/index.html', '404 Not Found', 'text/plain',
                    'Not Found')
 
     def test_404(self):
