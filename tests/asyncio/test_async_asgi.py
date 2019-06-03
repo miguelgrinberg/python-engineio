@@ -86,6 +86,22 @@ class AsgiTests(unittest.TestCase):
         check_path('/static/test/index.html', 200, 'text/html',
                    '<html></html>\n')
 
+        app.static_files[''] = 'index.html'
+        check_path('/static/test/', 200, 'text/html',
+                   '<html></html>\n')
+
+        app.static_files[''] = {'filename': 'index.html'}
+        check_path('/static/test/', 200, 'text/html',
+                   '<html></html>\n')
+
+        app.static_files[''] = {'filename': 'index.html',
+                                'content_type': 'image/gif'}
+        check_path('/static/test/', 200, 'image/gif',
+                   '<html></html>\n')
+
+        app.static_files[''] = {'filename': 'test.gif'}
+        check_path('/static/test/', 404, 'text/plain', 'Not Found')
+
     def test_lifespan_startup(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}

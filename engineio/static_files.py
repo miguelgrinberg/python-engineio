@@ -37,9 +37,19 @@ def get_static_file(path, static_files):
                 break
     if f:
         if isinstance(f, str):
-            ext = f.rsplit('.')[-1]
             f = {'filename': f}
+        if f['filename'].endswith('/'):
+            if '' in static_files:
+                if isinstance(static_files[''], str):
+                    f['filename'] += static_files['']
+                else:
+                    f['filename'] += static_files['']['filename']
+                    if 'content_type' in static_files['']:
+                        f['content_type'] = static_files['']['content_type']
+            else:
+                f['filename'] += 'index.html'
         if 'content_type' not in f:
+            ext = f['filename'].rsplit('.')[-1]
             f['content_type'] = content_types.get(
                 ext, 'application/octet-stream')
     return f

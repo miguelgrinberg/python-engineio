@@ -57,6 +57,25 @@ class TestWSGIApp(unittest.TestCase):
                    'Not Found')
         check_path('/static/test/index.html', '200 OK', 'text/html',
                    '<html></html>\n')
+        check_path('/static/test/', '200 OK', 'text/html',
+                   '<html></html>\n')
+
+        m.static_files[''] = 'index.html'
+        check_path('/static/test/', '200 OK', 'text/html',
+                   '<html></html>\n')
+
+        m.static_files[''] = {'filename': 'index.html'}
+        check_path('/static/test/', '200 OK', 'text/html',
+                   '<html></html>\n')
+
+        m.static_files[''] = {'filename': 'index.html',
+                              'content_type': 'image/gif'}
+        check_path('/static/test/', '200 OK', 'image/gif',
+                   '<html></html>\n')
+
+        m.static_files[''] = {'filename': 'test.gif'}
+        check_path('/static/test/', '404 Not Found', 'text/plain',
+                   'Not Found')
 
     def test_404(self):
         mock_wsgi_app = None
