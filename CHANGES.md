@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 3.8.0** - 2019-06-03
+
+- Much more flexible support for static files in the server ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b27cafb207589cc52b5ba1ffa60f9a2e1e553af9), [commit](https://github.com/miguelgrinberg/python-engineio/commit/a56aed103c39a25ff6afb316d171cfeca5bf9894))
+- Correctly handle rejected websocket connections in Tornado [#114](https://github.com/miguelgrinberg/python-engineio/issues/114) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/51f5ad28d5c3a17bfad7d9b55555b23223eff43b))
+
 **Release 3.7.0** - 2019-05-29
 
 - Add JSONP support in the server [#98](https://github.com/miguelgrinberg/python-engineio/issues/98) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/36a15987a677ba5a61675250f9b4a9e7c6cbaa74)) (thanks **StoneMoe**!)
