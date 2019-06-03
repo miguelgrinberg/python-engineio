@@ -135,7 +135,12 @@ def make_response(status, headers, payload, environ):
     mode.
     """
     tornado_handler = environ['tornado.handler']
-    tornado_handler.set_status(int(status.split()[0]))
+    try:
+        tornado_handler.set_status(int(status.split()[0]))
+    except RuntimeError:  # pragma: no cover
+        # for websocket connections Tornado does not accept a response, since
+        # it already emitted the 101 status code
+        return
     for header, value in headers:
         tornado_handler.set_header(header, value)
     tornado_handler.write(payload)
