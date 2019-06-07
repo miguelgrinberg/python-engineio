@@ -591,7 +591,6 @@ class Client(object):
                 packets = [self.queue.get(timeout=timeout)]
             except self.queue.Empty:
                 self.logger.error('packet queue is empty, aborting')
-                self._reset()
                 break
             if packets == [None]:
                 self.queue.task_done()

@@ -509,7 +509,6 @@ class AsyncClient(client.Client):
             except (self.queue.Empty, asyncio.TimeoutError,
                     asyncio.CancelledError):
                 self.logger.error('packet queue is empty, aborting')
-                self._reset()
                 break
             if packets == [None]:
                 self.queue.task_done()
