@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 3.8.1** - 2019-06-08
+
+- Optimization to static file serving ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5b8701042678b3e092e2be365bdd31b425b714f6))
+- Do not reset connection when packet queue timeouts [#110](https://github.com/miguelgrinberg/python-engineio/issues/110) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e64e5a67b723400e20cb7c5a014413a4445d9184)) (thanks **Victor Moyano**!)
+
 **Release 3.8.0** - 2019-06-03
 
 - Much more flexible support for static files in the server ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b27cafb207589cc52b5ba1ffa60f9a2e1e553af9), [commit](https://github.com/miguelgrinberg/python-engineio/commit/a56aed103c39a25ff6afb316d171cfeca5bf9894))
