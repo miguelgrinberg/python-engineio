@@ -40,7 +40,7 @@ You can then access the application from your web browser at
 ``http://localhost:5000``.
 
 Near the top of the ``simple.py`` and ``latency.py`` source files there is a
-``async_mode`` variable that can be edited to swich to the other asynchornous
+``async_mode`` variable that can be edited to switch to the other asynchronous
 modes that perform much better than the threading mode. Accepted values for
 ``async_mode`` are ``'threading'``, ``'eventlet'`` and ``'gevent'``.
 
