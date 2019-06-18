@@ -303,7 +303,7 @@ Here is the ``asyncio`` version::
 Note that this function is not a coroutine, since it does not wait for the
 background function to end, but the background function is.
 
-The ``sleep()`` method is a second convenince function that is provided for
+The ``sleep()`` method is a second convenience function that is provided for
 the benefit of applications working with background tasks of their own::
 
     eio.sleep(2)
@@ -410,7 +410,7 @@ The Sanic application is then executed in the usual manner::
         app.run()
 
 It has been reported that the CORS support provided by the Sanic extension
-`sanic-cors <https://github.com/ashleysommer/sanic-cors>`_ is incomaptible with
+`sanic-cors <https://github.com/ashleysommer/sanic-cors>`_ is incompatible with
 this package's own support for this protocol. To disable CORS support in this
 package and let Sanic take full control, initialize the server as follows::
 

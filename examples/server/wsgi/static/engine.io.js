@@ -2791,7 +2791,7 @@ exports.skips = [];
 /**
  * Map of special "%n" handling functions, for the debug "format" argument.
  *
- * Valid key names are a single, lowercased letter, i.e. "n".
+ * Valid key names are a single, lowercase letter, i.e. "n".
  */
 
 exports.formatters = {};

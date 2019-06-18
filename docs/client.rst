@@ -162,7 +162,7 @@ Here is the ``asyncio`` version::
 Note that this function is not a coroutine, since it does not wait for the
 background function to end, but the background function is.
 
-The ``sleep()`` method is a second convenince function that is provided for
+The ``sleep()`` method is a second convenience function that is provided for
 the benefit of applications working with background tasks of their own::
 
     eio.sleep(2)
