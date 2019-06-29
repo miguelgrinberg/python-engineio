@@ -253,7 +253,7 @@ class AsyncServer(server.Server):
             self.logger.warning('Method %s not supported', method)
             r = self._method_not_found()
         if not isinstance(r, dict):
-            return r if r is not None else []
+            return r
         if self.http_compression and \
                 len(r['response']) >= self.compression_threshold:
             encodings = [e.split(';')[0].strip() for e in
