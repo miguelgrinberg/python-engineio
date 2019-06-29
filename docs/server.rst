@@ -228,7 +228,6 @@ retrieve information in the user session::
 
 For the ``asyncio`` server, these methods are coroutines::
 
-
     @eio.on('connect')
     async def on_connect(sid, environ):
         username = authenticate_user(environ)
@@ -264,6 +263,9 @@ For the ``asyncio`` server, an asynchronous context manager is used::
     def on_message(sid, data):
         async with eio.session(sid) as session:
             print('message from ', session['username'])
+
+Note: the contents of the user session are destroyed when the client
+disconnects.
 
 Disconnecting a Client
 ----------------------
