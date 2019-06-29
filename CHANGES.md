@@ -1,5 +1,12 @@
 # python-engineio change log
 
+**Release 3.8.2** - 2019-06-29
+
+- Correctly autodetect asgi async mode [#122](https://github.com/miguelgrinberg/python-engineio/issues/122) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2690ea08b3d3beeaf34b5b4871ac1b567e048a9f))
+- Omit response when asyncio websocket ends [#120](https://github.com/miguelgrinberg/python-engineio/issues/120) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f13074670dcd95e578d17f00b91845139e4f25eb))
+- Improved ocumentation on user session behavior on disconnections ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6b8e667ad26c4e654f84b7f12b851c07d801211d))
+- Correct spelling mistakes in documentation [#119](https://github.com/miguelgrinberg/python-engineio/issues/119) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a4404989a1c48b3522c09a7f6335f2ad401805a2)) (thanks **Edward Betts**!)
+
 **Release 3.8.1** - 2019-06-08
 
 - Optimization to static file serving ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5b8701042678b3e092e2be365bdd31b425b714f6))
