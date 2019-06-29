@@ -25,7 +25,7 @@ setup(
     author_email='miguelgrinberg50@gmail.com',
     description='Engine.IO server',
     long_description=long_description,
-    packages=find_packages(),
+    packages=["engineio"],
     zip_safe=False,
     include_package_data=True,
     platforms='any',
