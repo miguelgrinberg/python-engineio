@@ -3,11 +3,8 @@ import sys
 from urllib.parse import urlsplit
 from .. import exceptions
 
-try:
-    import tornado.web
-    import tornado.websocket
-except ImportError:  # pragma: no cover
-    pass
+import tornado.web
+import tornado.websocket
 import six
 
 

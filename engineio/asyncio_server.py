@@ -20,8 +20,10 @@ class AsyncServer(server.Server):
                        section in the documentation for a description of the
                        available options. Valid async modes are "aiohttp",
                        "sanic", "tornado" and "asgi". If this argument is not
-                       given, an async mode is chosen based on the installed
-                       packages.
+                       given, "aiohttp" is tried first, followed by "sanic",
+                       "tornado", and finally "asgi". The first async mode that
+                       has all its dependencies installed is the one that is
+                       chosen.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting.
     :param ping_interval: The interval in seconds at which the client pings
