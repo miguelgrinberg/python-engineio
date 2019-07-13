@@ -734,6 +734,41 @@ class TestClient(unittest.TestCase):
         r = c._trigger_event('message', 321)
         self.assertEqual(r, 'bar')
 
+    def test_pong_event(self):
+        c = client.Client()
+        c.state = 'connected'
+        c.pong_received = False
+        c._trigger_event = mock.MagicMock()
+        @c.on('pong')
+        def pong():
+            return True
+        c._receive_packet(packet.Packet(packet.PONG))
+        c._trigger_event.assert_called_once_with('pong', run_async=True)
+
+    def test_ping_event(self):
+        c = client.Client()
+        c.state = 'connected'
+        c.queue = mock.MagicMock()
+        c._trigger_event = mock.MagicMock()
+        c._trigger_event = mock.MagicMock()
+        states = [
+            ('disconnecting', True)
+        ]
+        @c.on('ping')
+        def ping():
+            return True
+
+        def fake_wait(timeout):
+            c.state, c.pong_received = states.pop(0)
+
+        c.ping_loop_event.wait = fake_wait
+        c._ping_loop()
+        c.write_loop_task = mock.MagicMock()
+        c.ping_loop_task = mock.MagicMock()
+        c._receive_packet = mock.MagicMock()
+        c._read_loop_websocket()
+        c._trigger_event.assert_called_once_with('ping', run_async=True)
+
     def test_trigger_unknown_event(self):
         c = client.Client()
         c._trigger_event('connect', run_async=False)

@@ -69,7 +69,7 @@ class Client(object):
                        connections to servers with self signed certificates.
                        The default is ``True``.
     """
-    event_names = ['connect', 'disconnect', 'message']
+    event_names = ['connect', 'disconnect', 'message', 'ping', 'pong']
 
     def __init__(self,
                  logger=False,
@@ -447,6 +447,7 @@ class Client(object):
             self._trigger_event('message', pkt.data, run_async=True)
         elif pkt.packet_type == packet.PONG:
             self.pong_received = True
+            self._trigger_event('pong', run_async=True)
         elif pkt.packet_type == packet.CLOSE:
             self.disconnect(abort=True)
         elif pkt.packet_type == packet.NOOP:
@@ -533,6 +534,7 @@ class Client(object):
                 break
             self.pong_received = False
             self._send_packet(packet.Packet(packet.PING))
+            self._trigger_event("ping", run_async=True)
             self.ping_loop_event.wait(timeout=self.ping_interval)
         self.logger.info('Exiting ping task')
 

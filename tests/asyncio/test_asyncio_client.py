@@ -818,6 +818,38 @@ class TestAsyncClient(unittest.TestCase):
             fut)
         self.assertEqual(result, ['bar'])
 
+    def test_pong_event_async(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.pong_received = False
+        c._trigger_event = AsyncMock()
+        @c.on('pong')
+        def pong():
+            return True
+        _run(c._receive_packet(packet.Packet(packet.PONG)))
+        c._trigger_event.mock.assert_called_once_with('pong', run_async=True)
+
+    def test_ping_event_async(self):
+        c = asyncio_client.AsyncClient()
+        c.state = 'connected'
+        c.queue = mock.MagicMock()
+        c.queue.put = AsyncMock()
+        c._trigger_event = AsyncMock()
+        states = [
+            ('disconnecting', True)
+        ]
+        @c.on('ping')
+        def ping():
+            return True
+        async def fake_wait():
+            c.state, c.pong_received = states.pop(0)
+        c.ping_loop_event.wait = fake_wait
+        _run(c._ping_loop())
+        c.write_loop_task = AsyncMock()()
+        c.ping_loop_task = AsyncMock()()
+        c._receive_packet = AsyncMock()
+        _run(c._read_loop_websocket())
+        c._trigger_event.mock.assert_called_once_with('ping', run_async=True)
     def test_trigger_unknown_event(self):
         c = asyncio_client.AsyncClient()
         _run(c._trigger_event('connect', run_async=False))
