@@ -841,6 +841,7 @@ class TestAsyncClient(unittest.TestCase):
         @c.on('ping')
         def ping():
             return True
+
         async def fake_wait():
             c.state, c.pong_received = states.pop(0)
         c.ping_loop_event.wait = fake_wait
@@ -850,6 +851,7 @@ class TestAsyncClient(unittest.TestCase):
         c._receive_packet = AsyncMock()
         _run(c._read_loop_websocket())
         c._trigger_event.mock.assert_called_once_with('ping', run_async=True)
+
     def test_trigger_unknown_event(self):
         c = asyncio_client.AsyncClient()
         _run(c._trigger_event('connect', run_async=False))
