@@ -48,9 +48,9 @@ class Server(object):
                    id. If set to ``None``, a cookie is not sent to the client.
                    The default is ``'io'``.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
-                                 connect to this server. All origins are
-                                 allowed by default, which is equivalent to
-                                 setting this argument to ``'*'``.
+                                 connect to this server. Only the same server
+                                 is allowed by default. Set this argument to
+                                 ``'*'`` to allow all origins.
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server. The default
                              is ``True``.
@@ -309,6 +309,18 @@ class Server(object):
         This function returns the HTTP response body to deliver to the client
         as a byte sequence.
         """
+        # Validate the origin header if present
+        # This is important for WebSocket more than for HTTP, since browsers
+        # only apply CORS controls to HTTP.
+        origin = environ.get('HTTP_ORIGIN')
+        if origin:
+            allowed_origins = self._cors_allowed_origins(environ)
+            if allowed_origins is not None and origin not in allowed_origins:
+                self.logger.info(origin + ' is not an accepted origin.')
+                r = self._bad_request()
+                start_response(r['status'], r['headers'])
+                return [r['response']]
+
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
 
@@ -572,27 +584,35 @@ class Server(object):
                 'headers': [('Content-Type', 'text/plain')],
                 'response': b'Unauthorized'}
 
-    def _cors_headers(self, environ):
-        """Return the cross-origin-resource-sharing headers."""
-        if isinstance(self.cors_allowed_origins, six.string_types):
-            if self.cors_allowed_origins == '*':
-                allowed_origins = None
-            else:
-                allowed_origins = [self.cors_allowed_origins]
+    def _cors_allowed_origins(self, environ):
+        default_origin = None
+        if 'wsgi.url_scheme' in environ and 'HTTP_HOST' in environ:
+            default_origin = '{scheme}://{host}'.format(
+                scheme=environ['wsgi.url_scheme'], host=environ['HTTP_HOST'])
+        if self.cors_allowed_origins is None:
+            allowed_origins = [default_origin] \
+                if default_origin is not None else[]
+        elif self.cors_allowed_origins == '*':
+            allowed_origins = None
+        elif isinstance(self.cors_allowed_origins, six.string_types):
+            allowed_origins = [self.cors_allowed_origins]
         else:
             allowed_origins = self.cors_allowed_origins
-        if allowed_origins is not None and \
-                environ.get('HTTP_ORIGIN', '') not in allowed_origins:
-            return []
-        if 'HTTP_ORIGIN' in environ:
+        return allowed_origins
+
+    def _cors_headers(self, environ):
+        """Return the cross-origin-resource-sharing headers."""
+        headers = []
+        allowed_origins = self._cors_allowed_origins(environ)
+        if allowed_origins is None or \
+                ('HTTP_ORIGIN' in environ and environ['HTTP_ORIGIN'] in
+                 allowed_origins):
             headers = [('Access-Control-Allow-Origin', environ['HTTP_ORIGIN'])]
-        else:
-            headers = [('Access-Control-Allow-Origin', '*')]
         if environ['REQUEST_METHOD'] == 'OPTIONS':
             headers += [('Access-Control-Allow-Methods', 'OPTIONS, GET, POST')]
         if 'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' in environ:
             headers += [('Access-Control-Allow-Headers',
-                         environ['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])]
+                        environ['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'])]
         if self.cors_credentials:
             headers += [('Access-Control-Allow-Credentials', 'true')]
         return headers

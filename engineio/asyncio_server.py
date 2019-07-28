@@ -37,9 +37,10 @@ class AsyncServer(server.Server):
                                   is greater than this value.
     :param cookie: Name of the HTTP cookie that contains the client session
                    id. If set to ``None``, a cookie is not sent to the client.
-    :param cors_allowed_origins: List of origins that are allowed to connect
-                                 to this server. All origins are allowed by
-                                 default.
+    :param cors_allowed_origins: Origin or list of origins that are allowed to
+                                 connect to this server. Only the same server
+                                 is allowed by default. Set this argument to
+                                 ``'*'`` to allow all origins.
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server.
     :param logger: To enable logging set to ``True`` or pass a logger object to
@@ -181,6 +182,21 @@ class AsyncServer(server.Server):
             environ = await translate_request(*args, **kwargs)
         else:
             environ = translate_request(*args, **kwargs)
+
+        # Validate the origin header if present
+        # This is important for WebSocket more than for HTTP, since browsers
+        # only apply CORS controls to HTTP.
+        origin = environ.get('HTTP_ORIGIN')
+        if origin:
+            allowed_origins = self._cors_allowed_origins(environ)
+            if allowed_origins is not None and origin not in allowed_origins:
+                self.logger.info(origin + ' is not an accepted origin.')
+                r = self._bad_request()
+                make_response = self._async['make_response']
+                response = make_response(r['status'], r['headers'],
+                                         r['response'], environ)
+                return response
+
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
 

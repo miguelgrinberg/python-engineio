@@ -399,7 +399,6 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', '*'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
     @mock.patch('importlib.import_module')
@@ -422,6 +421,52 @@ class TestAsyncServer(unittest.TestCase):
         headers = a._async['make_response'].call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_cors_all_origins(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                                 'HTTP_ORIGIN': 'foo'})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cors_allowed_origins='*')
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Origin', 'foo'), headers)
+        self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_cors_one_origin(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                                 'HTTP_ORIGIN': 'a'})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cors_allowed_origins='a')
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Origin', 'a'), headers)
+        self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_cors_one_origin_not_allowed(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                                 'HTTP_ORIGIN': 'b'})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cors_allowed_origins='a')
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        self.assertNotIn(('Access-Control-Allow-Origin', 'b'), headers)
+        self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_cors_headers_default_origin(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                                 'wsgi.url_scheme': 'http',
+                                 'HTTP_HOST': 'foo',
+                                 'HTTP_ORIGIN': 'http://foo'})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Origin', 'http://foo'),
+                      headers)
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_no_credentials(self, import_module):

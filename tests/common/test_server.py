@@ -553,7 +553,6 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', '*'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
     def test_connect_cors_allowed_origin(self):
@@ -577,11 +576,12 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_headers_all_origins(self):
         s = server.Server(cors_allowed_origins='*')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                   'HTTP_ORIGIN': 'foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', '*'), headers)
+        self.assertIn(('Access-Control-Allow-Origin', 'foo'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
     def test_connect_cors_headers_one_origin(self):
@@ -603,6 +603,17 @@ class TestServer(unittest.TestCase):
         headers = start_response.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'b'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+
+    def test_connect_cors_headers_default_origin(self):
+        s = server.Server()
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                   'wsgi.url_scheme': 'http', 'HTTP_HOST': 'foo',
+                   'HTTP_ORIGIN': 'http://foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        headers = start_response.call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Origin', 'http://foo'),
+                      headers)
 
     def test_connect_cors_no_credentials(self):
         s = server.Server(cors_credentials=False)
