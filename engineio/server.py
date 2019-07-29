@@ -591,7 +591,7 @@ class Server(object):
                 scheme=environ['wsgi.url_scheme'], host=environ['HTTP_HOST'])
         if self.cors_allowed_origins is None:
             allowed_origins = [default_origin] \
-                if default_origin is not None else[]
+                if default_origin is not None else []
         elif self.cors_allowed_origins == '*':
             allowed_origins = None
         elif isinstance(self.cors_allowed_origins, six.string_types):
