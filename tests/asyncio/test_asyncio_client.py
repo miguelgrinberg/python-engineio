@@ -423,7 +423,7 @@ class TestAsyncClient(unittest.TestCase):
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
-        side_effect=[websockets.exceptions.InvalidURI]))
+        side_effect=[websockets.exceptions.InvalidURI('foo')]))
     def test_websocket_connection_failed(self, _time):
         c = asyncio_client.AsyncClient()
         self.assertRaises(
@@ -436,7 +436,7 @@ class TestAsyncClient(unittest.TestCase):
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
-        side_effect=[websockets.exceptions.InvalidURI]))
+        side_effect=[websockets.exceptions.InvalidURI('foo')]))
     def test_websocket_upgrade_failed(self, _time):
         c = asyncio_client.AsyncClient()
         c.sid = '123'
