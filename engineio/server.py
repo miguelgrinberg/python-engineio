@@ -48,7 +48,7 @@ class Server(object):
                    id. If set to ``None``, a cookie is not sent to the client.
                    The default is ``'io'``.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
-                                 connect to this server. Only the same server
+                                 connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
                                  ``'*'`` to allow all origins.
     :param cors_credentials: Whether credentials (cookies, authentication) are
