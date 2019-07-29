@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 3.9.0** - 2019-07-29
+
+- Address potential websocket cross-origin attacks [#128](https://github.com/miguelgrinberg/python-engineio/issues/128) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7548f704a0a3000b7ac8a6c88796c4ae58aa9c37))
+- Documentation for the Same Origin security policy ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5b5879469348c529c283e1d81032a603c5e69b31))
+- Remove tests from built package [#124](https://github.com/miguelgrinberg/python-engineio/issues/124) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/399dc8acf2077856c4bd8edb22d0f254b47f0ca2)) (thanks **Pablo Escodebar**!)
+
 **Release 3.8.2** - 2019-06-29
 
 - Correctly autodetect asgi async mode [#122](https://github.com/miguelgrinberg/python-engineio/issues/122) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2690ea08b3d3beeaf34b5b4871ac1b567e048a9f))
