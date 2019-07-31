@@ -40,7 +40,8 @@ class AsyncServer(server.Server):
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
-                                 ``'*'`` to allow all origins.
+                                 ``'*'`` to allow all origins, or to ``[]`` to
+                                 disable CORS handling.
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server.
     :param logger: To enable logging set to ``True`` or pass a logger object to

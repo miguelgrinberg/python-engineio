@@ -489,6 +489,16 @@ class TestAsyncServer(unittest.TestCase):
                        'OPTIONS, GET, POST'), headers)
 
     @mock.patch('importlib.import_module')
+    def test_connect_cors_disabled(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''})
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cors_allowed_origins=[])
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        for header in headers:
+            self.assertFalse(header[0].startswith('Access-Control-'))
+
+    @mock.patch('importlib.import_module')
     def test_connect_event(self, import_module):
         a = self.get_async_mock()
         import_module.side_effect = [a]
