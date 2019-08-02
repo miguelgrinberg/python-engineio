@@ -184,19 +184,21 @@ class AsyncServer(server.Server):
         else:
             environ = translate_request(*args, **kwargs)
 
-        # Validate the origin header if present
-        # This is important for WebSocket more than for HTTP, since browsers
-        # only apply CORS controls to HTTP.
-        origin = environ.get('HTTP_ORIGIN')
-        if origin:
-            allowed_origins = self._cors_allowed_origins(environ)
-            if allowed_origins is not None and origin not in allowed_origins:
-                self.logger.info(origin + ' is not an accepted origin.')
-                r = self._bad_request()
-                make_response = self._async['make_response']
-                response = make_response(r['status'], r['headers'],
-                                         r['response'], environ)
-                return response
+        if self.cors_allowed_origins != []:
+            # Validate the origin header if present
+            # This is important for WebSocket more than for HTTP, since
+            # browsers only apply CORS controls to HTTP.
+            origin = environ.get('HTTP_ORIGIN')
+            if origin:
+                allowed_origins = self._cors_allowed_origins(environ)
+                if allowed_origins is not None and origin not in \
+                        allowed_origins:
+                    self.logger.info(origin + ' is not an accepted origin.')
+                    r = self._bad_request()
+                    make_response = self._async['make_response']
+                    response = make_response(r['status'], r['headers'],
+                                             r['response'], environ)
+                    return response
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))

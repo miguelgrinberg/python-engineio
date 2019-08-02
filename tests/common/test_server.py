@@ -552,6 +552,8 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
@@ -561,6 +563,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'b'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'b'), headers)
 
@@ -570,6 +574,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'c'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '400 BAD REQUEST')
         headers = start_response.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
@@ -580,6 +586,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'foo'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
@@ -590,6 +598,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'a'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'a'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
@@ -600,6 +610,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'b'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '400 BAD REQUEST')
         headers = start_response.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'b'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
@@ -611,6 +623,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'http://foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'http://foo'),
                       headers)
@@ -620,6 +634,8 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
@@ -628,6 +644,8 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'OPTIONS', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Methods', 'OPTIONS, GET, POST'),
                       headers)
@@ -638,6 +656,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ACCESS_CONTROL_REQUEST_HEADERS': 'Foo, Bar'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         self.assertIn(('Access-Control-Allow-Headers', 'Foo, Bar'), headers)
 
@@ -647,6 +667,8 @@ class TestServer(unittest.TestCase):
                    'HTTP_ORIGIN': 'http://foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
         headers = start_response.call_args[0][1]
         for header in headers:
             self.assertFalse(header[0].startswith('Access-Control-'))

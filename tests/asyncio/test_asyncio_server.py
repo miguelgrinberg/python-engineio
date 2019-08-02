@@ -398,6 +398,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
@@ -408,6 +410,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=['a', 'b'])
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'b'), headers)
 
@@ -418,6 +422,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=['a', 'b'])
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '400 BAD REQUEST')
         headers = a._async['make_response'].call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
@@ -429,6 +435,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='*')
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'foo'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
@@ -440,6 +448,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='a')
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'a'), headers)
         self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
@@ -451,6 +461,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='a')
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '400 BAD REQUEST')
         headers = a._async['make_response'].call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'b'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
@@ -464,6 +476,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertIn(('Access-Control-Allow-Origin', 'http://foo'),
                       headers)
@@ -474,6 +488,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_credentials=False)
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Credentials', 'true'), headers)
 
@@ -484,6 +500,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_credentials=False)
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         self.assertIn(('Access-Control-Allow-Methods',
                        'OPTIONS, GET, POST'), headers)
@@ -495,6 +513,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=[])
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
             self.assertFalse(header[0].startswith('Access-Control-'))
@@ -505,6 +525,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=[])
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
             self.assertNotEqual(header[0], 'Access-Control-Allow-Origin')
@@ -515,6 +537,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='*')
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
             self.assertNotEqual(header[0], 'Access-Control-Allow-Origin')
@@ -525,6 +549,8 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=[])
         _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '200 OK')
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
             self.assertNotEqual(header[0], 'Access-Control-Allow-Origin')
