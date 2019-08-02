@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 3.9.1** - 2019-08-02
+
+- Skip CORS headers when origin is not given by client [#131](https://github.com/miguelgrinberg/python-engineio/issues/131) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d01bbfc57e77e4427974afe945c7895edcd94d69))
+- Restore CORS disable option [#329](https://github.com/miguelgrinberg/python-socketio/issues/329) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9f4cd8cf9e7be6baf4bc8c485e7ad204dd87be75))
+
 **Release 3.9.0** - 2019-07-29
 
 - Address potential websocket cross-origin attacks [#128](https://github.com/miguelgrinberg/python-engineio/issues/128) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7548f704a0a3000b7ac8a6c88796c4ae58aa9c37))
