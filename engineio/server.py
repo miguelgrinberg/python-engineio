@@ -609,8 +609,8 @@ class Server(object):
         headers = []
         allowed_origins = self._cors_allowed_origins(environ)
         if 'HTTP_ORIGIN' in environ and \
-                (allowed_origins is None or
-                 environ['HTTP_ORIGIN'] in allowed_origins):
+                (allowed_origins is None or environ['HTTP_ORIGIN'] in
+                 allowed_origins):
             headers = [('Access-Control-Allow-Origin', environ['HTTP_ORIGIN'])]
         if environ['REQUEST_METHOD'] == 'OPTIONS':
             headers += [('Access-Control-Allow-Methods', 'OPTIONS, GET, POST')]
