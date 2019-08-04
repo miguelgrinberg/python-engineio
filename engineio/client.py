@@ -57,10 +57,12 @@ class Client(object):
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param request_timeout: A timeout in seconds for requests. The default is
+                            5 seconds.
     """
     event_names = ['connect', 'disconnect', 'message']
 
-    def __init__(self, logger=False, json=None):
+    def __init__(self, logger=False, json=None, request_timeout=5):
         self.handlers = {}
         self.base_url = None
         self.transports = None
@@ -92,6 +94,8 @@ class Client(object):
                 else:
                     self.logger.setLevel(logging.ERROR)
                 self.logger.addHandler(logging.StreamHandler())
+
+        self.request_timeout = request_timeout
 
     def is_asyncio_based(self):
         return False
@@ -264,7 +268,8 @@ class Client(object):
         self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
         self.logger.info('Attempting polling connection to ' + self.base_url)
         r = self._send_request(
-            'GET', self.base_url + self._get_url_timestamp(), headers=headers)
+            'GET', self.base_url + self._get_url_timestamp(), headers=headers,
+            timeout=self.request_timeout)
         if r is None:
             self._reset()
             raise exceptions.ConnectionError(
@@ -437,13 +442,16 @@ class Client(object):
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
 
     def _send_request(
-            self, method, url, headers=None, body=None):  # pragma: no cover
+            self, method, url, headers=None, body=None,
+            timeout=None):  # pragma: no cover
         if self.http is None:
             self.http = requests.Session()
         try:
-            return self.http.request(method, url, headers=headers, data=body)
-        except requests.exceptions.RequestException:
-            pass
+            return self.http.request(method, url, headers=headers, data=body,
+                                     timeout=timeout)
+        except requests.exceptions.RequestException as exc:
+            self.logger.info('HTTP %s request to %s failed with error %s.',
+                             method, url, exc)
 
     def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -507,7 +515,8 @@ class Client(object):
             self.logger.info(
                 'Sending polling GET request to ' + self.base_url)
             r = self._send_request(
-                'GET', self.base_url + self._get_url_timestamp())
+                'GET', self.base_url + self._get_url_timestamp(),
+                timeout=max(self.ping_interval, self.ping_timeout) + 5)
             if r is None:
                 self.logger.warning(
                     'Connection refused by the server, aborting')
@@ -612,7 +621,8 @@ class Client(object):
                 p = payload.Payload(packets=packets)
                 r = self._send_request(
                     'POST', self.base_url, body=p.encode(),
-                    headers={'Content-Type': 'application/octet-stream'})
+                    headers={'Content-Type': 'application/octet-stream'},
+                    timeout=self.request_timeout)
                 for pkt in packets:
                     self.queue.task_done()
                 if r is None:

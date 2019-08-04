@@ -55,6 +55,12 @@ class TestClient(unittest.TestCase):
         c = client.Client(logger=my_logger)
         self.assertEqual(c.logger, my_logger)
 
+    def test_custon_timeout(self):
+        c = client.Client()
+        self.assertEqual(c.request_timeout, 5)
+        c = client.Client(request_timeout=27)
+        self.assertEqual(c.request_timeout, 27)
+
     def test_on_event(self):
         c = client.Client()
 
@@ -282,7 +288,7 @@ class TestClient(unittest.TestCase):
                           headers={'Foo': 'Bar'})
         _send_request.assert_called_once_with(
             'GET', 'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
-            headers={'Foo': 'Bar'})
+            headers={'Foo': 'Bar'}, timeout=5)
 
     @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_404(self, _send_request):
@@ -773,6 +779,8 @@ class TestClient(unittest.TestCase):
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_no_response(self, _time):
         c = client.Client()
+        c.ping_interval = 25
+        c.ping_timeout = 5
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
@@ -785,13 +793,16 @@ class TestClient(unittest.TestCase):
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
         c.ping_loop_task.join.assert_called_once_with()
-        c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
+        c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456',
+                                                timeout=30)
         c._trigger_event.assert_called_once_with('disconnect',
                                                  run_async=False)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_bad_status(self, _time):
         c = client.Client()
+        c.ping_interval = 25
+        c.ping_timeout = 5
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
@@ -804,11 +815,14 @@ class TestClient(unittest.TestCase):
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
         c.ping_loop_task.join.assert_called_once_with()
-        c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
+        c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456',
+                                                timeout=30)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_bad_packet(self, _time):
         c = client.Client()
+        c.ping_interval = 25
+        c.ping_timeout = 60
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
@@ -822,10 +836,13 @@ class TestClient(unittest.TestCase):
         c.queue.put.assert_called_once_with(None)
         c.write_loop_task.join.assert_called_once_with()
         c.ping_loop_task.join.assert_called_once_with()
-        c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456')
+        c._send_request.assert_called_once_with('GET', 'http://foo&t=123.456',
+                                                timeout=65)
 
     def test_read_loop_polling(self):
         c = client.Client()
+        c.ping_interval = 25
+        c.ping_timeout = 5
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
@@ -954,7 +971,7 @@ class TestClient(unittest.TestCase):
             packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})])
         c._send_request.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'})
+            headers={'Content-Type': 'application/octet-stream'}, timeout=5)
 
     def test_write_loop_polling_three_packets(self):
         c = client.Client()
@@ -983,7 +1000,7 @@ class TestClient(unittest.TestCase):
         ])
         c._send_request.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'})
+            headers={'Content-Type': 'application/octet-stream'}, timeout=5)
 
     def test_write_loop_polling_two_packets_done(self):
         c = client.Client()
@@ -1010,7 +1027,7 @@ class TestClient(unittest.TestCase):
         ])
         c._send_request.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'})
+            headers={'Content-Type': 'application/octet-stream'}, timeout=5)
         self.assertEqual(c.state, 'connected')
 
     def test_write_loop_polling_bad_connection(self):
@@ -1034,7 +1051,7 @@ class TestClient(unittest.TestCase):
             packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})])
         c._send_request.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'})
+            headers={'Content-Type': 'application/octet-stream'}, timeout=5)
         self.assertEqual(c.state, 'connected')
 
     def test_write_loop_polling_bad_status(self):
@@ -1058,7 +1075,7 @@ class TestClient(unittest.TestCase):
             packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})])
         c._send_request.assert_called_once_with(
             'POST', 'http://foo', body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'})
+            headers={'Content-Type': 'application/octet-stream'}, timeout=5)
         self.assertEqual(c.state, 'disconnected')
 
     def test_write_loop_websocket_one_packet(self):

@@ -30,6 +30,8 @@ class AsyncClient(client.Client):
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
                  versions.
+    :param request_timeout: A timeout in seconds for requests. The default is
+                            5 seconds.
     """
     def is_asyncio_based(self):
         return True
@@ -172,7 +174,8 @@ class AsyncClient(client.Client):
         self.base_url = self._get_engineio_url(url, engineio_path, 'polling')
         self.logger.info('Attempting polling connection to ' + self.base_url)
         r = await self._send_request(
-            'GET', self.base_url + self._get_url_timestamp(), headers=headers)
+            'GET', self.base_url + self._get_url_timestamp(), headers=headers,
+            timeout=self.request_timeout)
         if r is None:
             self._reset()
             raise exceptions.ConnectionError(
@@ -348,14 +351,18 @@ class AsyncClient(client.Client):
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
 
     async def _send_request(
-            self, method, url, headers=None, body=None):  # pragma: no cover
+            self, method, url, headers=None, body=None,
+            timeout=None):  # pragma: no cover
         if self.http is None or self.http.closed:
             self.http = aiohttp.ClientSession()
-        method = getattr(self.http, method.lower())
+        http_method = getattr(self.http, method.lower())
         try:
-            return await method(url, headers=headers, data=body)
-        except aiohttp.ClientError:
-            return
+            return await http_method(
+                url, headers=headers, data=body,
+                timeout=aiohttp.ClientTimeout(total=timeout))
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            self.logger.info('HTTP %s request to %s failed with error %s.',
+                             method, url, exc)
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -424,7 +431,8 @@ class AsyncClient(client.Client):
             self.logger.info(
                 'Sending polling GET request to ' + self.base_url)
             r = await self._send_request(
-                'GET', self.base_url + self._get_url_timestamp())
+                'GET', self.base_url + self._get_url_timestamp(),
+                timeout=max(self.ping_interval, self.ping_timeout) + 5)
             if r is None:
                 self.logger.warning(
                     'Connection refused by the server, aborting')
@@ -530,7 +538,8 @@ class AsyncClient(client.Client):
                 p = payload.Payload(packets=packets)
                 r = await self._send_request(
                     'POST', self.base_url, body=p.encode(),
-                    headers={'Content-Type': 'application/octet-stream'})
+                    headers={'Content-Type': 'application/octet-stream'},
+                    timeout=self.request_timeout)
                 for pkt in packets:
                     self.queue.task_done()
                 if r is None:
