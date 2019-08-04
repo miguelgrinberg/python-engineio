@@ -252,7 +252,8 @@ class AsyncClient(client.Client):
                 websocket_url + self._get_url_timestamp(),
                 extra_headers=headers)
         except (websockets.exceptions.InvalidURI,
-                websockets.exceptions.InvalidHandshake):
+                websockets.exceptions.InvalidHandshake,
+                OSError):
             if upgrade:
                 self.logger.warning(
                     'WebSocket upgrade failed: connection error')
