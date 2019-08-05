@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 3.9.3** - 2019-08-05
+
+- Apply timeouts to all HTTP requests sent from the client [#127](https://github.com/miguelgrinberg/python-engineio/issues/127) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6666d6a092333aa60f48ccdc42b250be60e9f33c))
+- Shutdown non responding websocket connections in the client [#326](https://github.com/miguelgrinberg/python-socketio/issues/326) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/95731e9e2d66e8ee91faeb5538dcde84b88466bd))
+- Catch OSError exceptions from websockets package [#328](https://github.com/miguelgrinberg/python-socketio/issues/328) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0adc074e58dac1d81f769ed1a2edfcab5e0644d1))
+
 **Release 3.9.2** - 2019-08-03
 
 - Skip CORS headers when origin is not given by client [#131](https://github.com/miguelgrinberg/python-engineio/issues/131) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a349d4e3ce25ff771027f986c7594d840cc9e941))
