@@ -501,7 +501,7 @@ class Client(object):
                 self.logger.info(
                     'PONG response has not been received, aborting')
                 if self.ws:
-                    self.ws.close()
+                    self.ws.shutdown()
                 self.queue.put(None)
                 break
             self.pong_received = False
