@@ -27,7 +27,11 @@ class AsyncServer(server.Server):
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting.
     :param ping_interval: The interval in seconds at which the client pings
-                          the server.
+                          the server. The default is 25 seconds. For advanced
+                          control, a two element tuple can be given, where
+                          the first number is the ping interval and the second
+                          is a grace period added by the server. The default
+                          grace period is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport.
     :param allow_upgrades: Whether to allow transport upgrades or not.

@@ -84,6 +84,12 @@ class TestServer(unittest.TestCase):
         s = server.Server(**kwargs)
         for arg in six.iterkeys(kwargs):
             self.assertEqual(getattr(s, arg), kwargs[arg])
+        self.assertEqual(s.ping_interval_grace_period, 5)
+
+    def test_create_with_grace_period(self):
+        s = server.Server(ping_interval=(1, 2))
+        self.assertEqual(s.ping_interval, 1)
+        self.assertEqual(s.ping_interval_grace_period, 2)
 
     def test_create_ignores_kwargs(self):
         server.Server(foo='bar')  # this should not raise

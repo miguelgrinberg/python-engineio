@@ -33,7 +33,11 @@ class Server(object):
                          server to respond before disconnecting. The default
                          is 60 seconds.
     :param ping_interval: The interval in seconds at which the client pings
-                          the server. The default is 25 seconds.
+                          the server. The default is 25 seconds. For advanced
+                          control, a two element tuple can be given, where
+                          the first number is the ping interval and the second
+                          is a grace period added by the server. The default
+                          grace period is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport. The default is 100,000,000
                                  bytes.
@@ -83,7 +87,12 @@ class Server(object):
                  cors_credentials=True, logger=False, json=None,
                  async_handlers=True, monitor_clients=None, **kwargs):
         self.ping_timeout = ping_timeout
-        self.ping_interval = ping_interval
+        if isinstance(ping_interval, tuple):
+            self.ping_interval = ping_interval[0]
+            self.ping_interval_grace_period = ping_interval[1]
+        else:
+            self.ping_interval = ping_interval
+            self.ping_interval_grace_period = 5
         self.max_http_buffer_size = max_http_buffer_size
         self.allow_upgrades = allow_upgrades
         self.http_compression = http_compression

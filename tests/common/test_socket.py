@@ -21,6 +21,7 @@ class TestSocket(unittest.TestCase):
         mock_server = mock.Mock()
         mock_server.ping_timeout = 0.2
         mock_server.ping_interval = 0.2
+        mock_server.ping_interval_grace_period = 0.001
         mock_server.async_handlers = True
 
         try:
@@ -109,9 +110,10 @@ class TestSocket(unittest.TestCase):
 
     def test_timeout(self):
         mock_server = self._get_mock_server()
-        mock_server.ping_interval = -6
+        mock_server.ping_interval = 6
+        mock_server.ping_interval_grace_period = 2
         s = socket.Socket(mock_server, 'sid')
-        s.last_ping = time.time() - 1
+        s.last_ping = time.time() - 9
         s.close = mock.MagicMock()
         s.send('packet')
         s.close.assert_called_once_with(wait=False, abort=False)
