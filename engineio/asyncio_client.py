@@ -213,7 +213,8 @@ class AsyncClient(client.Client):
 
         if 'websocket' in self.upgrades and 'websocket' in self.transports:
             # attempt to upgrade to websocket
-            if await self._connect_websocket(url, headers, engineio_path, cert):
+            if await self._connect_websocket(url, headers, engineio_path,
+                                             cert):
                 # upgrade to websocket succeeded, we're done here
                 return
 
