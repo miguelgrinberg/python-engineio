@@ -5,6 +5,7 @@ try:
 except ImportError:  # pragma: no cover
     aiohttp = None
 import six
+import ssl
 try:
     import websockets
 except ImportError:  # pragma: no cover
@@ -37,7 +38,7 @@ class AsyncClient(client.Client):
         return True
 
     async def connect(self, url, headers={}, transports=None,
-                      engineio_path='engine.io'):
+                      engineio_path='engine.io', cert=None):
         """Connect to an Engine.IO server.
 
         :param url: The URL of the Engine.IO server. It can include custom
@@ -51,6 +52,7 @@ class AsyncClient(client.Client):
         :param engineio_path: The endpoint where the Engine.IO server is
                               installed. The default value is appropriate for
                               most cases.
+        :param cert: A path to a trusted SSL certficate in PEM format.
 
         Note: this method is a coroutine.
 
@@ -72,7 +74,7 @@ class AsyncClient(client.Client):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return await getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers, engineio_path, cert)
 
     async def wait(self):
         """Wait until the connection with the server ends.
@@ -165,7 +167,7 @@ class AsyncClient(client.Client):
             asyncio.ensure_future(self.http.close())
         super()._reset()
 
-    async def _connect_polling(self, url, headers, engineio_path):
+    async def _connect_polling(self, url, headers, engineio_path, cert=None):
         """Establish a long-polling connection to the Engine.IO server."""
         if aiohttp is None:  # pragma: no cover
             self.logger.error('aiohttp not installed -- cannot make HTTP '
@@ -175,7 +177,7 @@ class AsyncClient(client.Client):
         self.logger.info('Attempting polling connection to ' + self.base_url)
         r = await self._send_request(
             'GET', self.base_url + self._get_url_timestamp(), headers=headers,
-            timeout=self.request_timeout)
+            timeout=self.request_timeout, cert=cert)
         if r is None:
             self._reset()
             raise exceptions.ConnectionError(
@@ -211,7 +213,7 @@ class AsyncClient(client.Client):
 
         if 'websocket' in self.upgrades and 'websocket' in self.transports:
             # attempt to upgrade to websocket
-            if await self._connect_websocket(url, headers, engineio_path):
+            if await self._connect_websocket(url, headers, engineio_path, cert):
                 # upgrade to websocket succeeded, we're done here
                 return
 
@@ -220,7 +222,7 @@ class AsyncClient(client.Client):
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
 
-    async def _connect_websocket(self, url, headers, engineio_path):
+    async def _connect_websocket(self, url, headers, engineio_path, cert=None):
         """Establish or upgrade to a WebSocket connection with the server."""
         if websockets is None:  # pragma: no cover
             self.logger.error('websockets package not installed')
@@ -247,10 +249,11 @@ class AsyncClient(client.Client):
             headers = headers.copy()
             headers['Cookie'] = cookies
 
+        sslopt = {'certfile': cert}
         try:
             ws = await websockets.connect(
                 websocket_url + self._get_url_timestamp(),
-                extra_headers=headers)
+                extra_headers=headers, sslopt=sslopt)
         except (websockets.exceptions.InvalidURI,
                 websockets.exceptions.InvalidHandshake,
                 OSError):
@@ -353,14 +356,15 @@ class AsyncClient(client.Client):
 
     async def _send_request(
             self, method, url, headers=None, body=None,
-            timeout=None):  # pragma: no cover
+            timeout=None, cert=None):  # pragma: no cover
         if self.http is None or self.http.closed:
             self.http = aiohttp.ClientSession()
         http_method = getattr(self.http, method.lower())
+        ssl_context = ssl.create_default_context(cafile=cert)
         try:
             return await http_method(
                 url, headers=headers, data=body,
-                timeout=aiohttp.ClientTimeout(total=timeout))
+                timeout=aiohttp.ClientTimeout(total=timeout), ssl=ssl_context)
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)

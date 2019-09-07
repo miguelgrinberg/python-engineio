@@ -68,14 +68,14 @@ class TestAsyncClient(unittest.TestCase):
         c._connect_polling = AsyncMock(return_value='foo')
         self.assertEqual(_run(c.connect('http://foo')), 'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = asyncio_client.AsyncClient()
         c._connect_polling = AsyncMock(return_value='foo')
         self.assertEqual(
             _run(c.connect('http://foo', transports=['polling'])), 'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = asyncio_client.AsyncClient()
         c._connect_polling = AsyncMock(return_value='foo')
@@ -84,7 +84,7 @@ class TestAsyncClient(unittest.TestCase):
                                                      'websocket'])),
             'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
     def test_connect_websocket(self):
         c = asyncio_client.AsyncClient()
@@ -93,7 +93,7 @@ class TestAsyncClient(unittest.TestCase):
             _run(c.connect('http://foo', transports=['websocket'])),
             'foo')
         c._connect_websocket.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = asyncio_client.AsyncClient()
         c._connect_websocket = AsyncMock(return_value='foo')
@@ -101,14 +101,14 @@ class TestAsyncClient(unittest.TestCase):
             _run(c.connect('http://foo', transports='websocket')),
             'foo')
         c._connect_websocket.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
     def test_connect_query_string(self):
         c = asyncio_client.AsyncClient()
         c._connect_polling = AsyncMock(return_value='foo')
         self.assertEqual(_run(c.connect('http://foo?bar=baz')), 'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo?bar=baz', {}, 'engine.io')
+            'http://foo?bar=baz', {}, 'engine.io', None)
 
     def test_connect_custom_headers(self):
         c = asyncio_client.AsyncClient()
@@ -117,7 +117,7 @@ class TestAsyncClient(unittest.TestCase):
             _run(c.connect('http://foo', headers={'Foo': 'Bar'})),
             'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo', {'Foo': 'Bar'}, 'engine.io')
+            'http://foo', {'Foo': 'Bar'}, 'engine.io', None)
 
     def test_wait(self):
         c = asyncio_client.AsyncClient()
@@ -270,7 +270,7 @@ class TestAsyncClient(unittest.TestCase):
                 'http://foo', headers={'Foo': 'Bar'}))
         c._send_request.mock.assert_called_once_with(
             'GET', 'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
-            headers={'Foo': 'Bar'}, timeout=5)
+            cert=None, headers={'Foo': 'Bar'}, timeout=5)
 
     def test_polling_connection_404(self):
         c = asyncio_client.AsyncClient()
@@ -380,7 +380,7 @@ class TestAsyncClient(unittest.TestCase):
         _run(c.connect('http://foo'))
 
         c._connect_websocket.mock.assert_called_once_with('http://foo', {},
-                                                          'engine.io')
+                                                          'engine.io', None)
         on_connect.assert_called_once_with()
         self.assertIn(c, client.connected_clients)
         self.assertEqual(
@@ -413,7 +413,7 @@ class TestAsyncClient(unittest.TestCase):
         time.sleep(0.1)
 
         c._connect_websocket.mock.assert_called_once_with('http://foo', {},
-                                                          'engine.io')
+                                                          'engine.io', None)
         c._ping_loop.mock.assert_called_once_with()
         c._read_loop_polling.mock.assert_called_once_with()
         c._read_loop_websocket.mock.assert_not_called()
@@ -432,7 +432,7 @@ class TestAsyncClient(unittest.TestCase):
                       headers={'Foo': 'Bar'}))
         asyncio_client.websockets.connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            extra_headers={'Foo': 'Bar'})
+            extra_headers={'Foo': 'Bar'}, sslopt={'certfile': None})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
@@ -444,7 +444,7 @@ class TestAsyncClient(unittest.TestCase):
             'http://foo', transports=['websocket'])))
         asyncio_client.websockets.connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
-            extra_headers={})
+            extra_headers={}, sslopt={'certfile': None})
 
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_connection_no_open_packet(self):
@@ -491,7 +491,7 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.ws, ws)
         asyncio_client.websockets.connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            extra_headers={})
+            extra_headers={}, sslopt={'certfile': None})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
@@ -519,7 +519,8 @@ class TestAsyncClient(unittest.TestCase):
         time.sleep(0.1)
         asyncio_client.websockets.connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            extra_headers={'Cookie': 'key=value; key2=value2'})
+            extra_headers={'Cookie': 'key=value; key2=value2'},
+            sslopt={'certfile': None})
 
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_upgrade_no_pong(self):
