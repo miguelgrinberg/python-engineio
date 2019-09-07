@@ -341,7 +341,7 @@ class Client(object):
         if self.http:
             cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
                                  for cookie in self.http.cookies])
-        sslopt = {'certfile' : cert}
+        sslopt = {'certfile': cert}
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), header=headers,
