@@ -63,8 +63,25 @@ class TestPayload(unittest.TestCase):
         self.assertRaises(ValueError, payload.Payload,
                           encoded_payload=b'bad payload')
 
-    def test_decode_multi_payload(self):
-        p = payload.Payload(encoded_payload=b'4:4abc\x00\x04\xff4def')
+    # performance improvements in the payload parser assume packets in a
+    # payload are either all binary or all text, so the following test does
+    # no work anymore.
+    #
+    # def test_decode_multi_payload(self):
+    #     p = payload.Payload(encoded_payload=b'4:4abc\x00\x04\xff4def')
+    #     self.assertEqual(len(p.packets), 2)
+    #     self.assertEqual(p.packets[0].data, 'abc')
+    #     self.assertEqual(p.packets[1].data, 'def')
+
+    def test_decode_multi_binary_payload(self):
+        p = payload.Payload(
+            encoded_payload=b'\x00\x04\xff4abc\x00\x04\xff4def')
+        self.assertEqual(len(p.packets), 2)
+        self.assertEqual(p.packets[0].data, 'abc')
+        self.assertEqual(p.packets[1].data, 'def')
+
+    def test_decode_multi_text_payload(self):
+        p = payload.Payload(encoded_payload=b'4:4abc4:4def')
         self.assertEqual(len(p.packets), 2)
         self.assertEqual(p.packets[0].data, 'abc')
         self.assertEqual(p.packets[1].data, 'def')

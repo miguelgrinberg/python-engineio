@@ -42,39 +42,34 @@ class Payload(object):
     def decode(self, encoded_payload):
         """Decode a transmitted payload."""
         self.packets = []
-        while encoded_payload:
-            # JSONP POST payload starts with 'd='
-            if encoded_payload.startswith(b'd='):
-                encoded_payload = urllib.parse.parse_qs(
-                    encoded_payload)[b'd'][0]
 
-            if six.byte2int(encoded_payload[0:1]) <= 1:
+        if len(encoded_payload) == 0:
+            return
+
+        # JSONP POST payload starts with 'd='
+        if encoded_payload.startswith(b'd='):
+            encoded_payload = urllib.parse.parse_qs(
+                encoded_payload)[b'd'][0]
+
+        i = 0
+        if six.byte2int(encoded_payload[0:1]) <= 1:
+            # binary encoding
+            while i < len(encoded_payload):
                 packet_len = 0
-                i = 1
+                i += 1
                 while six.byte2int(encoded_payload[i:i + 1]) != 255:
                     packet_len = packet_len * 10 + six.byte2int(
                         encoded_payload[i:i + 1])
                     i += 1
                 self.packets.append(packet.Packet(
                     encoded_packet=encoded_payload[i + 1:i + 1 + packet_len]))
-            else:
-                i = encoded_payload.find(b':')
-                if i == -1:
-                    raise ValueError('invalid payload')
-
-                # extracting the packet out of the payload is extremely
-                # inefficient, because the payload needs to be treated as
-                # binary, but the non-binary packets have to be parsed as
-                # unicode. Luckily this complication only applies to long
-                # polling, as the websocket transport sends packets
-                # individually wrapped.
-                packet_len = int(encoded_payload[0:i])
-                pkt = encoded_payload.decode('utf-8', errors='ignore')[
-                    i + 1: i + 1 + packet_len].encode('utf-8')
+                i += packet_len + 1
+        else:
+            # assume text encoding
+            encoded_payload = encoded_payload.decode('utf-8')
+            while i < len(encoded_payload):
+                j = encoded_payload.find(':', i)
+                packet_len = int(encoded_payload[i:j])
+                pkt = encoded_payload[j + 1:j + 1 + packet_len]
                 self.packets.append(packet.Packet(encoded_packet=pkt))
-
-                # the engine.io protocol sends the packet length in
-                # utf-8 characters, but we need it in bytes to be able to
-                # jump to the next packet in the payload
-                packet_len = len(pkt)
-            encoded_payload = encoded_payload[i + 1 + packet_len:]
+                i = j + 1 + packet_len
