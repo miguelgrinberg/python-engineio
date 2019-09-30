@@ -4,6 +4,7 @@ try:
 except ImportError:  # pragma: no cover
     import Queue as queue
 import signal
+import ssl
 import threading
 import time
 
@@ -59,10 +60,14 @@ class Client(object):
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
+    :param ssl_verify: ``True`` if SSL connections should be fully verified or
+                       ``False`` to skip SSL certificate verification allowing
+                       connection to server with self signed certificates. The
+                       default is ``True``
     """
     event_names = ['connect', 'disconnect', 'message']
 
-    def __init__(self, logger=False, json=None, request_timeout=5):
+    def __init__(self, logger=False, json=None, request_timeout=5, ssl_verify=True):
         self.handlers = {}
         self.base_url = None
         self.transports = None
@@ -80,6 +85,7 @@ class Client(object):
         self.ping_loop_event = self.create_event()
         self.queue = None
         self.state = 'disconnected'
+        self.ssl_verify = ssl_verify
 
         if json is not None:
             packet.Packet.json = json
@@ -340,10 +346,15 @@ class Client(object):
         if self.http:
             cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
                                  for cookie in self.http.cookies])
+
+        sslopt = {}
+        if not self.ssl_verify:
+            sslopt = {"cert_reqs": ssl.CERT_NONE}
+
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies)
+                cookie=cookies, sslopt=sslopt)
         except ConnectionError:
             if upgrade:
                 self.logger.warning(
@@ -448,7 +459,7 @@ class Client(object):
             self.http = requests.Session()
         try:
             return self.http.request(method, url, headers=headers, data=body,
-                                     timeout=timeout)
+                                     timeout=timeout, verify=self.ssl_verify)
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
