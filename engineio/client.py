@@ -347,14 +347,15 @@ class Client(object):
             cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
                                  for cookie in self.http.cookies])
 
-        sslopt = {}
-        if not self.ssl_verify:
-            sslopt["cert_reqs"] = ssl.CERT_NONE
-
         try:
-            ws = websocket.create_connection(
-                websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, sslopt=sslopt)
+            if not self.ssl_verify:
+                ws = websocket.create_connection(
+                    websocket_url + self._get_url_timestamp(), header=headers,
+                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE})
+            else:
+                ws = websocket.create_connection(
+                    websocket_url + self._get_url_timestamp(), header=headers,
+                    cookie=cookies)
         except ConnectionError:
             if upgrade:
                 self.logger.warning(
