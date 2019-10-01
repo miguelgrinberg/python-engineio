@@ -349,7 +349,7 @@ class Client(object):
 
         sslopt = {}
         if not self.ssl_verify:
-            sslopt = {"cert_reqs": ssl.CERT_NONE}
+            sslopt["cert_reqs"] = ssl.CERT_NONE
 
         try:
             ws = websocket.create_connection(
