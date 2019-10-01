@@ -67,7 +67,11 @@ class Client(object):
     """
     event_names = ['connect', 'disconnect', 'message']
 
-    def __init__(self, logger=False, json=None, request_timeout=5, ssl_verify=True):
+    def __init__(self,
+                 logger=False,
+                 json=None,
+                 request_timeout=5,
+                 ssl_verify=True):
         self.handlers = {}
         self.base_url = None
         self.transports = None
