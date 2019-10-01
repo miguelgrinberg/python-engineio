@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 import sys
 import time
 import unittest
@@ -337,6 +338,41 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'polling')
 
+    def test_polling_https_noverify_connection_successful(self):
+        c = asyncio_client.AsyncClient(ssl_verify=False)
+        c._send_request = AsyncMock()
+        c._send_request.mock.return_value.status = 200
+        c._send_request.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.OPEN, {
+                    'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                    'pingTimeout': 2000
+                })
+            ]).encode())
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = AsyncMock()
+        c.on('connect', on_connect)
+        _run(c.connect('https://foo'))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_called_once_with()
+        c._read_loop_websocket.mock.assert_not_called()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.mock.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'https://foo/engine.io/?transport=polling&EIO=3&sid=123')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'polling')
+
     def test_polling_connection_with_more_packets(self):
         c = asyncio_client.AsyncClient()
         c._send_request = AsyncMock()
@@ -492,6 +528,45 @@ class TestAsyncClient(unittest.TestCase):
         asyncio_client.websockets.connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
             extra_headers={})
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
+    def test_websocket_https_noverify_connection_successful(self, _time):
+        ws = asyncio_client.websockets.connect.mock.return_value
+        ws.recv = AsyncMock(return_value=packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode())
+        c = asyncio_client.AsyncClient(ssl_verify=False)
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        _run(c.connect('wss://foo', transports=['websocket']))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_not_called()
+        c._read_loop_websocket.mock.assert_called_once_with()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'wss://foo/engine.io/?transport=websocket&EIO=3')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'websocket')
+        self.assertEqual(c.ws, ws)
+        _, kwargs = asyncio_client.websockets.connect.mock.call_args
+        self.assertTrue('ssl' in kwargs)
+        self.assertTrue(isinstance(kwargs['ssl'], ssl.SSLContext))
+        self.assertEqual(kwargs['ssl'].verify_mode, ssl.CERT_NONE)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
