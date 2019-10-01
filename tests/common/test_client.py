@@ -532,7 +532,8 @@ class TestClient(unittest.TestCase):
                          {'header': {}, 'cookie': None})
 
     @mock.patch('engineio.client.websocket.create_connection')
-    def test_websocket_https_noverify_connection_successful(self, create_connection):
+    def test_websocket_https_noverify_connection_successful(
+            self, create_connection):
         create_connection.return_value.recv.return_value = packet.Packet(
             packet.OPEN, {
                 'sid': '123', 'upgrades': [], 'pingInterval': 1000,
