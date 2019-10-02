@@ -1,4 +1,5 @@
 import asyncio
+import ssl
 
 try:
     import aiohttp
@@ -248,9 +249,17 @@ class AsyncClient(client.Client):
             headers['Cookie'] = cookies
 
         try:
-            ws = await websockets.connect(
-                websocket_url + self._get_url_timestamp(),
-                extra_headers=headers)
+            if not self.ssl_verify:
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                ws = await websockets.connect(
+                    websocket_url + self._get_url_timestamp(),
+                    extra_headers=headers, ssl=ssl_context)
+            else:
+                ws = await websockets.connect(
+                    websocket_url + self._get_url_timestamp(),
+                    extra_headers=headers)
         except (websockets.exceptions.InvalidURI,
                 websockets.exceptions.InvalidHandshake,
                 OSError):
@@ -357,10 +366,17 @@ class AsyncClient(client.Client):
         if self.http is None or self.http.closed:
             self.http = aiohttp.ClientSession()
         http_method = getattr(self.http, method.lower())
+
         try:
-            return await http_method(
-                url, headers=headers, data=body,
-                timeout=aiohttp.ClientTimeout(total=timeout))
+            if not self.ssl_verify:
+                return await http_method(
+                    url, headers=headers, data=body,
+                    timeout=aiohttp.ClientTimeout(total=timeout), ssl=False)
+            else:
+                return await http_method(
+                    url, headers=headers, data=body,
+                    timeout=aiohttp.ClientTimeout(total=timeout))
+
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)

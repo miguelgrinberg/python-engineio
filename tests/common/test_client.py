@@ -1,5 +1,6 @@
 import json
 import logging
+import ssl
 import time
 import unittest
 
@@ -350,6 +351,40 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.transport(), 'polling')
 
     @mock.patch('engineio.client.Client._send_request')
+    def test_polling_https_noverify_connection_successful(self, _send_request):
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(packets=[
+            packet.Packet(packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            })
+        ]).encode()
+        c = client.Client(ssl_verify=False)
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('https://foo')
+        time.sleep(0.1)
+
+        c._ping_loop.assert_called_once_with()
+        c._read_loop_polling.assert_called_once_with()
+        c._read_loop_websocket.assert_not_called()
+        c._write_loop.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'https://foo/engine.io/?transport=polling&EIO=3&sid=123')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'polling')
+
+    @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_with_more_packets(self, _send_request):
         _send_request.return_value.status_code = 200
         _send_request.return_value.content = payload.Payload(packets=[
@@ -495,6 +530,44 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
                          {'header': {}, 'cookie': None})
+
+    @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_https_noverify_connection_successful(
+            self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode()
+        c = client.Client(ssl_verify=False)
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('wss://foo', transports=['websocket'])
+        time.sleep(0.1)
+
+        c._ping_loop.assert_called_once_with()
+        c._read_loop_polling.assert_not_called()
+        c._read_loop_websocket.assert_called_once_with()
+        c._write_loop.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'wss://foo/engine.io/?transport=websocket&EIO=3')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'websocket')
+        self.assertEqual(c.ws, create_connection.return_value)
+        self.assertEqual(len(create_connection.call_args_list), 1)
+        self.assertEqual(create_connection.call_args[1],
+                         {'header': {}, 'cookie': None,
+                          'sslopt': {'cert_reqs': ssl.CERT_NONE}})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_with_cookies(self, create_connection):
