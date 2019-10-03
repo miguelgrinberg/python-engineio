@@ -652,7 +652,7 @@ class Server(object):
                 continue
 
             # go through the entire client list in a ping interval cycle
-            sleep_interval = self.ping_timeout / len(self.sockets)
+            sleep_interval = float(self.ping_timeout) / len(self.sockets)
 
             try:
                 # iterate over the current clients
