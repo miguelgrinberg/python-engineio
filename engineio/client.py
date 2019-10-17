@@ -39,7 +39,11 @@ def signal_handler(sig, frame):
             client.start_background_task(client.disconnect, abort=True)
         else:
             client.disconnect(abort=True)
-    return original_signal_handler(sig, frame)
+    if callable(original_signal_handler):
+        return original_signal_handler(sig, frame)
+    else:  # pragma: no cover
+        # Handle case where no original SIGINT handler was present.
+        return signal.def_int_handler(sig, frame)
 
 
 original_signal_handler = signal.signal(signal.SIGINT, signal_handler)
