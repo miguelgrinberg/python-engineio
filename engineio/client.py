@@ -284,7 +284,7 @@ class Client(object):
             self._reset()
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
-        if r.status_code != 200:
+        if r.status_code < 200 or r.status_code >= 300:
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
                     r.status_code))
@@ -538,7 +538,7 @@ class Client(object):
                     'Connection refused by the server, aborting')
                 self.queue.put(None)
                 break
-            if r.status_code != 200:
+            if r.status_code < 200 or r.status_code >= 300:
                 self.logger.warning('Unexpected status code %s in server '
                                     'response, aborting', r.status_code)
                 self.queue.put(None)
@@ -645,7 +645,7 @@ class Client(object):
                     self.logger.warning(
                         'Connection refused by the server, aborting')
                     break
-                if r.status_code != 200:
+                if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status_code)
                     self._reset()
