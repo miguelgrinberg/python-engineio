@@ -85,3 +85,12 @@ class TestPayload(unittest.TestCase):
         self.assertEqual(len(p.packets), 2)
         self.assertEqual(p.packets[0].data, 'abc')
         self.assertEqual(p.packets[1].data, 'def')
+
+    def test_decode_multi_binary_payload_with_too_many_packets(self):
+        self.assertRaises(
+            ValueError, payload.Payload,
+            encoded_payload=b'\x00\x04\xff4abc\x00\x04\xff4def' * 9)
+
+    def test_decode_multi_text_payload_with_too_many_packets(self):
+        self.assertRaises(ValueError, payload.Payload,
+                          encoded_payload=b'4:4abc4:4def' * 9)
