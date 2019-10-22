@@ -1,5 +1,15 @@
 # python-engineio change log
 
+**Release 3.10.0** - 2019-10-22
+
+- Added support for SSL connection to unverified host in the client. [#137](https://github.com/miguelgrinberg/python-engineio/issues/137) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/51da0bed3c93c41b980bb565560c7233da3501f5)) (thanks **sgaron-cse**!)
+- Performance improvements in parsing long-polling payloads ([commit](https://github.com/miguelgrinberg/python-engineio/commit/64a34fc1550458ded57014301d5f9e97534f0843))
+- Prevent heavy CPU usage when decoding payloads ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c8407ae97821bb00c33a91114f425b8454f5e50e))
+- Handle case where no original SIGINT handler existed and call signal.… [#140](https://github.com/miguelgrinberg/python-engineio/issues/140) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9b4a10fede2ef3a9e85f370f48b6720fe7a15f35)) (thanks **Robin Christine Burr**!)
+- Accept any 2xx response as valid in the client [#331](https://github.com/miguelgrinberg/python-socketio/issues/331) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9d4ab4bb519d898ef170815deb767b85aeefd141))
+- Avoid loop without yield when sockets are >60 [#138](https://github.com/miguelgrinberg/python-engineio/issues/138) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5c6fbeac0e9f0788d300cf06de74ce65f8994f05)) (thanks **Gawen Arab**!)
+- Configurable ping interval grace period [#134](https://github.com/miguelgrinberg/python-engineio/issues/134) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bb2401354c3b7c3cf6a5577db83cc51ae071836e))
+
 **Release 3.9.3** - 2019-08-05
 
 - Apply timeouts to all HTTP requests sent from the client [#127](https://github.com/miguelgrinberg/python-engineio/issues/127) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6666d6a092333aa60f48ccdc42b250be60e9f33c))
