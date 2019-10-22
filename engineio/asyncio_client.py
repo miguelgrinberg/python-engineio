@@ -33,6 +33,10 @@ class AsyncClient(client.Client):
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
+    :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
+                       skip SSL certificate verification, allowing
+                       connections to servers with self signed certificates.
+                       The default is ``True``.
     """
     def is_asyncio_based(self):
         return True
