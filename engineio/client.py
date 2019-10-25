@@ -64,10 +64,10 @@ class Client(object):
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
-    :param ssl_verify: ``True`` if SSL connections should be fully verified or
-                       ``False`` to skip SSL certificate verification allowing
-                       connection to server with self signed certificates. The
-                       default is ``True``
+    :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
+                       skip SSL certificate verification, allowing
+                       connections to servers with self signed certificates.
+                       The default is ``True``.
     """
     event_names = ['connect', 'disconnect', 'message']
 
@@ -288,7 +288,7 @@ class Client(object):
             self._reset()
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
-        if r.status_code != 200:
+        if r.status_code < 200 or r.status_code >= 300:
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
                     r.status_code))
@@ -542,7 +542,7 @@ class Client(object):
                     'Connection refused by the server, aborting')
                 self.queue.put(None)
                 break
-            if r.status_code != 200:
+            if r.status_code < 200 or r.status_code >= 300:
                 self.logger.warning('Unexpected status code %s in server '
                                     'response, aborting', r.status_code)
                 self.queue.put(None)
@@ -649,7 +649,7 @@ class Client(object):
                     self.logger.warning(
                         'Connection refused by the server, aborting')
                     break
-                if r.status_code != 200:
+                if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status_code)
                     self._reset()

@@ -7,6 +7,8 @@ from six.moves import urllib
 
 class Payload(object):
     """Engine.IO payload."""
+    max_decode_packets = 16
+
     def __init__(self, packets=None, encoded_payload=None):
         self.packets = packets or []
         if encoded_payload is not None:
@@ -55,6 +57,8 @@ class Payload(object):
         if six.byte2int(encoded_payload[0:1]) <= 1:
             # binary encoding
             while i < len(encoded_payload):
+                if len(self.packets) >= self.max_decode_packets:
+                    raise ValueError('Too many packets in payload')
                 packet_len = 0
                 i += 1
                 while six.byte2int(encoded_payload[i:i + 1]) != 255:
@@ -68,6 +72,8 @@ class Payload(object):
             # assume text encoding
             encoded_payload = encoded_payload.decode('utf-8')
             while i < len(encoded_payload):
+                if len(self.packets) >= self.max_decode_packets:
+                    raise ValueError('Too many packets in payload')
                 j = encoded_payload.find(':', i)
                 packet_len = int(encoded_payload[i:j])
                 pkt = encoded_payload[j + 1:j + 1 + packet_len]
