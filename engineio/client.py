@@ -43,7 +43,7 @@ def signal_handler(sig, frame):
         return original_signal_handler(sig, frame)
     else:
         # Handle case where no original SIGINT handler was present.
-        return signal.def_int_handler(sig, frame)
+        return signal.default_int_handler(sig, frame)
 
 
 original_signal_handler = signal.signal(signal.SIGINT, signal_handler)
