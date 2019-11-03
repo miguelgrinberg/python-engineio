@@ -186,7 +186,6 @@ class TestAsyncServer(unittest.TestCase):
         a._async['translate_request'].assert_called_once_with('request')
         self.assertEqual(a._async['make_response'].call_count, 1)
         self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        print('***', a._async['make_response'].call_args[0][2])
         self.assertTrue(a._async['make_response'].call_args[0][2].startswith(
             b'___eio[233]("'))
         self.assertTrue(a._async['make_response'].call_args[0][2].endswith(
@@ -425,6 +424,22 @@ class TestAsyncServer(unittest.TestCase):
         self.assertEqual(a._async['make_response'].call_args[0][0],
                          '400 BAD REQUEST')
         headers = a._async['make_response'].call_args[0][1]
+        self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
+        self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+
+    @mock.patch('importlib.import_module')
+    def test_connect_cors_not_allowed_origin_async_response(self,
+                                                            import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                                 'HTTP_ORIGIN': 'c'})
+        a._async['make_response'] = AsyncMock(
+            return_value=a._async['make_response'].return_value)
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cors_allowed_origins=['a', 'b'])
+        _run(s.handle_request('request'))
+        self.assertEqual(a._async['make_response'].mock.call_args[0][0],
+                         '400 BAD REQUEST')
+        headers = a._async['make_response'].mock.call_args[0][1]
         self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
         self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
 
