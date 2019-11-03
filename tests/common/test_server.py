@@ -635,6 +635,21 @@ class TestServer(unittest.TestCase):
         self.assertIn(('Access-Control-Allow-Origin', 'http://foo'),
                       headers)
 
+    def test_connect_cors_headers_default_origin_proxy_server(self):
+        s = server.Server()
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
+                   'wsgi.url_scheme': 'http', 'HTTP_HOST': 'foo',
+                   'HTTP_ORIGIN': 'https://bar',
+                   'HTTP_X_FORWARDED_PROTO': 'https, ftp',
+                   'HTTP_X_FORWARDED_HOST': 'bar , baz'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        self.assertEqual(start_response.call_args[0][0],
+                         '200 OK')
+        headers = start_response.call_args[0][1]
+        self.assertIn(('Access-Control-Allow-Origin', 'https://bar'),
+                      headers)
+
     def test_connect_cors_no_credentials(self):
         s = server.Server(cors_credentials=False)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
