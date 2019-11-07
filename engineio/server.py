@@ -289,7 +289,8 @@ class Server(object):
                 pass
             else:
                 socket.close()
-                del self.sockets[sid]
+                if sid in self.sockets:  # pragma: no cover
+                    del self.sockets[sid]
         else:
             for client in six.itervalues(self.sockets):
                 client.close()

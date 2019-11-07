@@ -168,7 +168,8 @@ class AsyncServer(server.Server):
                 pass
             else:
                 await socket.close()
-                del self.sockets[sid]
+                if sid in self.sockets:  # pragma: no cover
+                    del self.sockets[sid]
         else:
             await asyncio.wait([client.close()
                                 for client in six.itervalues(self.sockets)])
