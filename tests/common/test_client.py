@@ -791,6 +791,7 @@ class TestClient(unittest.TestCase):
             self.assertEqual(timeout, 10)
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         self.assertEqual(
@@ -811,6 +812,7 @@ class TestClient(unittest.TestCase):
             self.assertEqual(timeout, 10)
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         self.assertEqual(c.state, 'connected')
@@ -832,6 +834,7 @@ class TestClient(unittest.TestCase):
             self.assertEqual(timeout, 10)
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         self.assertEqual(c.state, 'connected')

@@ -427,7 +427,8 @@ class AsyncClient(client.Client):
         interval.
         """
         self.pong_received = True
-        self.ping_loop_event.clear()
+        if self.ping_loop_event is None:
+            self.ping_loop_event = self.create_event()
         while self.state == 'connected':
             if not self.pong_received:
                 self.logger.info(
@@ -477,7 +478,8 @@ class AsyncClient(client.Client):
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
         self.logger.info('Waiting for ping loop task to end')
-        self.ping_loop_event.set()
+        if self.ping_loop_event:  # pragma: no cover
+            self.ping_loop_event.set()
         await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
@@ -512,7 +514,8 @@ class AsyncClient(client.Client):
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
         self.logger.info('Waiting for ping loop task to end')
-        self.ping_loop_event.set()
+        if self.ping_loop_event:  # pragma: no cover
+            self.ping_loop_event.set()
         await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)

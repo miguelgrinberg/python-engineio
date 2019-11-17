@@ -838,6 +838,7 @@ class TestAsyncClient(unittest.TestCase):
         async def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         self.assertEqual(
@@ -858,6 +859,7 @@ class TestAsyncClient(unittest.TestCase):
         async def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         self.assertEqual(c.state, 'connected')
@@ -880,6 +882,7 @@ class TestAsyncClient(unittest.TestCase):
         async def fake_wait():
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         self.assertEqual(c.state, 'connected')

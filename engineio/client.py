@@ -90,7 +90,7 @@ class Client(object):
         self.read_loop_task = None
         self.write_loop_task = None
         self.ping_loop_task = None
-        self.ping_loop_event = self.create_event()
+        self.ping_loop_event = None
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
@@ -515,7 +515,8 @@ class Client(object):
         interval.
         """
         self.pong_received = True
-        self.ping_loop_event.clear()
+        if self.ping_loop_event is None:
+            self.ping_loop_event = self.create_event()
         while self.state == 'connected':
             if not self.pong_received:
                 self.logger.info(
@@ -560,7 +561,8 @@ class Client(object):
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
         self.logger.info('Waiting for ping loop task to end')
-        self.ping_loop_event.set()
+        if self.ping_loop_event:  # pragma: no cover
+            self.ping_loop_event.set()
         self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
@@ -595,7 +597,8 @@ class Client(object):
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
         self.logger.info('Waiting for ping loop task to end')
-        self.ping_loop_event.set()
+        if self.ping_loop_event:  # pragma: no cover
+            self.ping_loop_event.set()
         self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
