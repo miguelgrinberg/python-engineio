@@ -10,14 +10,9 @@ if six.PY3:
 else:
     import mock
 try:
-    import websockets
+    import aiohttp
 except ImportError:
-    # weirdness to avoid errors in PY2 test run
-    class _dummy():
-        pass
-    websockets = _dummy()
-    websockets.exceptions = _dummy()
-    websockets.exceptions.InvalidURI = _dummy()
+    aiohttp = None
 
 from engineio import asyncio_client
 from engineio import client
@@ -458,49 +453,55 @@ class TestAsyncClient(unittest.TestCase):
         self.assertIn(c, client.connected_clients)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
-        side_effect=[websockets.exceptions.InvalidURI('foo')]))
     def test_websocket_connection_failed(self, _time):
         c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock(side_effect=[
+            aiohttp.client_exceptions.ServerConnectionError()])
         self.assertRaises(
             exceptions.ConnectionError, _run,
             c.connect('http://foo', transports=['websocket'],
                       headers={'Foo': 'Bar'}))
-        asyncio_client.websockets.connect.mock.assert_called_once_with(
+        c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            extra_headers={'Foo': 'Bar'})
+            headers={'Foo': 'Bar'})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock(
-        side_effect=[websockets.exceptions.InvalidURI('foo')]))
     def test_websocket_upgrade_failed(self, _time):
         c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock(side_effect=[
+            aiohttp.client_exceptions.ServerConnectionError()])
         c.sid = '123'
         self.assertFalse(_run(c.connect(
             'http://foo', transports=['websocket'])))
-        asyncio_client.websockets.connect.mock.assert_called_once_with(
+        c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
-            extra_headers={})
+            headers={})
 
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_connection_no_open_packet(self):
-        asyncio_client.websockets.connect.mock.return_value.recv = AsyncMock(
-            return_value=packet.Packet(packet.CLOSE).encode())
         c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(
+            packet.CLOSE).encode()
         self.assertRaises(
             exceptions.ConnectionError, _run,
             c.connect('http://foo', transports=['websocket']))
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_connection_successful(self, _time):
-        ws = asyncio_client.websockets.connect.mock.return_value
-        ws.recv = AsyncMock(return_value=packet.Packet(
-            packet.OPEN, {
-                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
-                'pingTimeout': 2000
-            }).encode())
         c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(packet.OPEN, {
+            'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+            'pingTimeout': 2000
+        }).encode()
         c._ping_loop = AsyncMock()
         c._read_loop_polling = AsyncMock()
         c._read_loop_websocket = AsyncMock()
@@ -525,20 +526,21 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'websocket')
         self.assertEqual(c.ws, ws)
-        asyncio_client.websockets.connect.mock.assert_called_once_with(
+        c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            extra_headers={})
+            headers={})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_https_noverify_connection_successful(self, _time):
-        ws = asyncio_client.websockets.connect.mock.return_value
-        ws.recv = AsyncMock(return_value=packet.Packet(
-            packet.OPEN, {
-                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
-                'pingTimeout': 2000
-            }).encode())
         c = asyncio_client.AsyncClient(ssl_verify=False)
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(packet.OPEN, {
+            'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+            'pingTimeout': 2000
+        }).encode()
         c._ping_loop = AsyncMock()
         c._read_loop_polling = AsyncMock()
         c._read_loop_websocket = AsyncMock()
@@ -563,22 +565,22 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'websocket')
         self.assertEqual(c.ws, ws)
-        _, kwargs = asyncio_client.websockets.connect.mock.call_args
+        _, kwargs = c.http.ws_connect.mock.call_args
         self.assertTrue('ssl' in kwargs)
         self.assertTrue(isinstance(kwargs['ssl'], ssl.SSLContext))
         self.assertEqual(kwargs['ssl'].verify_mode, ssl.CERT_NONE)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_connection_with_cookies(self, _time):
-        ws = asyncio_client.websockets.connect.mock.return_value
-        ws.recv = AsyncMock(return_value=packet.Packet(
-            packet.OPEN, {
-                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
-                'pingTimeout': 2000
-            }).encode())
         c = asyncio_client.AsyncClient()
-        c.http = mock.MagicMock()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(packet.OPEN, {
+            'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+            'pingTimeout': 2000
+        }).encode()
         c.http._cookie_jar = [mock.MagicMock(), mock.MagicMock()]
         c.http._cookie_jar[0].key = 'key'
         c.http._cookie_jar[0].value = 'value'
@@ -592,20 +594,21 @@ class TestAsyncClient(unittest.TestCase):
         c.on('connect', on_connect)
         _run(c.connect('ws://foo', transports=['websocket']))
         time.sleep(0.1)
-        asyncio_client.websockets.connect.mock.assert_called_once_with(
+        c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            extra_headers={'Cookie': 'key=value; key2=value2'})
+            headers={})
 
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_upgrade_no_pong(self):
-        ws = asyncio_client.websockets.connect.mock.return_value
-        ws.recv = AsyncMock(return_value=packet.Packet(
-            packet.OPEN, {
-                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
-                'pingTimeout': 2000
-            }).encode())
-        ws.send = AsyncMock()
         c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(packet.OPEN, {
+            'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+            'pingTimeout': 2000
+        }).encode()
+        ws.send_str = AsyncMock()
         c.sid = '123'
         c.current_transport = 'polling'
         c._ping_loop = AsyncMock()
@@ -623,15 +626,17 @@ class TestAsyncClient(unittest.TestCase):
         c._write_loop.mock.assert_not_called()
         on_connect.assert_not_called()
         self.assertEqual(c.transport(), 'polling')
-        ws.send.mock.assert_called_once_with('2probe')
+        ws.send_str.mock.assert_called_once_with('2probe')
 
-    @mock.patch('engineio.asyncio_client.websockets.connect', new=AsyncMock())
     def test_websocket_upgrade_successful(self):
-        ws = asyncio_client.websockets.connect.mock.return_value
-        ws.recv = AsyncMock(return_value=packet.Packet(
-            packet.PONG, 'probe').encode())
-        ws.send = AsyncMock()
         c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(
+            packet.PONG, 'probe').encode()
+        ws.send_str = AsyncMock()
         c.sid = '123'
         c.base_url = 'http://foo'
         c.current_transport = 'polling'
@@ -656,10 +661,10 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.transport(), 'websocket')
         self.assertEqual(c.ws, ws)
         self.assertEqual(
-            ws.send.mock.call_args_list[0],
+            ws.send_str.mock.call_args_list[0],
             (('2probe',),))  # ping
         self.assertEqual(
-            ws.send.mock.call_args_list[1],
+            ws.send_str.mock.call_args_list[1],
             (('5',),))  # upgrade
 
     def test_receive_unknown_packet(self):
@@ -1004,8 +1009,8 @@ class TestAsyncClient(unittest.TestCase):
         c.queue = mock.MagicMock()
         c.queue.put = AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.recv = AsyncMock(
-            side_effect=websockets.exceptions.ConnectionClosed(1, 'foo'))
+        c.ws.receive = AsyncMock(
+            side_effect=aiohttp.client_exceptions.ServerDisconnectedError())
         c.write_loop_task = AsyncMock()()
         c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_websocket())
@@ -1019,7 +1024,7 @@ class TestAsyncClient(unittest.TestCase):
         c.queue = mock.MagicMock()
         c.queue.put = AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.recv = AsyncMock(side_effect=ValueError)
+        c.ws.receive = AsyncMock(side_effect=ValueError)
         c.write_loop_task = AsyncMock()()
         c.ping_loop_task = AsyncMock()()
         _run(c._read_loop_websocket())
@@ -1033,8 +1038,9 @@ class TestAsyncClient(unittest.TestCase):
         c.queue = mock.MagicMock()
         c.queue.put = AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.recv = AsyncMock(side_effect=[
-            packet.Packet(packet.PING).encode(), ValueError])
+        c.ws.receive = AsyncMock(side_effect=[
+            mock.MagicMock(data=packet.Packet(packet.PING).encode()),
+            ValueError])
         c.write_loop_task = AsyncMock()()
         c.ping_loop_task = AsyncMock()()
         c._receive_packet = AsyncMock()
@@ -1224,11 +1230,11 @@ class TestAsyncClient(unittest.TestCase):
             RuntimeError
         ])
         c.ws = mock.MagicMock()
-        c.ws.send = AsyncMock()
+        c.ws.send_str = AsyncMock()
         _run(c._write_loop())
         self.assertEqual(c.queue.task_done.call_count, 1)
-        self.assertEqual(c.ws.send.mock.call_count, 1)
-        c.ws.send.mock.assert_called_once_with('4{"foo":"bar"}')
+        self.assertEqual(c.ws.send_str.mock.call_count, 1)
+        c.ws.send_str.mock.assert_called_once_with('4{"foo":"bar"}')
 
     def test_write_loop_websocket_three_packets(self):
         c = asyncio_client.AsyncClient()
@@ -1248,14 +1254,14 @@ class TestAsyncClient(unittest.TestCase):
             RuntimeError
         ])
         c.ws = mock.MagicMock()
-        c.ws.send = AsyncMock()
+        c.ws.send_str = AsyncMock()
         _run(c._write_loop())
         self.assertEqual(c.queue.task_done.call_count, 3)
-        self.assertEqual(c.ws.send.mock.call_count, 3)
-        self.assertEqual(c.ws.send.mock.call_args_list[0][0][0],
+        self.assertEqual(c.ws.send_str.mock.call_count, 3)
+        self.assertEqual(c.ws.send_str.mock.call_args_list[0][0][0],
                          '4{"foo":"bar"}')
-        self.assertEqual(c.ws.send.mock.call_args_list[1][0][0], '2')
-        self.assertEqual(c.ws.send.mock.call_args_list[2][0][0], '6')
+        self.assertEqual(c.ws.send_str.mock.call_args_list[1][0][0], '2')
+        self.assertEqual(c.ws.send_str.mock.call_args_list[2][0][0], '6')
 
     def test_write_loop_websocket_one_packet_binary(self):
         c = asyncio_client.AsyncClient()
@@ -1273,11 +1279,11 @@ class TestAsyncClient(unittest.TestCase):
             RuntimeError
         ])
         c.ws = mock.MagicMock()
-        c.ws.send = AsyncMock()
+        c.ws.send_bytes = AsyncMock()
         _run(c._write_loop())
         self.assertEqual(c.queue.task_done.call_count, 1)
-        self.assertEqual(c.ws.send.mock.call_count, 1)
-        c.ws.send.mock.assert_called_once_with(b'\x04foo')
+        self.assertEqual(c.ws.send_bytes.mock.call_count, 1)
+        c.ws.send_bytes.mock.assert_called_once_with(b'\x04foo')
 
     def test_write_loop_websocket_bad_connection(self):
         c = asyncio_client.AsyncClient()
@@ -1295,7 +1301,7 @@ class TestAsyncClient(unittest.TestCase):
             RuntimeError
         ])
         c.ws = mock.MagicMock()
-        c.ws.send = AsyncMock(
-            side_effect=websockets.exceptions.ConnectionClosed(1, 'foo'))
+        c.ws.send_str = AsyncMock(
+            side_effect=aiohttp.client_exceptions.ServerDisconnectedError())
         _run(c._write_loop())
         self.assertEqual(c.state, 'connected')

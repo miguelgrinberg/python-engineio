@@ -35,11 +35,11 @@ def signal_handler(sig, frame):
     print('exiting')
 
 
-async def start_server():
+async def start_client():
     await eio.connect('http://localhost:5000')
     await eio.wait()
 
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, signal_handler)
-    loop.run_until_complete(start_server())
+    loop.run_until_complete(start_client())

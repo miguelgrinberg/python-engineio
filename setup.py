@@ -39,7 +39,6 @@ setup(
         ],
         'asyncio_client': [
             'aiohttp>=3.4',
-            'websockets>=7.0',
         ]
     },
     tests_require=[

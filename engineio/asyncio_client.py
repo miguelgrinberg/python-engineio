@@ -6,10 +6,6 @@ try:
 except ImportError:  # pragma: no cover
     aiohttp = None
 import six
-try:
-    import websockets
-except ImportError:  # pragma: no cover
-    websockets = None
 
 from . import client
 from . import exceptions
@@ -227,8 +223,8 @@ class AsyncClient(client.Client):
 
     async def _connect_websocket(self, url, headers, engineio_path):
         """Establish or upgrade to a WebSocket connection with the server."""
-        if websockets is None:  # pragma: no cover
-            self.logger.error('websockets package not installed')
+        if aiohttp is None:  # pragma: no cover
+            self.logger.error('aiohttp package not installed')
             return False
         websocket_url = self._get_engineio_url(url, engineio_path,
                                                'websocket')
@@ -243,30 +239,20 @@ class AsyncClient(client.Client):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
 
-        # get the cookies from the long-polling connection so that they can
-        # also be sent the the WebSocket route
-        cookies = None
-        if self.http:
-            cookies = '; '.join(["{}={}".format(cookie.key, cookie.value)
-                                 for cookie in self.http._cookie_jar])
-            headers = headers.copy()
-            headers['Cookie'] = cookies
-
         try:
             if not self.ssl_verify:
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
-                ws = await websockets.connect(
+                ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    extra_headers=headers, ssl=ssl_context)
+                    headers=headers, ssl=ssl_context)
             else:
-                ws = await websockets.connect(
+                ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    extra_headers=headers)
-        except (websockets.exceptions.InvalidURI,
-                websockets.exceptions.InvalidHandshake,
-                OSError):
+                    headers=headers)
+        except (aiohttp.client_exceptions.WSServerHandshakeError,
+                aiohttp.client_exceptions.ServerConnectionError):
             if upgrade:
                 self.logger.warning(
                     'WebSocket upgrade failed: connection error')
@@ -277,14 +263,14 @@ class AsyncClient(client.Client):
             p = packet.Packet(packet.PING, data='probe').encode(
                 always_bytes=False)
             try:
-                await ws.send(p)
+                await ws.send_str(p)
             except Exception as e:  # pragma: no cover
                 self.logger.warning(
                     'WebSocket upgrade failed: unexpected send exception: %s',
                     str(e))
                 return False
             try:
-                p = await ws.recv()
+                p = (await ws.receive()).data
             except Exception as e:  # pragma: no cover
                 self.logger.warning(
                     'WebSocket upgrade failed: unexpected recv exception: %s',
@@ -297,19 +283,17 @@ class AsyncClient(client.Client):
                 return False
             p = packet.Packet(packet.UPGRADE).encode(always_bytes=False)
             try:
-                await ws.send(p)
+                await ws.send_str(p)
             except Exception as e:  # pragma: no cover
                 self.logger.warning(
                     'WebSocket upgrade failed: unexpected send exception: %s',
                     str(e))
                 return False
             self.current_transport = 'websocket'
-            if self.http:  # pragma: no cover
-                await self.http.close()
             self.logger.info('WebSocket upgrade was successful')
         else:
             try:
-                p = await ws.recv()
+                p = (await ws.receive()).data
             except Exception as e:  # pragma: no cover
                 raise exceptions.ConnectionError(
                     'Unexpected recv exception: ' + str(e))
@@ -495,8 +479,8 @@ class AsyncClient(client.Client):
         while self.state == 'connected':
             p = None
             try:
-                p = await self.ws.recv()
-            except websockets.exceptions.ConnectionClosed:
+                p = (await self.ws.receive()).data
+            except aiohttp.client_exceptions.ServerDisconnectedError:
                 self.logger.info(
                     'Read loop: WebSocket connection was closed, aborting')
                 await self.queue.put(None)
@@ -579,9 +563,14 @@ class AsyncClient(client.Client):
                 # websocket
                 try:
                     for pkt in packets:
-                        await self.ws.send(pkt.encode(always_bytes=False))
+                        if pkt.binary:
+                            await self.ws.send_bytes(pkt.encode(
+                                always_bytes=False))
+                        else:
+                            await self.ws.send_str(pkt.encode(
+                                always_bytes=False))
                         self.queue.task_done()
-                except websockets.exceptions.ConnectionClosed:
+                except aiohttp.client_exceptions.ServerDisconnectedError:
                     self.logger.info(
                         'Write loop: WebSocket connection was closed, '
                         'aborting')

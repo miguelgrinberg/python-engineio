@@ -28,10 +28,10 @@ async def on_message(data):
     await send_ping()
 
 
-async def start_server():
+async def start_client():
     await eio.connect('http://localhost:5000')
     await eio.wait()
 
 
 if __name__ == '__main__':
-    loop.run_until_complete(start_server())
+    loop.run_until_complete(start_client())
