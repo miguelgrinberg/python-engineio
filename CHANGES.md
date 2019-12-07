@@ -1,5 +1,15 @@
 # python-engineio change log
 
+**Release 3.11.0** - 2019-12-07
+
+- Fix websocket exception handling on python2.7 [#149](https://github.com/miguelgrinberg/python-engineio/issues/149) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b714f81a0ee27e30070a5ca702a1823236df9981)) (thanks **Payton Yao**!)
+- Use aiohttp's WebSocket client [#324](https://github.com/miguelgrinberg/python-socketio/issues/324) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/280aa0f00c0ca3d099c2a693f6c2ce7919d2dc86))
+- Support user created loops on the asyncio client [#1065](https://github.com/miguelgrinberg/Flask-SocketIO/issues/1065) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e38daad301d4b855cabf6a289b7348a58a314273))
+- Fix occasional server disconnect crashes [#146](https://github.com/miguelgrinberg/python-engineio/issues/146) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9f96cd827c59776cb7da72614891be05681e5063)) (thanks **Dominik Winecki**!)
+- Use X-Forwarded headers if present to verify origin ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3c221aaec7173a046ca42f6aff9be0915cf92237))
+- Support async `make_response` function in ASGI driver [#145](https://github.com/miguelgrinberg/python-engineio/issues/145) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3f6391ca3229d26f081a16436cd4acd292ee69df))
+- Support not having a sigint handler [#143](https://github.com/miguelgrinberg/python-engineio/issues/143) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/fc984aaa5e5dc91f6632729e56b34628f2fd2563)) (thanks **Robin Christine Burr**!)
+
 **Release 3.10.0** - 2019-10-22
 
 - Added support for SSL connection to unverified host in the client. [#137](https://github.com/miguelgrinberg/python-engineio/issues/137) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/51da0bed3c93c41b980bb565560c7233da3501f5)) (thanks **sgaron-cse**!)
