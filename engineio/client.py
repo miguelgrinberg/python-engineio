@@ -517,6 +517,8 @@ class Client(object):
         self.pong_received = True
         if self.ping_loop_event is None:
             self.ping_loop_event = self.create_event()
+        else:
+            self.ping_loop_event.clear()
         while self.state == 'connected':
             if not self.pong_received:
                 self.logger.info(
