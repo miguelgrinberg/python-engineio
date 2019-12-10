@@ -761,6 +761,7 @@ class TestClient(unittest.TestCase):
         def fake_wait(timeout):
             c.state, c.pong_received = states.pop(0)
 
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         c._ping_loop()
         c.write_loop_task = mock.MagicMock()

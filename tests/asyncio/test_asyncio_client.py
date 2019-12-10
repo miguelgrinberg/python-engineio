@@ -844,6 +844,7 @@ class TestAsyncClient(unittest.TestCase):
 
         async def fake_wait():
             c.state, c.pong_received = states.pop(0)
+        c.ping_loop_event = c.create_event()
         c.ping_loop_event.wait = fake_wait
         _run(c._ping_loop())
         c.write_loop_task = AsyncMock()()
