@@ -839,7 +839,7 @@ class TestClient(unittest.TestCase):
         c._ping_loop()
         self.assertEqual(c.state, 'connected')
         c.queue.put.assert_called_once_with(None)
-        c.ws.shutdown.assert_called_once_with()
+        c.ws.close.assert_called_once_with(timeout=0)
 
     def test_read_loop_polling_disconnected(self):
         c = client.Client()
