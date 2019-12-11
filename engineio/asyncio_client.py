@@ -239,6 +239,9 @@ class AsyncClient(client.Client):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
 
+        if self.http is None or self.http.closed:  # pragma: no cover
+            self.http = aiohttp.ClientSession()
+
         try:
             if not self.ssl_verify:
                 ssl_context = ssl.create_default_context()
