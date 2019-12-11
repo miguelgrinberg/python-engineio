@@ -46,7 +46,7 @@ def signal_handler(sig, frame):
         return signal.default_int_handler(sig, frame)
 
 
-original_signal_handler = signal.signal(signal.SIGINT, signal_handler)
+original_signal_handler = None
 
 
 class Client(object):
@@ -76,6 +76,10 @@ class Client(object):
                  json=None,
                  request_timeout=5,
                  ssl_verify=True):
+        global original_signal_handler
+        if original_signal_handler is None:
+            original_signal_handler = signal.signal(signal.SIGINT,
+                                                    signal_handler)
         self.handlers = {}
         self.base_url = None
         self.transports = None

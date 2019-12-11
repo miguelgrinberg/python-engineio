@@ -5,6 +5,7 @@ import engineio
 loop = asyncio.get_event_loop()
 eio = engineio.AsyncClient()
 exit_event = asyncio.Event()
+original_signal_handler = None
 
 
 async def send_hello():
@@ -33,6 +34,8 @@ def on_message(data):
 def signal_handler(sig, frame):
     exit_event.set()
     print('exiting')
+    if callable(original_signal_handler):
+        original_signal_handler(sig, frame)
 
 
 async def start_client():
@@ -41,5 +44,5 @@ async def start_client():
 
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGINT, signal_handler)
+    original_signal_handler = signal.signal(signal.SIGINT, signal_handler)
     loop.run_until_complete(start_client())
