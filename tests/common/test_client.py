@@ -478,6 +478,18 @@ class TestClient(unittest.TestCase):
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.websocket.create_connection',
+                side_effect=[websocket.WebSocketException])
+    def test_websocket_connection_failed_with_websocket_error(
+            self, create_connection, _time):
+        c = client.Client()
+        self.assertRaises(exceptions.ConnectionError, c.connect, 'http://foo',
+                          transports=['websocket'], headers={'Foo': 'Bar'})
+        create_connection.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            header={'Foo': 'Bar'}, cookie=None)
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.client.websocket.create_connection',
                 side_effect=[ConnectionError])
     def test_websocket_upgrade_failed(self, create_connection, _time):
         c = client.Client()
