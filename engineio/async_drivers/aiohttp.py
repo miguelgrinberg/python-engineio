@@ -91,7 +91,7 @@ class WebSocket(object):  # pragma: no cover
 
     async def __call__(self, environ):
         request = environ['aiohttp.request']
-        self._sock = WebSocketResponse()
+        self._sock = WebSocketResponse(max_msg_size=0)
         await self._sock.prepare(request)
 
         self.environ = environ
