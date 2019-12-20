@@ -168,8 +168,7 @@ class AsyncServer(server.Server):
                 pass
             else:
                 await socket.close()
-                if sid in self.sockets:  # pragma: no cover
-                    del self.sockets[sid]
+                self.sockets.pop(sid, None)
         else:
             await asyncio.wait([client.close()
                                 for client in six.itervalues(self.sockets)])
@@ -258,7 +257,7 @@ class AsyncServer(server.Server):
                             await self.disconnect(sid)
                         r = self._bad_request()
                     if sid in self.sockets and self.sockets[sid].closed:
-                        del self.sockets[sid]
+                        self.sockets.pop(sid, None)
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
                 self.logger.warning('Invalid session %s', sid)
@@ -384,7 +383,7 @@ class AsyncServer(server.Server):
         ret = await self._trigger_event('connect', sid, environ,
                                         run_async=False)
         if ret is False:
-            del self.sockets[sid]
+            self.sockets.pop(sid, None)
             self.logger.warning('Application rejected connection')
             return self._unauthorized()
 
@@ -392,7 +391,7 @@ class AsyncServer(server.Server):
             ret = await s.handle_get_request(environ)
             if s.closed:
                 # websocket connection ended, so we are done
-                del self.sockets[sid]
+                self.sockets.pop(sid, None)
             return ret
         else:
             s.connected = True

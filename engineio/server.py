@@ -289,8 +289,7 @@ class Server(object):
                 pass
             else:
                 socket.close()
-                if sid in self.sockets:  # pragma: no cover
-                    del self.sockets[sid]
+                self.sockets.pop(sid, None)
         else:
             for client in six.itervalues(self.sockets):
                 client.close()
@@ -384,7 +383,7 @@ class Server(object):
                             self.disconnect(sid)
                         r = self._bad_request()
                     if sid in self.sockets and self.sockets[sid].closed:
-                        del self.sockets[sid]
+                        self.sockets.pop(sid, None)
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
                 self.logger.warning('Invalid session %s', sid)
@@ -506,7 +505,7 @@ class Server(object):
 
         ret = self._trigger_event('connect', sid, environ, run_async=False)
         if ret is False:
-            del self.sockets[sid]
+            self.sockets.pop(sid, None)
             self.logger.warning('Application rejected connection')
             return self._unauthorized()
 
@@ -514,7 +513,7 @@ class Server(object):
             ret = s.handle_get_request(environ, start_response)
             if s.closed:
                 # websocket connection ended, so we are done
-                del self.sockets[sid]
+                self.sockets.pop(sid, None)
             return ret
         else:
             s.connected = True
@@ -557,7 +556,7 @@ class Server(object):
         except KeyError:
             raise KeyError('Session not found')
         if s.closed:
-            del self.sockets[sid]
+            self.sockets.pop(sid, None)
             raise KeyError('Session is disconnected')
         return s
 
