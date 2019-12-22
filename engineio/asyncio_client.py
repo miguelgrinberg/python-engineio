@@ -485,6 +485,8 @@ class AsyncClient(client.Client):
             p = None
             try:
                 p = (await self.ws.receive()).data
+                if p is None:  # pragma: no cover
+                    raise RuntimeError('WebSocket read returned None')
             except aiohttp.client_exceptions.ServerDisconnectedError:
                 self.logger.info(
                     'Read loop: WebSocket connection was closed, aborting')
