@@ -166,6 +166,7 @@ class Client(object):
         :param engineio_path: The endpoint where the Engine.IO server is
                               installed. The default value is appropriate for
                               most cases.
+        :param origin: Sets the Origin HTTP header passed to websocket.
 
         Example usage::
 
