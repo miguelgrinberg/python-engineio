@@ -152,7 +152,7 @@ class Client(object):
         set_handler(handler)
 
     def connect(self, url, headers={}, transports=None,
-                engineio_path='engine.io'):
+                engineio_path='engine.io', origin=None):
         """Connect to an Engine.IO server.
 
         :param url: The URL of the Engine.IO server. It can include custom
@@ -185,7 +185,7 @@ class Client(object):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers, engineio_path, origin)
 
     def wait(self):
         """Wait until the connection with the server ends.
@@ -276,7 +276,7 @@ class Client(object):
         self.state = 'disconnected'
         self.sid = None
 
-    def _connect_polling(self, url, headers, engineio_path):
+    def _connect_polling(self, url, headers, engineio_path, origin):
         """Establish a long-polling connection to the Engine.IO server."""
         if requests is None:  # pragma: no cover
             # not installed
@@ -323,7 +323,7 @@ class Client(object):
 
         if 'websocket' in self.upgrades and 'websocket' in self.transports:
             # attempt to upgrade to websocket
-            if self._connect_websocket(url, headers, engineio_path):
+            if self._connect_websocket(url, headers, engineio_path, origin):
                 # upgrade to websocket succeeded, we're done here
                 return
 
@@ -333,7 +333,7 @@ class Client(object):
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
 
-    def _connect_websocket(self, url, headers, engineio_path):
+    def _connect_websocket(self, url, headers, engineio_path, origin):
         """Establish or upgrade to a WebSocket connection with the server."""
         if websocket is None:  # pragma: no cover
             # not installed
@@ -363,11 +363,11 @@ class Client(object):
             if not self.ssl_verify:
                 ws = websocket.create_connection(
                     websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE})
+                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE}, origin=origin)
             else:
                 ws = websocket.create_connection(
                     websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies)
+                    cookie=cookies, origin=origin)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
