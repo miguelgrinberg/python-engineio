@@ -579,7 +579,8 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
                          {'header': {}, 'cookie': None,
-                          'sslopt': {'cert_reqs': ssl.CERT_NONE}, 'origin': None})
+                          'sslopt': {'cert_reqs': ssl.CERT_NONE},
+                          'origin': None})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_with_cookies(self, create_connection):
@@ -606,7 +607,8 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
-                         {'header': {}, 'cookie': 'key=value; key2=value2', 'origin': None})
+                         {'header': {}, 'cookie': 'key=value; key2=value2',
+                          'origin': None})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_no_pong(self, create_connection):

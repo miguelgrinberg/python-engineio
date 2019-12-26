@@ -364,7 +364,8 @@ class Client(object):
             if not self.ssl_verify:
                 ws = websocket.create_connection(
                     websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE}, origin=origin)
+                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE},
+                    origin=origin)
             else:
                 ws = websocket.create_connection(
                     websocket_url + self._get_url_timestamp(), header=headers,
