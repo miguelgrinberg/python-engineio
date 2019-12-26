@@ -250,11 +250,11 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context, origin)
+                    headers=headers, ssl=ssl_context, origin=origin)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, origin)
+                    headers=headers, origin=origin)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError):
             if upgrade:
