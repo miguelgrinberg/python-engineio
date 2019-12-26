@@ -71,7 +71,7 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(
             _run(c.connect('http://foo', transports=['polling'])), 'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = asyncio_client.AsyncClient()
         c._connect_polling = AsyncMock(return_value='foo')
@@ -80,7 +80,7 @@ class TestAsyncClient(unittest.TestCase):
                                                      'websocket'])),
             'foo')
         c._connect_polling.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
     def test_connect_websocket(self):
         c = asyncio_client.AsyncClient()
@@ -97,7 +97,7 @@ class TestAsyncClient(unittest.TestCase):
             _run(c.connect('http://foo', transports='websocket')),
             'foo')
         c._connect_websocket.mock.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
     def test_connect_query_string(self):
         c = asyncio_client.AsyncClient()
