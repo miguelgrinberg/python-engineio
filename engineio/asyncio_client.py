@@ -38,7 +38,7 @@ class AsyncClient(client.Client):
         return True
 
     async def connect(self, url, headers={}, transports=None,
-                      engineio_path='engine.io'):
+                      engineio_path='engine.io', origin=None):
         """Connect to an Engine.IO server.
 
         :param url: The URL of the Engine.IO server. It can include custom
@@ -52,6 +52,7 @@ class AsyncClient(client.Client):
         :param engineio_path: The endpoint where the Engine.IO server is
                               installed. The default value is appropriate for
                               most cases.
+        :param origin: Sets the Origin HTTP header passed to websocket.
 
         Note: this method is a coroutine.
 
@@ -73,7 +74,7 @@ class AsyncClient(client.Client):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return await getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers, engineio_path, origin)
 
     async def wait(self):
         """Wait until the connection with the server ends.
@@ -166,7 +167,7 @@ class AsyncClient(client.Client):
             asyncio.ensure_future(self.http.close())
         super()._reset()
 
-    async def _connect_polling(self, url, headers, engineio_path):
+    async def _connect_polling(self, url, headers, engineio_path, origin):
         """Establish a long-polling connection to the Engine.IO server."""
         if aiohttp is None:  # pragma: no cover
             self.logger.error('aiohttp not installed -- cannot make HTTP '
@@ -212,7 +213,7 @@ class AsyncClient(client.Client):
 
         if 'websocket' in self.upgrades and 'websocket' in self.transports:
             # attempt to upgrade to websocket
-            if await self._connect_websocket(url, headers, engineio_path):
+            if await self._connect_websocket(url, headers, engineio_path, origin):
                 # upgrade to websocket succeeded, we're done here
                 return
 
@@ -221,7 +222,7 @@ class AsyncClient(client.Client):
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
 
-    async def _connect_websocket(self, url, headers, engineio_path):
+    async def _connect_websocket(self, url, headers, engineio_path, origin):
         """Establish or upgrade to a WebSocket connection with the server."""
         if aiohttp is None:  # pragma: no cover
             self.logger.error('aiohttp package not installed')
@@ -249,11 +250,11 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context)
+                    headers=headers, ssl=ssl_context, origin)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers)
+                    headers=headers, origin)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError):
             if upgrade:
