@@ -98,14 +98,14 @@ class TestClient(unittest.TestCase):
         c._connect_polling = mock.MagicMock(return_value='foo')
         self.assertEqual(c.connect('http://foo'), 'foo')
         c._connect_polling.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = client.Client()
         c._connect_polling = mock.MagicMock(return_value='foo')
         self.assertEqual(c.connect('http://foo', transports=['polling']),
                          'foo')
         c._connect_polling.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = client.Client()
         c._connect_polling = mock.MagicMock(return_value='foo')
@@ -113,7 +113,7 @@ class TestClient(unittest.TestCase):
                                    transports=['polling', 'websocket']),
                          'foo')
         c._connect_polling.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
     def test_connect_websocket(self):
         c = client.Client()
@@ -121,21 +121,21 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.connect('http://foo', transports=['websocket']),
                          'foo')
         c._connect_websocket.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
         c = client.Client()
         c._connect_websocket = mock.MagicMock(return_value='foo')
         self.assertEqual(c.connect('http://foo', transports='websocket'),
                          'foo')
         c._connect_websocket.assert_called_once_with(
-            'http://foo', {}, 'engine.io')
+            'http://foo', {}, 'engine.io', None)
 
     def test_connect_query_string(self):
         c = client.Client()
         c._connect_polling = mock.MagicMock(return_value='foo')
         self.assertEqual(c.connect('http://foo?bar=baz'), 'foo')
         c._connect_polling.assert_called_once_with(
-            'http://foo?bar=baz', {}, 'engine.io')
+            'http://foo?bar=baz', {}, 'engine.io', None)
 
     def test_connect_custom_headers(self):
         c = client.Client()
@@ -143,7 +143,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.connect('http://foo', headers={'Foo': 'Bar'}),
                          'foo')
         c._connect_polling.assert_called_once_with(
-            'http://foo', {'Foo': 'Bar'}, 'engine.io')
+            'http://foo', {'Foo': 'Bar'}, 'engine.io', None)
 
     def test_wait(self):
         c = client.Client()
@@ -425,7 +425,7 @@ class TestClient(unittest.TestCase):
         c.connect('http://foo')
 
         c._connect_websocket.assert_called_once_with('http://foo', {},
-                                                     'engine.io')
+                                                     'engine.io', None)
         on_connect.assert_called_once_with()
         self.assertIn(c, client.connected_clients)
         self.assertEqual(
@@ -457,7 +457,7 @@ class TestClient(unittest.TestCase):
         time.sleep(0.1)
 
         c._connect_websocket.assert_called_once_with('http://foo', {},
-                                                     'engine.io')
+                                                     'engine.io', None)
         c._ping_loop.assert_called_once_with()
         c._read_loop_polling.assert_called_once_with()
         c._read_loop_websocket.assert_not_called()
@@ -474,7 +474,7 @@ class TestClient(unittest.TestCase):
                           transports=['websocket'], headers={'Foo': 'Bar'})
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            header={'Foo': 'Bar'}, cookie=None)
+            header={'Foo': 'Bar'}, cookie=None, origin=None)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.websocket.create_connection',
@@ -486,7 +486,7 @@ class TestClient(unittest.TestCase):
                           transports=['websocket'], headers={'Foo': 'Bar'})
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            header={'Foo': 'Bar'}, cookie=None)
+            header={'Foo': 'Bar'}, cookie=None, origin=None)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.websocket.create_connection',
@@ -497,7 +497,7 @@ class TestClient(unittest.TestCase):
         self.assertFalse(c.connect('http://foo', transports=['websocket']))
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
-            header={}, cookie=None)
+            header={}, cookie=None, origin=None)
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_no_open_packet(self, create_connection):
@@ -541,7 +541,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.ws, create_connection.return_value)
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
-                         {'header': {}, 'cookie': None})
+                         {'header': {}, 'cookie': None, 'origin': None})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_https_noverify_connection_successful(
@@ -579,7 +579,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
                          {'header': {}, 'cookie': None,
-                          'sslopt': {'cert_reqs': ssl.CERT_NONE}})
+                          'sslopt': {'cert_reqs': ssl.CERT_NONE}, 'origin': None})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_with_cookies(self, create_connection):
@@ -606,7 +606,7 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
-                         {'header': {}, 'cookie': 'key=value; key2=value2'})
+                         {'header': {}, 'cookie': 'key=value; key2=value2', 'origin': None})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_no_pong(self, create_connection):
