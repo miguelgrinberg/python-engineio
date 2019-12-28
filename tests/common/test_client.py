@@ -750,7 +750,6 @@ class TestClient(unittest.TestCase):
         c.state = 'connected'
         c.queue = mock.MagicMock()
         c._trigger_event = mock.MagicMock()
-        c._trigger_event = mock.MagicMock()
         states = [
             ('disconnecting', True)
         ]
