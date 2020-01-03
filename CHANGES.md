@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 3.11.2** - 2020-01-03
+
+- Detect unreported websocket closures in asyncio client [#401](https://github.com/miguelgrinberg/python-socketio/issues/401) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a67b3d76d80e665ec071292dc4aadffb50be6d3f))
+- Initialize aiohttp when client connects directly through websocket [#152](https://github.com/miguelgrinberg/python-engineio/issues/152) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9a3d6453bd35bc9581b5dd9226dc9e6bba3a18aa))
+- Initialize the client's SIGINT signal handler only if a client is created [#147](https://github.com/miguelgrinberg/python-engineio/issues/147) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6534d324f3dce2e1e4927932660d5e5e8bcab202))
+- Add better exception handling for errors thrown by the websocket-client package [#155](https://github.com/miguelgrinberg/python-engineio/issues/155) * Add better exception handling for errors thrown by the websocket-client library. * Add test for handling websocket errors. ([commit](https://github.com/miguelgrinberg/python-engineio/commit/33c7cf1ba9ecc8dd24b0d850dfe334d425474612)) (thanks **Adam Grant**!)
+- Missing timeout when closing websocket client connection [#148](https://github.com/miguelgrinberg/python-engineio/issues/148) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/02a2c705b01f171edea106a7ee867b6112074853))
+
 **Release 3.11.1** - 2019-12-10
 
 - Reset event when it is reused after a reconnect [#153](https://github.com/miguelgrinberg/python-engineio/issues/153) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/179d0df931724f1c518d09417012e0adc90501fd))
