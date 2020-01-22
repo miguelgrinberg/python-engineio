@@ -249,6 +249,11 @@ class TestSocket(unittest.TestCase):
             packet.PONG, data=probe).encode(always_bytes=False))
         self.assertEqual(_run(s.queue.get()).packet_type, packet.NOOP)
         self.assertFalse(s.upgraded)
+        self.assertTrue(s.poll_ended)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=sid'}
+        packets = _run(s.handle_get_request(environ))
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].packet_type, packet.NOOP)
 
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()

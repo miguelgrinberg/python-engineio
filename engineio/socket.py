@@ -19,6 +19,7 @@ class Socket(object):
         self.connected = False
         self.upgrading = False
         self.upgraded = False
+        self.poll_ended = False
         self.packet_backlog = []
         self.closing = False
         self.closed = False
@@ -105,6 +106,8 @@ class Socket(object):
                                     self.sid, transport)
             return getattr(self, '_upgrade_' + transport)(environ,
                                                           start_response)
+        if self.poll_ended:
+            return [packet.Packet(packet.NOOP)]
         try:
             packets = self.poll()
         except exceptions.QueueEmpty:
@@ -167,6 +170,7 @@ class Socket(object):
             ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
+            self.poll_ended = True
             self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             pkt = ws.wait()

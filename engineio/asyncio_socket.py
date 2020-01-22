@@ -88,6 +88,8 @@ class AsyncSocket(socket.Socket):
             self.server.logger.info('%s: Received request to upgrade to %s',
                                     self.sid, transport)
             return await getattr(self, '_upgrade_' + transport)(environ)
+        if self.poll_ended:
+            return [packet.Packet(packet.NOOP)]
         try:
             packets = await self.poll()
         except exceptions.QueueEmpty:
@@ -147,6 +149,7 @@ class AsyncSocket(socket.Socket):
             await ws.send(packet.Packet(
                 packet.PONG,
                 data=six.text_type('probe')).encode(always_bytes=False))
+            self.poll_ended = True
             await self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             try:
