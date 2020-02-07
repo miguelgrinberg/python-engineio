@@ -5,7 +5,7 @@
 - Detect unreported websocket closures in asyncio client [#401](https://github.com/miguelgrinberg/python-socketio/issues/401) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a67b3d76d80e665ec071292dc4aadffb50be6d3f))
 - Initialize aiohttp when client connects directly through websocket [#152](https://github.com/miguelgrinberg/python-engineio/issues/152) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9a3d6453bd35bc9581b5dd9226dc9e6bba3a18aa))
 - Initialize the client's SIGINT signal handler only if a client is created [#147](https://github.com/miguelgrinberg/python-engineio/issues/147) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6534d324f3dce2e1e4927932660d5e5e8bcab202))
-- Add better exception handling for errors thrown by the websocket-client package [#155](https://github.com/miguelgrinberg/python-engineio/issues/155) * Add better exception handling for errors thrown by the websocket-client library. * Add test for handling websocket errors. ([commit](https://github.com/miguelgrinberg/python-engineio/commit/33c7cf1ba9ecc8dd24b0d850dfe334d425474612)) (thanks **Adam Grant**!)
+- Add better exception handling for errors thrown by the websocket-client package [#155](https://github.com/miguelgrinberg/python-engineio/issues/155) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/33c7cf1ba9ecc8dd24b0d850dfe334d425474612)) (thanks **Adam Grant**!)
 - Missing timeout when closing websocket client connection [#148](https://github.com/miguelgrinberg/python-engineio/issues/148) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/02a2c705b01f171edea106a7ee867b6112074853))
 
 **Release 3.11.1** - 2019-12-10
@@ -103,11 +103,10 @@
 - not necessary to hold the packet queue when upgrading ([commit](https://github.com/miguelgrinberg/python-engineio/commit/330c6b9379afb4a098c24456f1a96fed8c314b10))
 - add link to stack overflow for questions ([commit](https://github.com/miguelgrinberg/python-engineio/commit/138fb60a9bb8a4aae86e08a5fd5485563733b9d1))
 - pep8 fixes for previous commit ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0c15cdc29ff130dba2887f5bfc2623f57b4fb45c))
-- Use the correct text type for upgrade probes in both Python 2 and 3 [#101](https://github.com/miguelgrinberg/python-engineio/issues/101) Without this, Python 2 chooses binary mode. [#265](https://github.com/miguelgrinberg/python-engineio/issues/265). ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4f0b4ea83298701a2e192c1e42fc3e917f1ee989)) (thanks **Sam Brightman**!)
+- Use the correct text type for upgrade probes in both Python 2 and 3 [#101](https://github.com/miguelgrinberg/python-engineio/issues/101) [#265](https://github.com/miguelgrinberg/python-engineio/issues/265). ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4f0b4ea83298701a2e192c1e42fc3e917f1ee989)) (thanks **Sam Brightman**!)
 
 **Release 3.4.4** - 2019-03-14
 
-- Merge branch 'Genymobile-set-cookies-to-ws-connection' ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1833908a60a0849652f48ec7db46b88ee05781ee))
 - Pass cookies to websocket connection creation ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c4c9178951aa2b9ede3ccec9af79324444e09314)) (thanks **Adrien Gavignet**!)
 - close the aiohttp client to prevent exit warnings ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9f6db446034a579415ae17dc0490ba23d92c723d))
 - readme fixes ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d6a33d22cfd3ebe8b4d78cd5c27607de837d16e9))
