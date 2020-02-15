@@ -78,7 +78,8 @@ class Client(object):
                  request_timeout=5,
                  ssl_verify=True):
         global original_signal_handler
-        if original_signal_handler is None:
+        if original_signal_handler is None and \
+                threading.current_thread() == threading.main_thread():
             original_signal_handler = signal.signal(signal.SIGINT,
                                                     signal_handler)
         self.handlers = {}
