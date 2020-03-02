@@ -20,11 +20,16 @@ class AsyncSocket(socket.Socket):
             raise exceptions.QueueEmpty()
         if packets == [None]:
             return []
-        try:
-            packets.append(self.queue.get_nowait())
-            self.queue.task_done()
-        except asyncio.QueueEmpty:
-            pass
+        while True:
+            try:
+                pkt = self.queue.get_nowait()
+                self.queue.task_done()
+                if pkt is None:
+                    self.queue.put_nowait(None)
+                    break
+                packets.append(pkt)
+            except asyncio.QueueEmpty:
+                break
         return packets
 
     async def receive(self, pkt):

@@ -94,6 +94,15 @@ class TestSocket(unittest.TestCase):
         _run(s.queue.put(None))
         self.assertEqual(_run(s.poll()), [])
 
+    def test_poll_none_after_packet(self):
+        mock_server = self._get_mock_server()
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        pkt = packet.Packet(packet.MESSAGE, data='hello')
+        _run(s.send(pkt))
+        _run(s.queue.put(None))
+        self.assertEqual(_run(s.poll()), [pkt])
+        self.assertEqual(_run(s.poll()), [])
+
     def test_ping_pong(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')

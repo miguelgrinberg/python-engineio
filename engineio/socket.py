@@ -36,8 +36,12 @@ class Socket(object):
             return []
         while True:
             try:
-                packets.append(self.queue.get(block=False))
+                pkt = self.queue.get(block=False)
                 self.queue.task_done()
+                if pkt is None:
+                    self.queue.put(None)
+                    break
+                packets.append(pkt)
             except queue_empty:
                 break
         return packets

@@ -77,6 +77,21 @@ class TestSocket(unittest.TestCase):
         s.send(pkt2)
         self.assertEqual(s.poll(), [pkt1, pkt2])
 
+    def test_poll_none(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.queue.put(None)
+        self.assertEqual(s.poll(), [])
+
+    def test_poll_none_after_packet(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        pkt = packet.Packet(packet.MESSAGE, data='hello')
+        s.send(pkt)
+        s.queue.put(None)
+        self.assertEqual(s.poll(), [pkt])
+        self.assertEqual(s.poll(), [])
+
     def test_ping_pong(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
