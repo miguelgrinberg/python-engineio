@@ -360,6 +360,13 @@ class Client(object):
         if self.http:
             cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
                                  for cookie in self.http.cookies])
+            for header, value in headers.items():
+                if header.lower() == 'cookie':
+                    if cookies:
+                        cookies += '; '
+                    cookies += value
+                    del headers[header]
+                    break
 
         try:
             if not self.ssl_verify:

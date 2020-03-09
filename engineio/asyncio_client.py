@@ -243,6 +243,16 @@ class AsyncClient(client.Client):
         if self.http is None or self.http.closed:  # pragma: no cover
             self.http = aiohttp.ClientSession()
 
+        # extract any new cookies passed in a header so that they can also be
+        # sent the the WebSocket route
+        cookies = {}
+        for header, value in headers.items():
+            if header.lower() == 'cookie':
+                cookies = dict(
+                    [cookie.split('=') for cookie in value.split('; ')])
+                del headers[header]
+                break
+
         try:
             if not self.ssl_verify:
                 ssl_context = ssl.create_default_context()
@@ -250,11 +260,11 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context)
+                    headers=headers, cookies=cookies, ssl=ssl_context)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers)
+                    headers=headers, cookies=cookies)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError):
             if upgrade:

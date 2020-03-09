@@ -609,6 +609,60 @@ class TestClient(unittest.TestCase):
                          {'header': {}, 'cookie': 'key=value; key2=value2'})
 
     @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_connection_with_cookie_header(self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode()
+        c = client.Client()
+        c.http = mock.MagicMock()
+        c.http.cookies = []
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('ws://foo', headers={'Foo': 'bar', 'Cookie': 'key=value'},
+                  transports=['websocket'])
+        time.sleep(0.1)
+
+        self.assertEqual(len(create_connection.call_args_list), 1)
+        self.assertEqual(create_connection.call_args[1],
+                         {'header': {'Foo': 'bar'}, 'cookie': 'key=value'})
+
+    @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_connection_with_cookies_and_headers(
+            self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode()
+        c = client.Client()
+        c.http = mock.MagicMock()
+        c.http.cookies = [mock.MagicMock(), mock.MagicMock()]
+        c.http.cookies[0].name = 'key'
+        c.http.cookies[0].value = 'value'
+        c.http.cookies[1].name = 'key2'
+        c.http.cookies[1].value = 'value2'
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('ws://foo', headers={'Cookie': 'key3=value3'},
+                  transports=['websocket'])
+        time.sleep(0.1)
+
+        self.assertEqual(len(create_connection.call_args_list), 1)
+        self.assertEqual(
+            create_connection.call_args[1],
+            {'header': {}, 'cookie': 'key=value; key2=value2; key3=value3'})
+
+    @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_no_pong(self, create_connection):
         create_connection.return_value.recv.return_value = packet.Packet(
             packet.OPEN, {
