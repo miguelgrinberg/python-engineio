@@ -363,11 +363,20 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False)]
         s.upgrading = True
         _run(s.send(packet.Packet(packet.MESSAGE, data=foo)))
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=sid'}
+        packets = _run(s.handle_get_request(environ))
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].encode(), b'6')
+        packets = _run(s.poll())
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].encode(), b'4foo')
+
         _run(s._websocket_handler(ws))
         self.assertTrue(s.upgraded)
         self.assertFalse(s.upgrading)
-        self.assertEqual(s.packet_backlog, [])
-        ws.send.mock.assert_called_with('4foo')
+        packets = _run(s.handle_get_request(environ))
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].encode(), b'6')
 
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()

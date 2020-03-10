@@ -357,12 +357,22 @@ class TestSocket(unittest.TestCase):
                 always_bytes=False)]
         s.upgrading = True
         s.send(packet.Packet(packet.MESSAGE, data=foo))
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=sid'}
+        start_response = mock.MagicMock()
+        packets = s.handle_get_request(environ, start_response)
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].encode(), b'6')
+        packets = s.poll()
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].encode(), b'4foo')
+
         s._websocket_handler(ws)
         self._join_bg_tasks()
         self.assertTrue(s.upgraded)
         self.assertFalse(s.upgrading)
-        self.assertEqual(s.packet_backlog, [])
-        ws.send.assert_called_with('4foo')
+        packets = s.handle_get_request(environ, start_response)
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].encode(), b'6')
 
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()

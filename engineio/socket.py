@@ -19,7 +19,6 @@ class Socket(object):
         self.connected = False
         self.upgrading = False
         self.upgraded = False
-        self.packet_backlog = []
         self.closing = False
         self.closed = False
         self.session = {}
@@ -89,8 +88,6 @@ class Socket(object):
         """Send a packet to the client."""
         if not self.check_ping_timeout():
             return
-        if self.upgrading:
-            self.packet_backlog.append(pkt)
         else:
             self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
@@ -109,6 +106,10 @@ class Socket(object):
                                     self.sid, transport)
             return getattr(self, '_upgrade_' + transport)(environ,
                                                           start_response)
+        if self.upgrading or self.upgraded:
+            # we are upgrading to WebSocket, do not return any more packets
+            # through the polling endpoint
+            return [packet.Packet(packet.NOOP)]
         try:
             packets = self.poll()
         except exceptions.QueueEmpty:
@@ -167,6 +168,7 @@ class Socket(object):
                     decoded_pkt.data != 'probe':
                 self.server.logger.info(
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
+                self.upgrading = False
                 return []
             ws.send(packet.Packet(
                 packet.PONG,
@@ -181,13 +183,9 @@ class Socket(object):
                     ('%s: Failed websocket upgrade, expected UPGRADE packet, '
                      'received %s instead.'),
                     self.sid, pkt)
+                self.upgrading = False
                 return []
             self.upgraded = True
-
-            # flush any packets that were sent during the upgrade
-            for pkt in self.packet_backlog:
-                self.queue.put(pkt)
-            self.packet_backlog = []
             self.upgrading = False
         else:
             self.connected = True

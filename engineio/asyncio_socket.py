@@ -74,8 +74,6 @@ class AsyncSocket(socket.Socket):
         """Send a packet to the client."""
         if not await self.check_ping_timeout():
             return
-        if self.upgrading:
-            self.packet_backlog.append(pkt)
         else:
             await self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
@@ -93,6 +91,10 @@ class AsyncSocket(socket.Socket):
             self.server.logger.info('%s: Received request to upgrade to %s',
                                     self.sid, transport)
             return await getattr(self, '_upgrade_' + transport)(environ)
+        if self.upgrading or self.upgraded:
+            # we are upgrading to WebSocket, do not return any more packets
+            # through the polling endpoint
+            return [packet.Packet(packet.NOOP)]
         try:
             packets = await self.poll()
         except exceptions.QueueEmpty:
@@ -148,6 +150,7 @@ class AsyncSocket(socket.Socket):
                     decoded_pkt.data != 'probe':
                 self.server.logger.info(
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
+                self.upgrading = False
                 return
             await ws.send(packet.Packet(
                 packet.PONG,
@@ -157,6 +160,7 @@ class AsyncSocket(socket.Socket):
             try:
                 pkt = await ws.wait()
             except IOError:  # pragma: no cover
+                self.upgrading = False
                 return
             decoded_pkt = packet.Packet(encoded_packet=pkt)
             if decoded_pkt.packet_type != packet.UPGRADE:
@@ -165,13 +169,9 @@ class AsyncSocket(socket.Socket):
                     ('%s: Failed websocket upgrade, expected UPGRADE packet, '
                      'received %s instead.'),
                     self.sid, pkt)
+                self.upgrading = False
                 return
             self.upgraded = True
-
-            # flush any packets that were sent during the upgrade
-            for pkt in self.packet_backlog:
-                await self.queue.put(pkt)
-            self.packet_backlog = []
             self.upgrading = False
         else:
             self.connected = True
