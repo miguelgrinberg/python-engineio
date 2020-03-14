@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 3.12.0** - 2020-03-14
+
+- Correct handling of cookies in the client [#162](https://github.com/miguelgrinberg/python-engineio/issues/162) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/59a0cd43f7fabc2c6b2546c59e72f8376b9f85cc))
+- Fixed infrequent race condition when upgrading from polling to WebSocket [#160](https://github.com/miguelgrinberg/python-engineio/issues/160) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f2cce2bccb7fca58bb6115630d5c221569e52ba4))
+- Only add signal handler when client is created in main thread [#163](https://github.com/miguelgrinberg/python-engineio/issues/163) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e1ed079a8dafe2b9ca596fa2fc2885a91d1b486d))
+- More robust handling of a closing connection [#164](https://github.com/miguelgrinberg/python-engineio/issues/164) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bdd584b3b3ca87f37f89921e54d5b27ec5fd7953))
+- More accurate logging documentation [#158](https://github.com/miguelgrinberg/python-engineio/issues/158) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5260f5c4d8e6091fb913be9b688d61e36c11fb26))
+
 **Release 3.11.2** - 2020-01-03
 
 - Detect unreported websocket closures in asyncio client [#401](https://github.com/miguelgrinberg/python-socketio/issues/401) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a67b3d76d80e665ec071292dc4aadffb50be6d3f))
