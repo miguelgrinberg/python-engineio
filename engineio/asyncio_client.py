@@ -252,6 +252,7 @@ class AsyncClient(client.Client):
                     [cookie.split('=') for cookie in value.split('; ')])
                 del headers[header]
                 break
+        self.http.cookie_jar.update_cookies(cookies)
 
         try:
             if not self.ssl_verify:
@@ -260,11 +261,11 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, cookies=cookies, ssl=ssl_context)
+                    headers=headers, ssl=ssl_context)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, cookies=cookies)
+                    headers=headers)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError):
             if upgrade:

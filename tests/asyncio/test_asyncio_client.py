@@ -464,7 +464,7 @@ class TestAsyncClient(unittest.TestCase):
                       headers={'Foo': 'Bar'}))
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            headers={'Foo': 'Bar'}, cookies={})
+            headers={'Foo': 'Bar'})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_upgrade_failed(self, _time):
@@ -477,7 +477,7 @@ class TestAsyncClient(unittest.TestCase):
             'http://foo', transports=['websocket'])))
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
-            headers={}, cookies={})
+            headers={})
 
     def test_websocket_connection_no_open_packet(self):
         c = asyncio_client.AsyncClient()
@@ -528,7 +528,7 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.ws, ws)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            headers={}, cookies={})
+            headers={})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_https_noverify_connection_successful(self, _time):
@@ -596,7 +596,7 @@ class TestAsyncClient(unittest.TestCase):
         time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            headers={}, cookies={})
+            headers={})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_connection_with_cookie_header(self, _time):
@@ -622,7 +622,9 @@ class TestAsyncClient(unittest.TestCase):
         time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            headers={}, cookies={'key': 'value', 'key2': 'value2'})
+            headers={})
+        c.http.cookie_jar.update_cookies.assert_called_once_with(
+            {'key': 'value', 'key2': 'value2'})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_connection_with_cookies_and_headers(self, _time):
@@ -652,7 +654,9 @@ class TestAsyncClient(unittest.TestCase):
         time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            headers={'Foo': 'Bar'}, cookies={'key3': 'value3'})
+            headers={'Foo': 'Bar'})
+        c.http.cookie_jar.update_cookies.assert_called_once_with(
+            {'key3': 'value3'})
 
     def test_websocket_upgrade_no_pong(self):
         c = asyncio_client.AsyncClient()
