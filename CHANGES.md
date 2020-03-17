@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 3.12.1** - 2020-03-17
+
+- Asyncio client: correctly update cookie jar [#166](https://github.com/miguelgrinberg/python-engineio/issues/166) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5f2c7f640cbe1620387b6843683b2150dc713d82))
+
 **Release 3.12.0** - 2020-03-14
 
 - Correct handling of cookies in the client [#162](https://github.com/miguelgrinberg/python-engineio/issues/162) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/59a0cd43f7fabc2c6b2546c59e72f8376b9f85cc))
