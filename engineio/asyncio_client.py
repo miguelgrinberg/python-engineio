@@ -506,12 +506,19 @@ class AsyncClient(client.Client):
                 break
             except Exception as e:
                 self.logger.info(
-                    'Unexpected error "%s", aborting', str(e))
+                    'Unexpected error receiving packet: "%s", aborting',
+                    str(e))
                 await self.queue.put(None)
                 break
             if isinstance(p, six.text_type):  # pragma: no cover
                 p = p.encode('utf-8')
-            pkt = packet.Packet(encoded_packet=p)
+            try:
+                pkt = packet.Packet(encoded_packet=p)
+            except Exception as e:  # pragma: no cover
+                self.logger.info(
+                    'Unexpected error decoding packet: "%s", aborting', str(e))
+                await self.queue.put(None)
+                break
             await self._receive_packet(pkt)
 
         self.logger.info('Waiting for write loop task to end')
