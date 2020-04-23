@@ -21,6 +21,10 @@ class ASGIApp:
     :param engineio_path: The endpoint where the Engine.IO application should
                           be installed. The default value is appropriate for
                           most cases.
+    :param on_startup: function to be called on application startup; can be
+                       coroutine
+    :param on_shutdown: function to be called on application shutdown; can be
+                        coroutine
 
     Example usage::
 
@@ -82,17 +86,27 @@ class ASGIApp:
         if event['type'] == 'lifespan.startup':
             if self.on_startup:
                 try:
-                    await self.on_startup() if asyncio.iscoroutinefunction(self.on_startup) else self.on_startup()
+                    (await self.on_startup()
+                     if asyncio.iscoroutinefunction(self.on_startup)
+                     else self.on_startup())
                 except:
-                    await send({'type': 'lifespan.startup.failed', 'message': traceback.format_exc()})
+                    await send({
+                        'type': 'lifespan.startup.failed',
+                        'message': traceback.format_exc()
+                    })
                     return
             await send({'type': 'lifespan.startup.complete'})
         elif event['type'] == 'lifespan.shutdown':
             if self.on_shutdown:
                 try:
-                    await self.on_shutdown() if asyncio.iscoroutinefunction(self.on_shutdown) else self.on_shutdown()
+                    (await self.on_shutdown()
+                     if asyncio.iscoroutinefunction(self.on_shutdown)
+                     else self.on_shutdown())
                 except:
-                    await send({'type': 'lifespan.shutdown.failed', 'message': traceback.format_exc()})
+                    await send({
+                        'type': 'lifespan.shutdown.failed',
+                        'message': traceback.format_exc()
+                    })
                     return
             await send({'type': 'lifespan.shutdown.complete'})
 

@@ -118,6 +118,7 @@ class AsgiTests(unittest.TestCase):
 
         # sync startup function
         up = False
+
         def startup():
             nonlocal up
             up = True
@@ -129,9 +130,10 @@ class AsgiTests(unittest.TestCase):
         send.mock.assert_called_once_with(
             {'type': 'lifespan.startup.complete'})
         self.assertTrue(up)
-        
+
         # async startup function
         up = False
+
         async def startup():
             nonlocal up
             up = True
@@ -143,9 +145,10 @@ class AsgiTests(unittest.TestCase):
         send.mock.assert_called_once_with(
             {'type': 'lifespan.startup.complete'})
         self.assertTrue(up)
-        
+
         # startup function exception
         up = False
+
         def startup():
             raise Exception
         app = async_asgi.ASGIApp('eio', on_startup=startup)
@@ -168,6 +171,7 @@ class AsgiTests(unittest.TestCase):
 
         # sync shutdown function
         down = False
+
         def shutdown():
             nonlocal down
             down = True
@@ -179,9 +183,10 @@ class AsgiTests(unittest.TestCase):
         send.mock.assert_called_once_with(
             {'type': 'lifespan.shutdown.complete'})
         self.assertTrue(down)
-        
+
         # async shutdown function
         down = False
+
         async def shutdown():
             nonlocal down
             down = True
@@ -193,9 +198,10 @@ class AsgiTests(unittest.TestCase):
         send.mock.assert_called_once_with(
             {'type': 'lifespan.shutdown.complete'})
         self.assertTrue(down)
-        
+
         # shutdown function exception
         down = False
+
         def shutdown():
             raise Exception
         app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
