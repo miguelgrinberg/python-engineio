@@ -116,6 +116,52 @@ class AsgiTests(unittest.TestCase):
         send.mock.assert_called_once_with(
             {'type': 'lifespan.startup.complete'})
 
+    def test_lifespan_startup_sync_function(self):
+        up = False
+
+        def startup():
+            nonlocal up
+            up = True
+
+        app = async_asgi.ASGIApp('eio', on_startup=startup)
+        scope = {'type': 'lifespan'}
+        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        send = AsyncMock()
+        _run(app(scope, receive, send))
+        send.mock.assert_called_once_with(
+            {'type': 'lifespan.startup.complete'})
+        self.assertTrue(up)
+
+    def test_lifespan_startup_async_function(self):
+        up = False
+
+        async def startup():
+            nonlocal up
+            up = True
+
+        app = async_asgi.ASGIApp('eio', on_startup=startup)
+        scope = {'type': 'lifespan'}
+        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        send = AsyncMock()
+        _run(app(scope, receive, send))
+        send.mock.assert_called_once_with(
+            {'type': 'lifespan.startup.complete'})
+        self.assertTrue(up)
+
+    def test_lifespan_startup_function_exception(self):
+        up = False
+
+        def startup():
+            raise Exception
+
+        app = async_asgi.ASGIApp('eio', on_startup=startup)
+        scope = {'type': 'lifespan'}
+        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        send = AsyncMock()
+        _run(app(scope, receive, send))
+        send.mock.assert_called_once_with({'type': 'lifespan.startup.failed'})
+        self.assertFalse(up)
+
     def test_lifespan_shutdown(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}
@@ -124,6 +170,53 @@ class AsgiTests(unittest.TestCase):
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
             {'type': 'lifespan.shutdown.complete'})
+
+    def test_lifespan_shutdown_sync_function(self):
+        down = False
+
+        def shutdown():
+            nonlocal down
+            down = True
+
+        app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
+        scope = {'type': 'lifespan'}
+        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = AsyncMock()
+        _run(app(scope, receive, send))
+        send.mock.assert_called_once_with(
+            {'type': 'lifespan.shutdown.complete'})
+        self.assertTrue(down)
+
+    def test_lifespan_shutdown_async_function(self):
+        down = False
+
+        async def shutdown():
+            nonlocal down
+            down = True
+
+        app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
+        scope = {'type': 'lifespan'}
+        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = AsyncMock()
+        _run(app(scope, receive, send))
+        send.mock.assert_called_once_with(
+            {'type': 'lifespan.shutdown.complete'})
+        self.assertTrue(down)
+
+    def test_lifespan_shutdown_function_exception(self):
+        down = False
+
+        def shutdown():
+            raise Exception
+
+        app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
+        scope = {'type': 'lifespan'}
+        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = AsyncMock()
+        _run(app(scope, receive, send))
+        send.mock.assert_called_once_with(
+            {'type': 'lifespan.shutdown.failed'})
+        self.assertFalse(down)
 
     def test_lifespan_invalid(self):
         app = async_asgi.ASGIApp('eio')

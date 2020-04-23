@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 
 from engineio.static_files import get_static_file
 
@@ -19,6 +20,10 @@ class ASGIApp:
     :param engineio_path: The endpoint where the Engine.IO application should
                           be installed. The default value is appropriate for
                           most cases.
+    :param on_startup: function to be called on application startup; can be
+                       coroutine
+    :param on_shutdown: function to be called on application shutdown; can be
+                        coroutine
 
     Example usage::
 
@@ -34,11 +39,14 @@ class ASGIApp:
         uvicorn.run(app, '127.0.0.1', 5000)
     """
     def __init__(self, engineio_server, other_asgi_app=None,
-                 static_files=None, engineio_path='engine.io'):
+                 static_files=None, engineio_path='engine.io',
+                 on_startup=None, on_shutdown=None):
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path.strip('/')
         self.static_files = static_files or {}
+        self.on_startup = on_startup
+        self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
         if scope['type'] in ['http', 'websocket'] and \
@@ -75,8 +83,24 @@ class ASGIApp:
     async def lifespan(self, receive, send):
         event = await receive()
         if event['type'] == 'lifespan.startup':
+            if self.on_startup:
+                try:
+                    await self.on_startup() \
+                        if asyncio.iscoroutinefunction(self.on_startup) else \
+                            self.on_startup()
+                except:
+                    await send({'type': 'lifespan.startup.failed'})
+                    return
             await send({'type': 'lifespan.startup.complete'})
         elif event['type'] == 'lifespan.shutdown':
+            if self.on_shutdown:
+                try:
+                    await self.on_shutdown() \
+                        if asyncio.iscoroutinefunction(self.on_shutdown) \
+                            else self.on_shutdown()
+                except:
+                    await send({'type': 'lifespan.shutdown.failed'})
+                    return
             await send({'type': 'lifespan.shutdown.complete'})
 
     async def not_found(self, receive, send):
