@@ -100,6 +100,7 @@ class Client(object):
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
+        self.ssl_enable_multithread = False
 
         if json is not None:
             packet.Packet.json = json
@@ -369,14 +370,20 @@ class Client(object):
                     break
 
         try:
+            extra_options = {}
+            if self.ssl_enable_multithread:
+                extra_options.update({
+                    "enable_multithread": True
+                })
             if not self.ssl_verify:
-                ws = websocket.create_connection(
-                    websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE})
-            else:
-                ws = websocket.create_connection(
-                    websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies)
+                extra_options.update({
+                    "sslopt": {
+                        "cert_reqs": ssl.CERT_NONE
+                    }
+                })
+            ws = websocket.create_connection(
+                websocket_url + self._get_url_timestamp(), header=headers,
+                cookie=cookies, **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
