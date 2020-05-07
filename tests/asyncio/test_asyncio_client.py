@@ -617,14 +617,14 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('ws://foo',
-                       headers={'Cookie': 'key=value; key2=value2'},
+                       headers={'Cookie': 'key=value; key2=value2; key3="value3="'},
                        transports=['websocket']))
         time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
             headers={})
         c.http.cookie_jar.update_cookies.assert_called_once_with(
-            {'key': 'value', 'key2': 'value2'})
+            {'key': 'value', 'key2': 'value2', 'key3': '"value3="'})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_connection_with_cookies_and_headers(self, _time):
