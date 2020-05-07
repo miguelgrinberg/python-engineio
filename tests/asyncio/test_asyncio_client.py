@@ -617,7 +617,9 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('ws://foo',
-                       headers={'Cookie': 'key=value; key2=value2; key3="value3="'},
+                       headers={
+                           'Cookie': 'key=value; key2=value2; key3="value3="'
+                       },
                        transports=['websocket']))
         time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
