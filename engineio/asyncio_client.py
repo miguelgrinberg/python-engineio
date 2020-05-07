@@ -249,7 +249,7 @@ class AsyncClient(client.Client):
         for header, value in headers.items():
             if header.lower() == 'cookie':
                 cookies = dict(
-                    [cookie.split('=') for cookie in value.split('; ')])
+                    [cookie.split('=', 1) for cookie in value.split('; ')])
                 del headers[header]
                 break
         self.http.cookie_jar.update_cookies(cookies)
