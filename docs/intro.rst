@@ -63,7 +63,7 @@ Client Features
 ---------------
 
 - Can connect to other Engine.IO complaint servers besides the one in this package.
-- Compatible with Python 2.7 and 3.5+.
+- Compatible with Python 3.5+.
 - Two versions of the client, one for standard Python and another for ``asyncio``.
 - Uses an event-based architecture implemented with decorators that hides the
   details of the protocol.
@@ -131,7 +131,7 @@ Server Features
 
 - Can accept clients running other complaint Engine.IO clients besides the one in this
   package.
-- Compatible with Python 2.7 and Python 3.5+.
+- Compatible with Python 3.5+.
 - Two versions of the server, one for standard Python and another for ``asyncio``.
 - Supports large number of clients even on modest hardware due to being
   asynchronous.
