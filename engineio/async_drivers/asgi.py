@@ -135,7 +135,7 @@ async def translate_request(scope, receive, send):
             if event['type'] == 'http.request':
                 payload += event.get('body') or b''
     elif event['type'] == 'websocket.connect':
-        await send({'type': 'websocket.accept'})
+        pass
     else:
         return {}
 
@@ -187,6 +187,14 @@ async def translate_request(scope, receive, send):
 
 async def make_response(status, headers, payload, environ):
     headers = [(h[0].encode('utf-8'), h[1].encode('utf-8')) for h in headers]
+    if 'HTTP_SEC_WEBSOCKET_VERSION' in environ:
+        if status.startswith('200 '):
+            await environ['asgi.send']({'type': 'websocket.accept',
+                                        'headers': headers})
+        else:
+            await environ['asgi.send']({'type': 'websocket.close'})
+        return
+
     await environ['asgi.send']({'type': 'http.response.start',
                                 'status': int(status.split(' ')[0]),
                                 'headers': headers})
@@ -207,6 +215,7 @@ class WebSocket(object):  # pragma: no cover
     async def __call__(self, environ):
         self.asgi_receive = environ['asgi.receive']
         self.asgi_send = environ['asgi.send']
+        await self.asgi_send({'type': 'websocket.accept'})
         await self.handler(self)
 
     async def close(self):

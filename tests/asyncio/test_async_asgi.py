@@ -347,7 +347,7 @@ class AsgiTests(unittest.TestCase):
                         (b'content-length', b'123')],
             'path': '/foo/bar',
             'query_string': b'baz=1'}, receive, send))
-        send.mock.assert_called_once_with({'type': 'websocket.accept'})
+        send.mock.assert_not_called()
 
     def test_translate_unknown_request(self):
         receive = AsyncMock(return_value={'type': 'http.foo'})
@@ -358,7 +358,6 @@ class AsgiTests(unittest.TestCase):
             'query_string': b'baz=1'}, receive, send))
         self.assertEqual(environ, {})
 
-    # @mock.patch('async_aiohttp.aiohttp.web.Response')
     def test_make_response(self):
         environ = {
             'asgi.send': AsyncMock()
@@ -370,3 +369,23 @@ class AsgiTests(unittest.TestCase):
              'headers': [(b'foo', b'bar')]})
         environ['asgi.send'].mock.assert_any_call(
             {'type': 'http.response.body', 'body': b'payload'})
+
+    def test_make_response_websocket_accept(self):
+        environ = {
+            'asgi.send': AsyncMock(),
+            'HTTP_SEC_WEBSOCKET_VERSION': 'foo',
+        }
+        _run(async_asgi.make_response('200 OK', [('foo', 'bar')],
+                                      b'payload', environ))
+        environ['asgi.send'].mock.assert_called_with(
+            {'type': 'websocket.accept', 'headers': [(b'foo', b'bar')]})
+
+    def test_make_response_websocket_reject(self):
+        environ = {
+            'asgi.send': AsyncMock(),
+            'HTTP_SEC_WEBSOCKET_VERSION': 'foo',
+        }
+        _run(async_asgi.make_response('401 UNAUTHORIZED', [('foo', 'bar')],
+                                      b'payload', environ))
+        environ['asgi.send'].mock.assert_called_with(
+            {'type': 'websocket.close'})
