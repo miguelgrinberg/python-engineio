@@ -513,7 +513,7 @@ class Server(object):
 
         if transport == 'websocket':
             ret = s.handle_get_request(environ, start_response)
-            if s.closed:
+            if s.closed and sid in self.sockets:
                 # websocket connection ended, so we are done
                 del self.sockets[sid]
             return ret
