@@ -181,6 +181,14 @@ The ``sid`` argument passed into all the event handlers is a connection
 identifier for the client. All the events from a client will use the same
 ``sid`` value.
 
+The ``connect`` handler is the place where the server can perform
+authentication. The value returned by this handler is used to determine if the
+connection is accepted or rejected. When the handler does not return any value
+(which is the same as returning ``None``) or when it returns ``True`` the
+connection is accepted. If the handler returns ``False`` or any JSON
+compatible data type (string, integer, list or dictionary) the connection is
+rejected. A rejected connection triggers a response with a 401 status code.
+
 The ``data`` argument passed to the ``'message'`` event handler contains
 application-specific data provided by the client with the event.
 

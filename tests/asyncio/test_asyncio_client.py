@@ -272,8 +272,15 @@ class TestAsyncClient(unittest.TestCase):
         c = asyncio_client.AsyncClient()
         c._send_request = AsyncMock()
         c._send_request.mock.return_value.status = 404
-        self.assertRaises(
-            exceptions.ConnectionError, _run, c.connect('http://foo'))
+        c._send_request.mock.return_value.json = AsyncMock(
+            return_value={'foo': 'bar'})
+        try:
+            _run(c.connect('http://foo'))
+        except exceptions.ConnectionError as exc:
+            self.assertEqual(len(exc.args), 2)
+            self.assertEqual(exc.args[0],
+                             'Unexpected status code 404 in server response')
+            self.assertEqual(exc.args[1], {'foo': 'bar'})
 
     def test_polling_connection_invalid_packet(self):
         c = asyncio_client.AsyncClient()

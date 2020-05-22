@@ -506,10 +506,10 @@ class Server(object):
         s.send(pkt)
 
         ret = self._trigger_event('connect', sid, environ, run_async=False)
-        if ret is False:
+        if ret is not None and ret is not True:
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
-            return self._unauthorized()
+            return self._unauthorized(ret or None)
 
         if transport == 'websocket':
             ret = s.handle_get_request(environ, start_response)
@@ -592,11 +592,14 @@ class Server(object):
                 'headers': [('Content-Type', 'text/plain')],
                 'response': b'Method Not Found'}
 
-    def _unauthorized(self):
+    def _unauthorized(self, message=None):
         """Generate a unauthorized HTTP error response."""
+        if message is None:
+            message = 'Unauthorized'
+        message = packet.Packet.json.dumps(message)
         return {'status': '401 UNAUTHORIZED',
-                'headers': [('Content-Type', 'text/plain')],
-                'response': b'Unauthorized'}
+                'headers': [('Content-Type', 'application/json')],
+                'response': message.encode('utf-8')}
 
     def _cors_allowed_origins(self, environ):
         default_origins = []

@@ -599,6 +599,26 @@ class TestAsyncServer(unittest.TestCase):
         self.assertEqual(len(s.sockets), 0)
         self.assertEqual(a._async['make_response'].call_args[0][0],
                          '401 UNAUTHORIZED')
+        self.assertEqual(a._async['make_response'].call_args[0][2],
+                         b'"Unauthorized"')
+
+    @mock.patch('importlib.import_module')
+    def test_connect_event_rejects_with_message(self, import_module):
+        a = self.get_async_mock()
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        s._generate_id = mock.MagicMock(return_value='123')
+
+        def mock_connect(sid, environ):
+            return {'not': 'allowed'}
+
+        s.on('connect')(mock_connect)
+        _run(s.handle_request('request'))
+        self.assertEqual(len(s.sockets), 0)
+        self.assertEqual(a._async['make_response'].call_args[0][0],
+                         '401 UNAUTHORIZED')
+        self.assertEqual(a._async['make_response'].call_args[0][2],
+                         b'{"not": "allowed"}')
 
     @mock.patch('importlib.import_module')
     def test_method_not_found(self, import_module):

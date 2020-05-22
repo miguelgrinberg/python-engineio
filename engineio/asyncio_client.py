@@ -183,9 +183,10 @@ class AsyncClient(client.Client):
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
+            self._reset()
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status))
+                    r.status), await r.json())
         try:
             p = payload.Payload(encoded_payload=await r.read())
         except ValueError:

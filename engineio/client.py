@@ -295,9 +295,10 @@ class Client(object):
             raise exceptions.ConnectionError(
                 'Connection refused by the server')
         if r.status_code < 200 or r.status_code >= 300:
+            self._reset()
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status_code))
+                    r.status_code), r.json())
         try:
             p = payload.Payload(encoded_payload=r.content)
         except ValueError:

@@ -724,7 +724,7 @@ class TestServer(unittest.TestCase):
     def test_connect_event(self):
         s = server.Server()
         s._generate_id = mock.MagicMock(return_value='123')
-        mock_event = mock.MagicMock()
+        mock_event = mock.MagicMock(return_value=None)
         s.on('connect')(mock_event)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
@@ -739,9 +739,22 @@ class TestServer(unittest.TestCase):
         s.on('connect')(mock_event)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
         start_response = mock.MagicMock()
-        s.handle_request(environ, start_response)
+        ret = s.handle_request(environ, start_response)
         self.assertEqual(len(s.sockets), 0)
         self.assertEqual(start_response.call_args[0][0], '401 UNAUTHORIZED')
+        self.assertEqual(ret, [b'"Unauthorized"'])
+
+    def test_connect_event_rejects_with_message(self):
+        s = server.Server()
+        s._generate_id = mock.MagicMock(return_value='123')
+        mock_event = mock.MagicMock(return_value='not allowed')
+        s.on('connect')(mock_event)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
+        start_response = mock.MagicMock()
+        ret = s.handle_request(environ, start_response)
+        self.assertEqual(len(s.sockets), 0)
+        self.assertEqual(start_response.call_args[0][0], '401 UNAUTHORIZED')
+        self.assertEqual(ret, [b'"not allowed"'])
 
     def test_method_not_found(self):
         s = server.Server()
