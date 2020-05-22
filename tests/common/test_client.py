@@ -481,7 +481,7 @@ class TestClient(unittest.TestCase):
                           transports=['websocket'], headers={'Foo': 'Bar'})
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            header={'Foo': 'Bar'}, cookie=None)
+            header={'Foo': 'Bar'}, cookie=None, enable_multithread=True)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.websocket.create_connection',
@@ -493,7 +493,7 @@ class TestClient(unittest.TestCase):
                           transports=['websocket'], headers={'Foo': 'Bar'})
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
-            header={'Foo': 'Bar'}, cookie=None)
+            header={'Foo': 'Bar'}, cookie=None, enable_multithread=True)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.websocket.create_connection',
@@ -504,7 +504,7 @@ class TestClient(unittest.TestCase):
         self.assertFalse(c.connect('http://foo', transports=['websocket']))
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
-            header={}, cookie=None)
+            header={}, cookie=None, enable_multithread=True)
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_no_open_packet(self, create_connection):
@@ -548,7 +548,8 @@ class TestClient(unittest.TestCase):
         self.assertEqual(c.ws, create_connection.return_value)
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
-                         {'header': {}, 'cookie': None})
+                         {'header': {}, 'cookie': None,
+                          'enable_multithread': True})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_https_noverify_connection_successful(
@@ -586,6 +587,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
                          {'header': {}, 'cookie': None,
+                          'enable_multithread': True,
                           'sslopt': {'cert_reqs': ssl.CERT_NONE}})
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -613,7 +615,8 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
-                         {'header': {}, 'cookie': 'key=value; key2=value2'})
+                         {'header': {}, 'cookie': 'key=value; key2=value2',
+                          'enable_multithread': True})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_with_cookie_header(self, create_connection):
@@ -637,7 +640,8 @@ class TestClient(unittest.TestCase):
 
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(create_connection.call_args[1],
-                         {'header': {'Foo': 'bar'}, 'cookie': 'key=value'})
+                         {'header': {'Foo': 'bar'}, 'cookie': 'key=value',
+                          'enable_multithread': True})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_with_cookies_and_headers(
@@ -667,7 +671,8 @@ class TestClient(unittest.TestCase):
         self.assertEqual(len(create_connection.call_args_list), 1)
         self.assertEqual(
             create_connection.call_args[1],
-            {'header': {}, 'cookie': 'key=value; key2=value2; key3=value3'})
+            {'header': {}, 'enable_multithread': True,
+             'cookie': 'key=value; key2=value2; key3=value3'})
 
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_no_pong(self, create_connection):

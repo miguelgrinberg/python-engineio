@@ -369,15 +369,13 @@ class Client(object):
                     del headers[header]
                     break
 
+        extra_options = {}
+        if not self.ssl_verify:
+            extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
         try:
-            if not self.ssl_verify:
-                ws = websocket.create_connection(
-                    websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies, sslopt={"cert_reqs": ssl.CERT_NONE})
-            else:
-                ws = websocket.create_connection(
-                    websocket_url + self._get_url_timestamp(), header=headers,
-                    cookie=cookies)
+            ws = websocket.create_connection(
+                websocket_url + self._get_url_timestamp(), header=headers,
+                cookie=cookies, enable_multithread=True, **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
