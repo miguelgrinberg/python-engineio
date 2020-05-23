@@ -1,5 +1,16 @@
 # python-engineio change log
 
+**Release 3.13.0** - 2020-05-23
+
+- Support direct WebSocket connections in ASGI server ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c0e2817bddf2c12e72cbfe7e2ca4bb3f41392af5))
+- ASGI startup and shutdown lifespan handlers [#169](https://github.com/miguelgrinberg/python-engineio/issues/169) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/38cc39f527e4913f3fee519a2f13f218056343a7)) (thanks **avi**!)
+- Improved handling of rejected connections ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0e0b26f89bea6b0662c1d1748c5ae1fde5668207))
+- Make client disconnects more robust [#417](https://github.com/miguelgrinberg/python-socketio/issues/417) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4297eb4a9033029cd0061e3ddd5d46974b8e4d9e))
+- End WebSocket connection gracefully when user is intentionally disconnected [#168](https://github.com/miguelgrinberg/python-engineio/issues/168) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e4d9c33216a851ca0261b0944d4c08afcc05ae1e)) (thanks **Mohammad Almoghrabi**!)
+- Enable locking in websocket-client package [#170](https://github.com/miguelgrinberg/python-engineio/issues/170) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f7bbd97a68022b25f7d70c044cbff4328c50e909))
+- Correctly parse cookies with a "=" in their values [#175](https://github.com/miguelgrinberg/python-engineio/issues/175) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8c1d98c056ac69b04d8a1412a70563909b19f7e6)) (thanks **Ignacio Pascual**!)
+- Removed references to Python 2.7 in the documentation ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5b79e28d8a2c5349590f9ea23d9cb8142c165295))
+
 **Release 3.12.1** - 2020-03-17
 
 - Asyncio client: correctly update cookie jar [#166](https://github.com/miguelgrinberg/python-engineio/issues/166) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5f2c7f640cbe1620387b6843683b2150dc713d82))
