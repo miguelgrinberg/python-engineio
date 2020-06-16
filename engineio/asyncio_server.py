@@ -393,7 +393,7 @@ class AsyncServer(server.Server):
             ret = await s.handle_get_request(environ)
             if s.closed:
                 # websocket connection ended, so we are done
-                self.sockets.pop('sid', None)
+                self.sockets.pop(sid, None)
             return ret
         else:
             s.connected = True
