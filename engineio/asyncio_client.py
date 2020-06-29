@@ -34,6 +34,11 @@ class AsyncClient(client.Client):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param proxy: An HTTP proxy to be used in the websocket connection.
+                  e.g. "http://proxy.com:3128"
+                  Authentication credentials can be passed in proxy URL.
+                  e.g. "http://user:pass@some.proxy.com:3128"
+                  Default is ``None``.
     """
     def is_asyncio_based(self):
         return True
