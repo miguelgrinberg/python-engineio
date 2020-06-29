@@ -340,6 +340,52 @@ class TestAsyncClient(unittest.TestCase):
         self.assertEqual(c.upgrades, [])
         self.assertEqual(c.transport(), 'polling')
 
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_polling_connection_successful_with_proxy(self, _time):
+        c = asyncio_client.AsyncClient()
+        c.http = AsyncMock()
+        c.http.closed = False
+        c.http.get = AsyncMock()
+        c.http.get.mock.return_value.status = 200
+        c.http.get.mock.return_value.read = AsyncMock(
+            return_value=payload.Payload(packets=[
+                packet.Packet(packet.OPEN, {
+                    'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                    'pingTimeout': 2000
+                })
+            ]).encode())
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = AsyncMock()
+        c.on('connect', on_connect)
+        c._set_proxy('http://foo.proxy:3128')
+        _run(c.connect('http://foo'))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_called_once_with()
+        c._read_loop_websocket.mock.assert_not_called()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.mock.assert_called_once_with()
+        c.http.get.mock.assert_called_with(
+            'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
+            headers={}, data=None,
+            timeout=aiohttp.ClientTimeout(
+                total=5, connect=None,
+                sock_read=None, sock_connect=None),
+            proxy='http://foo.proxy:3128')
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'http://foo/engine.io/?transport=polling&EIO=3&sid=123')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'polling')
+
     def test_polling_https_noverify_connection_successful(self):
         c = asyncio_client.AsyncClient(ssl_verify=False)
         c._send_request = AsyncMock()
@@ -536,6 +582,46 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
             headers={})
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_websocket_connection_successful_with_proxy(self, _time):
+        c = asyncio_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock()
+        ws = c.http.ws_connect.mock.return_value
+        ws.receive = AsyncMock()
+        ws.receive.mock.return_value.data = packet.Packet(packet.OPEN, {
+            'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+            'pingTimeout': 2000
+        }).encode()
+        c._ping_loop = AsyncMock()
+        c._read_loop_polling = AsyncMock()
+        c._read_loop_websocket = AsyncMock()
+        c._write_loop = AsyncMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c._set_proxy('http://foo.proxy:3128')
+        _run(c.connect('ws://foo', transports=['websocket']))
+        time.sleep(0.1)
+
+        c._ping_loop.mock.assert_called_once_with()
+        c._read_loop_polling.mock.assert_not_called()
+        c._read_loop_websocket.mock.assert_called_once_with()
+        c._write_loop.mock.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'ws://foo/engine.io/?transport=websocket&EIO=3')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'websocket')
+        self.assertEqual(c.ws, ws)
+        c.http.ws_connect.mock.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            headers={}, proxy='http://foo.proxy:3128')
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_https_noverify_connection_successful(self, _time):

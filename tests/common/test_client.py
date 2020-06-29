@@ -145,6 +145,42 @@ class TestClient(unittest.TestCase):
         c._connect_polling.assert_called_once_with(
             'http://foo', {'Foo': 'Bar'}, 'engine.io')
 
+    def test_set_simple_proxy(self):
+        c = client.Client()
+        c._set_proxy('http://foo.proxy:3128')
+        self.assertDictEqual(
+            c.proxy,
+            {
+                'full': 'http://foo.proxy:3128',
+                'host': 'foo.proxy',
+                'port': 3128,
+                'auth': None
+            })
+
+    def test_set_auth_proxy(self):
+        c = client.Client()
+        c._set_proxy('http://user:password@foo.proxy:3128')
+        self.assertDictEqual(
+            c.proxy,
+            {
+                'full': 'http://user:password@foo.proxy:3128',
+                'host': 'foo.proxy',
+                'port': 3128,
+                'auth': ('user', 'password')
+            })
+
+    def test_set_invalid_proxy(self):
+        c = client.Client()
+        self.assertRaises(ValueError, c._set_proxy, 'socks5://foo.proxy')
+
+    def test_set_invalid_port_proxy(self):
+        c = client.Client()
+        self.assertRaises(ValueError, c._set_proxy, 'http://foo.proxy:abc')
+
+    def test_set_invalid_auth_proxy(self):
+        c = client.Client()
+        self.assertRaises(ValueError, c._set_proxy, 'http://ab@foo.proxy:abc')
+
     def test_wait(self):
         c = client.Client()
         c.read_loop_task = mock.MagicMock()
@@ -346,6 +382,50 @@ class TestClient(unittest.TestCase):
         c._read_loop_polling.assert_called_once_with()
         c._read_loop_websocket.assert_not_called()
         c._write_loop.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'http://foo/engine.io/?transport=polling&EIO=3&sid=123')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'polling')
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_polling_connection_successful_with_proxy(self, _time):
+        c = client.Client()
+        c.http = mock.MagicMock()
+
+        c.http.request = mock.MagicMock()
+        c.http.request.return_value.status_code = 200
+        c.http.request.return_value.content = payload.Payload(packets=[
+            packet.Packet(packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            })
+        ]).encode()
+
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c._set_proxy('http://foo.proxy:3128')
+        c.connect('http://foo')
+        time.sleep(0.1)
+
+        c._ping_loop.assert_called_once_with()
+        c._read_loop_polling.assert_called_once_with()
+        c._read_loop_websocket.assert_not_called()
+        c._write_loop.assert_called_once_with()
+        c.http.request.assert_called_once_with(
+            'GET', 'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
+            headers={}, data=None, timeout=5,
+            verify=True, proxies={'http': 'http://foo.proxy:3128'}
+        )
         on_connect.assert_called_once_with()
         self.assertIn(c, client.connected_clients)
         self.assertEqual(
@@ -733,6 +813,49 @@ class TestClient(unittest.TestCase):
         self.assertEqual(
             create_connection.return_value.send.call_args_list[1],
             ((packet.Packet(packet.UPGRADE).encode(),),))  # upgrade
+
+    @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_connection_successful_with_proxy(self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN, {
+                'sid': '123', 'upgrades': [], 'pingInterval': 1000,
+                'pingTimeout': 2000
+            }).encode()
+        c = client.Client()
+        c._ping_loop = mock.MagicMock()
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c._set_proxy('http://foo.proxy:3128')
+        c.connect('ws://foo', transports=['websocket'])
+        time.sleep(0.1)
+
+        c._ping_loop.assert_called_once_with()
+        c._read_loop_polling.assert_not_called()
+        c._read_loop_websocket.assert_called_once_with()
+        c._write_loop.assert_called_once_with()
+        on_connect.assert_called_once_with()
+        self.assertIn(c, client.connected_clients)
+        self.assertEqual(
+            c.base_url,
+            'ws://foo/engine.io/?transport=websocket&EIO=3')
+        self.assertEqual(c.sid, '123')
+        self.assertEqual(c.ping_interval, 1)
+        self.assertEqual(c.ping_timeout, 2)
+        self.assertEqual(c.upgrades, [])
+        self.assertEqual(c.transport(), 'websocket')
+        self.assertEqual(c.ws, create_connection.return_value)
+        self.assertEqual(len(create_connection.call_args_list), 1)
+
+        self.assertEqual(create_connection.call_args[1],
+                         {'header': {}, 'cookie': None,
+                          'enable_multithread': True,
+                          'http_proxy_host': 'foo.proxy',
+                          'http_proxy_port': 3128,
+                          'http_proxy_auth': None,
+                          })
 
     def test_receive_unknown_packet(self):
         c = client.Client()

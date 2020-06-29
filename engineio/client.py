@@ -69,6 +69,11 @@ class Client(object):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param proxy: An HTTP proxy to be used in the websocket connection.
+                  e.g. "http://proxy.com:3128"
+                  Authentication credentials can be passed in proxy URL.
+                  e.g. "http://user:pass@some.proxy.com:3128"
+                  Default is ``None``.
     """
     event_names = ['connect', 'disconnect', 'message']
 
@@ -76,7 +81,8 @@ class Client(object):
                  logger=False,
                  json=None,
                  request_timeout=5,
-                 ssl_verify=True):
+                 ssl_verify=True,
+                 proxy=None):
         global original_signal_handler
         if original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
@@ -100,6 +106,10 @@ class Client(object):
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
+        self.proxy = None
+
+        if proxy is not None:
+            self._set_proxy(proxy)
 
         if json is not None:
             packet.Packet.json = json
@@ -372,6 +382,12 @@ class Client(object):
         extra_options = {}
         if not self.ssl_verify:
             extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
+
+        if self.proxy is not None:
+            extra_options['http_proxy_host'] = self.proxy['host']
+            extra_options['http_proxy_port'] = self.proxy['port']
+            extra_options['http_proxy_auth'] = self.proxy['auth']
+
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), header=headers,
@@ -478,9 +494,15 @@ class Client(object):
             timeout=None):  # pragma: no cover
         if self.http is None:
             self.http = requests.Session()
+
+        extra_options = {}
+        if self.proxy is not None:
+            extra_options['proxies'] = {'http': self.proxy['full']}
+
         try:
             return self.http.request(method, url, headers=headers, data=body,
-                                     timeout=timeout, verify=self.ssl_verify)
+                                     timeout=timeout, verify=self.ssl_verify,
+                                     **extra_options)
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
@@ -496,6 +518,47 @@ class Client(object):
                     return self.handlers[event](*args)
                 except:
                     self.logger.exception(event + ' handler error')
+
+    def _set_proxy(self, proxy):
+        """
+        Set a proxy address to create the websocket connection.
+
+        :param proxy: An HTTP proxy to be used in the websocket connection.
+                      e.g. "http://proxy.com:3128"
+                      Authentication credentials can be passed in proxy URL.
+                      e.g. "http://user:pass@some.proxy.com:3128"
+
+        Example usage::
+
+            eio = engineio.Client()
+            eio._set_proxy("http://some.proxy.com:3128")
+        """
+
+        proxy_parts = urllib.parse.urlparse(proxy.strip())
+        if proxy_parts.scheme.lower() != 'http':
+            raise ValueError('proxy type not supported')
+
+        proxy_netloc = proxy_parts.netloc
+        proxy_auth = None
+        if '@' in proxy:
+            proxy_auth, proxy_netloc = proxy_netloc.rsplit('@', 1)
+            if ':' not in proxy_auth:
+                raise ValueError('badly formed credentials')
+            proxy_auth = tuple(proxy_auth.split(':', 1))  # auth tuple
+
+        if ':' not in proxy_netloc:
+            raise ValueError('you must provide a valid hostname:port')
+
+        proxy_host, proxy_port = proxy_netloc.split(':', 1)
+        if not proxy_port.isdigit():
+            raise ValueError('invalid port number')
+        proxy_port = int(proxy_port)
+        self.proxy = {
+            'full': proxy,
+            'host': proxy_host,
+            'port': proxy_port,
+            'auth': proxy_auth,
+        }
 
     def _get_engineio_url(self, url, engineio_path, transport):
         """Generate the Engine.IO connection URL."""

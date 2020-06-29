@@ -254,6 +254,9 @@ class AsyncClient(client.Client):
                 del headers[header]
                 break
         self.http.cookie_jar.update_cookies(cookies)
+        extra_options = {}
+        if self.proxy is not None:
+            extra_options['proxy'] = self.proxy['full']
 
         try:
             if not self.ssl_verify:
@@ -262,11 +265,11 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context)
+                    headers=headers, ssl=ssl_context, **extra_options)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers)
+                    headers=headers, **extra_options)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError):
             if upgrade:
@@ -371,15 +374,21 @@ class AsyncClient(client.Client):
             self.http = aiohttp.ClientSession()
         http_method = getattr(self.http, method.lower())
 
+        extra_options = {}
+        if self.proxy is not None:
+            extra_options['proxy'] = self.proxy['full']
+
         try:
             if not self.ssl_verify:
                 return await http_method(
                     url, headers=headers, data=body,
-                    timeout=aiohttp.ClientTimeout(total=timeout), ssl=False)
+                    timeout=aiohttp.ClientTimeout(total=timeout), ssl=False,
+                    **extra_options)
             else:
                 return await http_method(
                     url, headers=headers, data=body,
-                    timeout=aiohttp.ClientTimeout(total=timeout))
+                    timeout=aiohttp.ClientTimeout(total=timeout),
+                    **extra_options)
 
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
