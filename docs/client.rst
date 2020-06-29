@@ -83,6 +83,20 @@ In the case of the ``asyncio`` client, the method is a coroutine::
 
     await eio.connect('http://localhost:5000')
 
+If the application is behind a firewall or you need to use proxies::
+
+    eio._set_proxy('http://localhost:3128')
+
+Or when the client is initialized::
+
+    import engineio
+
+    # standard Python
+    eio = engineio.Client(proxy='http://localhost:3128')
+
+    # asyncio
+    eio = engineio.AsyncClient(proxy='http://localhost:3128')
+
 Upon connection, the server assigns the client a unique session identifier.
 The applicaction can find this identifier in the ``sid`` attribute::
 
