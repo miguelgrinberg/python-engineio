@@ -815,7 +815,7 @@ class TestClient(unittest.TestCase):
             ((packet.Packet(packet.UPGRADE).encode(),),))  # upgrade
 
     @mock.patch('engineio.client.websocket.create_connection')
-    def test_websocket_connection_successful_with_proxy(self, create_connection):
+    def test_websocket_connection_proxy_successful_w(self, create_connection):
         create_connection.return_value.recv.return_value = packet.Packet(
             packet.OPEN, {
                 'sid': '123', 'upgrades': [], 'pingInterval': 1000,
