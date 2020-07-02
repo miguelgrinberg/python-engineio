@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 3.13.1** - 2020-07-02
+
+- Fix KeyError during WebSocket disconnection in AsyncServer [#179](https://github.com/miguelgrinberg/python-engineio/issues/179) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f43807b26ea1a185ff0b9f569dd586ca77b8da67))
+
 **Release 3.13.0** - 2020-05-23
 
 - Support direct WebSocket connections in ASGI server ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c0e2817bddf2c12e72cbfe7e2ca4bb3f41392af5))
