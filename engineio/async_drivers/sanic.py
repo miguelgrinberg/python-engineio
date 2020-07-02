@@ -1,16 +1,16 @@
 import sys
 from urllib.parse import urlsplit
 
-from sanic.response import HTTPResponse
-try:
+try:  # pragma: no cover
+    from sanic.response import HTTPResponse
     from sanic.websocket import WebSocketProtocol
 except ImportError:
-    # the installed version of sanic does not have websocket support
+    HTTPResponse = None
     WebSocketProtocol = None
 import six
 
 
-def create_route(app, engineio_server, engineio_endpoint):
+def create_route(app, engineio_server, engineio_endpoint):  # pragma: no cover
     """This function sets up the engine.io endpoint as a route for the
     application.
 
@@ -26,7 +26,7 @@ def create_route(app, engineio_server, engineio_endpoint):
         pass
 
 
-def translate_request(request):
+def translate_request(request):  # pragma: no cover
     """This function takes the arguments passed to the request handler and
     uses them to generate a WSGI compatible environ dictionary.
     """
@@ -89,7 +89,7 @@ def translate_request(request):
     return environ
 
 
-def make_response(status, headers, payload, environ):
+def make_response(status, headers, payload, environ):  # pragma: no cover
     """This function generates an appropriate response object for this async
     mode.
     """
