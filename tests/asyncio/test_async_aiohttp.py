@@ -2,6 +2,7 @@ import sys
 import unittest
 
 import six
+
 if six.PY3:
     from unittest import mock
 else:
@@ -25,9 +26,13 @@ class AiohttpTests(unittest.TestCase):
         request._message.method = 'PUT'
         request._message.path = '/foo/bar?baz=1'
         request._message.version = (1, 1)
-        request._message.headers = {'a': 'b', 'c-c': 'd', 'c_c': 'e',
-                                    'content-type': 'application/json',
-                                    'content-length': 123}
+        request._message.headers = {
+            'a': 'b',
+            'c-c': 'd',
+            'c_c': 'e',
+            'content-type': 'application/json',
+            'content-length': 123,
+        }
         request._payload = b'hello world'
         environ = async_aiohttp.translate_request(request)
         expected_environ = {
@@ -44,14 +49,14 @@ class AiohttpTests(unittest.TestCase):
             'aiohttp.request': request,
         }
         for k, v in expected_environ.items():
-            self.assertEqual(v, environ[k])
-        self.assertTrue(
-            environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d')
+            assert v == environ[k]
+        assert environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d'
 
     # @mock.patch('async_aiohttp.aiohttp.web.Response')
     def test_make_response(self):
-        rv = async_aiohttp.make_response('202 ACCEPTED', {'foo': 'bar'},
-                                         b'payload', {})
-        self.assertEqual(rv.status, 202)
-        self.assertEqual(rv.headers['foo'], 'bar')
-        self.assertEqual(rv.body, b'payload')
+        rv = async_aiohttp.make_response(
+            '202 ACCEPTED', {'foo': 'bar'}, b'payload', {}
+        )
+        assert rv.status == 202
+        assert rv.headers['foo'] == 'bar'
+        assert rv.body == b'payload'

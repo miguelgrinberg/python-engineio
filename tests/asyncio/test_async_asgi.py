@@ -3,6 +3,7 @@ import sys
 import unittest
 
 import six
+
 if six.PY3:
     from unittest import mock
 else:
@@ -33,12 +34,15 @@ def _run(coro):
 class AsgiTests(unittest.TestCase):
     def test_create_app(self):
         app = async_asgi.ASGIApp(
-            'eio', 'other_app', static_files='static_files',
-            engineio_path='/foo')
-        self.assertEqual(app.engineio_server, 'eio')
-        self.assertEqual(app.other_asgi_app, 'other_app')
-        self.assertEqual(app.static_files, 'static_files')
-        self.assertEqual(app.engineio_path, 'foo'),
+            'eio',
+            'other_app',
+            static_files='static_files',
+            engineio_path='/foo',
+        )
+        assert app.engineio_server == 'eio'
+        assert app.other_asgi_app == 'other_app'
+        assert app.static_files == 'static_files'
+        assert app.engineio_path == 'foo'
 
     def test_engineio_routing(self):
         mock_server = mock.MagicMock()
@@ -47,7 +51,8 @@ class AsgiTests(unittest.TestCase):
         scope = {'type': 'http', 'path': '/engine.io/'}
         _run(app(scope, 'receive', 'send'))
         mock_server.handle_request.mock.assert_called_once_with(
-            scope, 'receive', 'send')
+            scope, 'receive', 'send'
+        )
 
     def test_other_app_routing(self):
         other_app = AsyncMock()
@@ -58,48 +63,58 @@ class AsgiTests(unittest.TestCase):
 
     def test_static_file_routing(self):
         root_dir = os.path.dirname(__file__)
-        app = async_asgi.ASGIApp('eio', static_files={
-            '/': root_dir + '/index.html',
-            '/foo': {'content_type': 'text/plain',
-                     'filename': root_dir + '/index.html'},
-            '/static': root_dir,
-            '/static/test/': root_dir + '/',
-        })
+        app = async_asgi.ASGIApp(
+            'eio',
+            static_files={
+                '/': root_dir + '/index.html',
+                '/foo': {
+                    'content_type': 'text/plain',
+                    'filename': root_dir + '/index.html',
+                },
+                '/static': root_dir,
+                '/static/test/': root_dir + '/',
+            },
+        )
 
         def check_path(path, status_code, content_type, body):
             scope = {'type': 'http', 'path': path}
             receive = AsyncMock(return_value={'type': 'http.request'})
             send = AsyncMock()
             _run(app(scope, receive, send))
-            send.mock.assert_any_call({
-                'type': 'http.response.start',
-                'status': status_code,
-                'headers': [(b'Content-Type', content_type.encode('utf-8'))]})
-            send.mock.assert_any_call({
-                'type': 'http.response.body',
-                'body': body.encode('utf-8')})
+            send.mock.assert_any_call(
+                {
+                    'type': 'http.response.start',
+                    'status': status_code,
+                    'headers': [
+                        (b'Content-Type', content_type.encode('utf-8'))
+                    ],
+                }
+            )
+            send.mock.assert_any_call(
+                {'type': 'http.response.body', 'body': body.encode('utf-8')}
+            )
 
         check_path('/', 200, 'text/html', '<html></html>\n')
         check_path('/foo', 200, 'text/plain', '<html></html>\n')
         check_path('/static/index.html', 200, 'text/html', '<html></html>\n')
         check_path('/static/foo.bar', 404, 'text/plain', 'Not Found')
-        check_path('/static/test/index.html', 200, 'text/html',
-                   '<html></html>\n')
+        check_path(
+            '/static/test/index.html', 200, 'text/html', '<html></html>\n'
+        )
         check_path('/bar/foo', 404, 'text/plain', 'Not Found')
         check_path('', 404, 'text/plain', 'Not Found')
 
         app.static_files[''] = 'index.html'
-        check_path('/static/test/', 200, 'text/html',
-                   '<html></html>\n')
+        check_path('/static/test/', 200, 'text/html', '<html></html>\n')
 
         app.static_files[''] = {'filename': 'index.html'}
-        check_path('/static/test/', 200, 'text/html',
-                   '<html></html>\n')
+        check_path('/static/test/', 200, 'text/html', '<html></html>\n')
 
-        app.static_files[''] = {'filename': 'index.html',
-                                'content_type': 'image/gif'}
-        check_path('/static/test/', 200, 'image/gif',
-                   '<html></html>\n')
+        app.static_files[''] = {
+            'filename': 'index.html',
+            'content_type': 'image/gif',
+        }
+        check_path('/static/test/', 200, 'image/gif', '<html></html>\n')
 
         app.static_files[''] = {'filename': 'test.gif'}
         check_path('/static/test/', 404, 'text/plain', 'Not Found')
@@ -114,7 +129,8 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
-            {'type': 'lifespan.startup.complete'})
+            {'type': 'lifespan.startup.complete'}
+        )
 
     def test_lifespan_startup_sync_function(self):
         up = False
@@ -129,8 +145,9 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
-            {'type': 'lifespan.startup.complete'})
-        self.assertTrue(up)
+            {'type': 'lifespan.startup.complete'}
+        )
+        assert up
 
     def test_lifespan_startup_async_function(self):
         up = False
@@ -145,8 +162,9 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
-            {'type': 'lifespan.startup.complete'})
-        self.assertTrue(up)
+            {'type': 'lifespan.startup.complete'}
+        )
+        assert up
 
     def test_lifespan_startup_function_exception(self):
         up = False
@@ -160,7 +178,7 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with({'type': 'lifespan.startup.failed'})
-        self.assertFalse(up)
+        assert not up
 
     def test_lifespan_shutdown(self):
         app = async_asgi.ASGIApp('eio')
@@ -169,7 +187,8 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
-            {'type': 'lifespan.shutdown.complete'})
+            {'type': 'lifespan.shutdown.complete'}
+        )
 
     def test_lifespan_shutdown_sync_function(self):
         down = False
@@ -184,8 +203,9 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
-            {'type': 'lifespan.shutdown.complete'})
-        self.assertTrue(down)
+            {'type': 'lifespan.shutdown.complete'}
+        )
+        assert down
 
     def test_lifespan_shutdown_async_function(self):
         down = False
@@ -200,8 +220,9 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with(
-            {'type': 'lifespan.shutdown.complete'})
-        self.assertTrue(down)
+            {'type': 'lifespan.shutdown.complete'}
+        )
+        assert down
 
     def test_lifespan_shutdown_function_exception(self):
         down = False
@@ -214,9 +235,8 @@ class AsgiTests(unittest.TestCase):
         receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
         send = AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
-            {'type': 'lifespan.shutdown.failed'})
-        self.assertFalse(down)
+        send.mock.assert_called_once_with({'type': 'lifespan.shutdown.failed'})
+        assert not down
 
     def test_lifespan_invalid(self):
         app = async_asgi.ASGIApp('eio')
@@ -233,23 +253,40 @@ class AsgiTests(unittest.TestCase):
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_any_call(
-            {'type': 'http.response.start', 'status': 404,
-             'headers': [(b'Content-Type', b'text/plain')]})
-        send.mock.assert_any_call({'type': 'http.response.body',
-                                   'body': b'Not Found'})
+            {
+                'type': 'http.response.start',
+                'status': 404,
+                'headers': [(b'Content-Type', b'text/plain')],
+            }
+        )
+        send.mock.assert_any_call(
+            {'type': 'http.response.body', 'body': b'Not Found'}
+        )
 
     def test_translate_request(self):
-        receive = AsyncMock(return_value={'type': 'http.request',
-                                          'body': b'hello world'})
+        receive = AsyncMock(
+            return_value={'type': 'http.request', 'body': b'hello world'}
+        )
         send = AsyncMock()
-        environ = _run(async_asgi.translate_request({
-            'type': 'http',
-            'method': 'PUT',
-            'headers': [(b'a', b'b'), (b'c-c', b'd'), (b'c_c', b'e'),
+        environ = _run(
+            async_asgi.translate_request(
+                {
+                    'type': 'http',
+                    'method': 'PUT',
+                    'headers': [
+                        (b'a', b'b'),
+                        (b'c-c', b'd'),
+                        (b'c_c', b'e'),
                         (b'content-type', b'application/json'),
-                        (b'content-length', b'123')],
-            'path': '/foo/bar',
-            'query_string': b'baz=1'}, receive, send))
+                        (b'content-length', b'123'),
+                    ],
+                    'path': '/foo/bar',
+                    'query_string': b'baz=1',
+                },
+                receive,
+                send,
+            )
+        )
         expected_environ = {
             'REQUEST_METHOD': 'PUT',
             'PATH_INFO': '/foo/bar',
@@ -261,26 +298,37 @@ class AsgiTests(unittest.TestCase):
             'RAW_URI': '/foo/bar?baz=1',
             'SERVER_PROTOCOL': 'HTTP/1.1',
             'asgi.receive': receive,
-            'asgi.send': send
+            'asgi.send': send,
         }
         for k, v in expected_environ.items():
-            self.assertEqual(v, environ[k])
-        self.assertTrue(
-            environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d')
+            assert v == environ[k]
+        assert environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d'
         body = _run(environ['wsgi.input'].read())
-        self.assertEqual(body, b'hello world')
+        assert body == b'hello world'
 
     def test_translate_request_no_query_string(self):
-        receive = AsyncMock(return_value={'type': 'http.request',
-                                          'body': b'hello world'})
+        receive = AsyncMock(
+            return_value={'type': 'http.request', 'body': b'hello world'}
+        )
         send = AsyncMock()
-        environ = _run(async_asgi.translate_request({
-            'type': 'http',
-            'method': 'PUT',
-            'headers': [(b'a', b'b'), (b'c-c', b'd'), (b'c_c', b'e'),
+        environ = _run(
+            async_asgi.translate_request(
+                {
+                    'type': 'http',
+                    'method': 'PUT',
+                    'headers': [
+                        (b'a', b'b'),
+                        (b'c-c', b'd'),
+                        (b'c_c', b'e'),
                         (b'content-type', b'application/json'),
-                        (b'content-length', b'123')],
-            'path': '/foo/bar'}, receive, send))
+                        (b'content-length', b'123'),
+                    ],
+                    'path': '/foo/bar',
+                },
+                receive,
+                send,
+            )
+        )
         expected_environ = {
             'REQUEST_METHOD': 'PUT',
             'PATH_INFO': '/foo/bar',
@@ -292,31 +340,43 @@ class AsgiTests(unittest.TestCase):
             'RAW_URI': '/foo/bar',
             'SERVER_PROTOCOL': 'HTTP/1.1',
             'asgi.receive': receive,
-            'asgi.send': send
+            'asgi.send': send,
         }
         for k, v in expected_environ.items():
-            self.assertEqual(v, environ[k])
-        self.assertTrue(
-            environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d')
+            assert v == environ[k]
+        assert environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d'
         body = _run(environ['wsgi.input'].read())
-        self.assertEqual(body, b'hello world')
+        assert body == b'hello world'
 
     def test_translate_request_with_large_body(self):
-        receive = AsyncMock(side_effect=[
-            {'type': 'http.request', 'body': b'hello ', 'more_body': True},
-            {'type': 'http.request', 'body': b'world', 'more_body': True},
-            {'type': 'foo.bar'},  # should stop parsing here
-            {'type': 'http.request', 'body': b'!!!'},
-        ])
+        receive = AsyncMock(
+            side_effect=[
+                {'type': 'http.request', 'body': b'hello ', 'more_body': True},
+                {'type': 'http.request', 'body': b'world', 'more_body': True},
+                {'type': 'foo.bar'},  # should stop parsing here
+                {'type': 'http.request', 'body': b'!!!'},
+            ]
+        )
         send = AsyncMock()
-        environ = _run(async_asgi.translate_request({
-            'type': 'http',
-            'method': 'PUT',
-            'headers': [(b'a', b'b'), (b'c-c', b'd'), (b'c_c', b'e'),
+        environ = _run(
+            async_asgi.translate_request(
+                {
+                    'type': 'http',
+                    'method': 'PUT',
+                    'headers': [
+                        (b'a', b'b'),
+                        (b'c-c', b'd'),
+                        (b'c_c', b'e'),
                         (b'content-type', b'application/json'),
-                        (b'content-length', b'123')],
-            'path': '/foo/bar',
-            'query_string': b'baz=1'}, receive, send))
+                        (b'content-length', b'123'),
+                    ],
+                    'path': '/foo/bar',
+                    'query_string': b'baz=1',
+                },
+                receive,
+                send,
+            )
+        )
         expected_environ = {
             'REQUEST_METHOD': 'PUT',
             'PATH_INFO': '/foo/bar',
@@ -328,64 +388,91 @@ class AsgiTests(unittest.TestCase):
             'RAW_URI': '/foo/bar?baz=1',
             'SERVER_PROTOCOL': 'HTTP/1.1',
             'asgi.receive': receive,
-            'asgi.send': send
+            'asgi.send': send,
         }
         for k, v in expected_environ.items():
-            self.assertEqual(v, environ[k])
-        self.assertTrue(
-            environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d')
+            assert v == environ[k]
+        assert environ['HTTP_C_C'] == 'd,e' or environ['HTTP_C_C'] == 'e,d'
         body = _run(environ['wsgi.input'].read())
-        self.assertEqual(body, b'hello world')
+        assert body == b'hello world'
 
     def test_translate_websocket_request(self):
         receive = AsyncMock(return_value={'type': 'websocket.connect'})
         send = AsyncMock()
-        _run(async_asgi.translate_request({
-            'type': 'websocket',
-            'headers': [(b'a', b'b'), (b'c-c', b'd'), (b'c_c', b'e'),
+        _run(
+            async_asgi.translate_request(
+                {
+                    'type': 'websocket',
+                    'headers': [
+                        (b'a', b'b'),
+                        (b'c-c', b'd'),
+                        (b'c_c', b'e'),
                         (b'content-type', b'application/json'),
-                        (b'content-length', b'123')],
-            'path': '/foo/bar',
-            'query_string': b'baz=1'}, receive, send))
+                        (b'content-length', b'123'),
+                    ],
+                    'path': '/foo/bar',
+                    'query_string': b'baz=1',
+                },
+                receive,
+                send,
+            )
+        )
         send.mock.assert_not_called()
 
     def test_translate_unknown_request(self):
         receive = AsyncMock(return_value={'type': 'http.foo'})
         send = AsyncMock()
-        environ = _run(async_asgi.translate_request({
-            'type': 'http',
-            'path': '/foo/bar',
-            'query_string': b'baz=1'}, receive, send))
-        self.assertEqual(environ, {})
+        environ = _run(
+            async_asgi.translate_request(
+                {'type': 'http', 'path': '/foo/bar', 'query_string': b'baz=1'},
+                receive,
+                send,
+            )
+        )
+        assert environ == {}
 
     def test_make_response(self):
-        environ = {
-            'asgi.send': AsyncMock()
-        }
-        _run(async_asgi.make_response('202 ACCEPTED', [('foo', 'bar')],
-                                      b'payload', environ))
+        environ = {'asgi.send': AsyncMock()}
+        _run(
+            async_asgi.make_response(
+                '202 ACCEPTED', [('foo', 'bar')], b'payload', environ
+            )
+        )
         environ['asgi.send'].mock.assert_any_call(
-            {'type': 'http.response.start', 'status': 202,
-             'headers': [(b'foo', b'bar')]})
+            {
+                'type': 'http.response.start',
+                'status': 202,
+                'headers': [(b'foo', b'bar')],
+            }
+        )
         environ['asgi.send'].mock.assert_any_call(
-            {'type': 'http.response.body', 'body': b'payload'})
+            {'type': 'http.response.body', 'body': b'payload'}
+        )
 
     def test_make_response_websocket_accept(self):
         environ = {
             'asgi.send': AsyncMock(),
             'HTTP_SEC_WEBSOCKET_VERSION': 'foo',
         }
-        _run(async_asgi.make_response('200 OK', [('foo', 'bar')],
-                                      b'payload', environ))
+        _run(
+            async_asgi.make_response(
+                '200 OK', [('foo', 'bar')], b'payload', environ
+            )
+        )
         environ['asgi.send'].mock.assert_called_with(
-            {'type': 'websocket.accept', 'headers': [(b'foo', b'bar')]})
+            {'type': 'websocket.accept', 'headers': [(b'foo', b'bar')]}
+        )
 
     def test_make_response_websocket_reject(self):
         environ = {
             'asgi.send': AsyncMock(),
             'HTTP_SEC_WEBSOCKET_VERSION': 'foo',
         }
-        _run(async_asgi.make_response('401 UNAUTHORIZED', [('foo', 'bar')],
-                                      b'payload', environ))
+        _run(
+            async_asgi.make_response(
+                '401 UNAUTHORIZED', [('foo', 'bar')], b'payload', environ
+            )
+        )
         environ['asgi.send'].mock.assert_called_with(
-            {'type': 'websocket.close'})
+            {'type': 'websocket.close'}
+        )

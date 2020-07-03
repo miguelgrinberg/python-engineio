@@ -7,6 +7,7 @@ import unittest
 import zlib
 
 import six
+
 if six.PY3:
     from unittest import mock
 else:
@@ -17,6 +18,7 @@ from engineio.async_drivers import aiohttp as async_aiohttp
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
+import pytest
 
 
 def AsyncMock(*args, **kwargs):
@@ -82,39 +84,36 @@ class TestAsyncServer(unittest.TestCase):
 
     def test_is_asyncio_based(self):
         s = asyncio_server.AsyncServer()
-        self.assertEqual(s.is_asyncio_based(), True)
+        assert s.is_asyncio_based()
 
     def test_async_modes(self):
         s = asyncio_server.AsyncServer()
-        self.assertEqual(s.async_modes(), ['aiohttp', 'sanic', 'tornado',
-                                           'asgi'])
+        assert s.async_modes() == ['aiohttp', 'sanic', 'tornado', 'asgi']
 
     def test_async_mode_aiohttp(self):
         s = asyncio_server.AsyncServer(async_mode='aiohttp')
-        self.assertEqual(s.async_mode, 'aiohttp')
-        self.assertEqual(s._async['asyncio'], True)
-        self.assertEqual(s._async['create_route'], async_aiohttp.create_route)
-        self.assertEqual(s._async['translate_request'],
-                         async_aiohttp.translate_request)
-        self.assertEqual(s._async['make_response'],
-                         async_aiohttp.make_response)
-        self.assertEqual(s._async['websocket'].__name__, 'WebSocket')
+        assert s.async_mode == 'aiohttp'
+        assert s._async['asyncio']
+        assert s._async['create_route'] == async_aiohttp.create_route
+        assert s._async['translate_request'] == async_aiohttp.translate_request
+        assert s._async['make_response'] == async_aiohttp.make_response
+        assert s._async['websocket'].__name__ == 'WebSocket'
 
     @mock.patch('importlib.import_module')
     def test_async_mode_auto_aiohttp(self, import_module):
         import_module.side_effect = [self.get_async_mock()]
         s = asyncio_server.AsyncServer()
-        self.assertEqual(s.async_mode, 'aiohttp')
+        assert s.async_mode == 'aiohttp'
 
     def test_async_modes_wsgi(self):
-        self.assertRaises(ValueError, asyncio_server.AsyncServer,
-                          async_mode='eventlet')
-        self.assertRaises(ValueError, asyncio_server.AsyncServer,
-                          async_mode='gevent')
-        self.assertRaises(ValueError, asyncio_server.AsyncServer,
-                          async_mode='gevent_uwsgi')
-        self.assertRaises(ValueError, asyncio_server.AsyncServer,
-                          async_mode='threading')
+        with pytest.raises(ValueError):
+            asyncio_server.AsyncServer(async_mode='eventlet')
+        with pytest.raises(ValueError):
+            asyncio_server.AsyncServer(async_mode='gevent')
+        with pytest.raises(ValueError):
+            asyncio_server.AsyncServer(async_mode='gevent_uwsgi')
+        with pytest.raises(ValueError):
+            asyncio_server.AsyncServer(async_mode='threading')
 
     @mock.patch('importlib.import_module')
     def test_attach(self, import_module):
@@ -138,7 +137,7 @@ class TestAsyncServer(unittest.TestCase):
             async with s.session('foo') as session:
                 await s.sleep(0)
                 session['username'] = 'bar'
-            self.assertEqual(await s.get_session('foo'), {'username': 'bar'})
+            assert await s.get_session('foo') == {'username': 'bar'}
 
         _run(_func())
 
@@ -146,50 +145,53 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
         _run(s.disconnect('foo'))
-        self.assertEqual(mock_socket.close.mock.call_count, 1)
+        assert mock_socket.close.mock.call_count == 1
         mock_socket.close.mock.assert_called_once_with()
-        self.assertNotIn('foo', s.sockets)
+        assert 'foo' not in s.sockets
 
     def test_disconnect_all(self):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_foo = self._get_mock_socket()
         s.sockets['bar'] = mock_bar = self._get_mock_socket()
         _run(s.disconnect())
-        self.assertEqual(mock_foo.close.mock.call_count, 1)
-        self.assertEqual(mock_bar.close.mock.call_count, 1)
+        assert mock_foo.close.mock.call_count == 1
+        assert mock_bar.close.mock.call_count == 1
         mock_foo.close.mock.assert_called_once_with()
         mock_bar.close.mock.assert_called_once_with()
-        self.assertNotIn('foo', s.sockets)
-        self.assertNotIn('bar', s.sockets)
+        assert 'foo' not in s.sockets
+        assert 'bar' not in s.sockets
 
     @mock.patch('importlib.import_module')
     def test_jsonp_not_supported(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'j=abc'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'j=abc'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         response = _run(s.handle_request('request'))
-        self.assertEqual(response, 'response')
+        assert response == 'response'
         a._async['translate_request'].assert_called_once_with('request')
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
     def test_jsonp_index(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'j=233'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'j=233'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         response = _run(s.handle_request('request'))
-        self.assertEqual(response, 'response')
+        assert response == 'response'
         a._async['translate_request'].assert_called_once_with('request')
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        self.assertTrue(a._async['make_response'].call_args[0][2].startswith(
-            b'___eio[233]("'))
-        self.assertTrue(a._async['make_response'].call_args[0][2].endswith(
-            b'");'))
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        assert (
+            a._async['make_response']
+            .call_args[0][2]
+            .startswith(b'___eio[233]("')
+        )
+        assert a._async['make_response'].call_args[0][2].endswith(b'");')
 
     @mock.patch('importlib.import_module')
     def test_connect(self, import_module):
@@ -197,42 +199,47 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 1)
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        self.assertIn(('Content-Type', 'application/octet-stream'),
-                      a._async['make_response'].call_args[0][1])
+        assert len(s.sockets) == 1
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        assert ('Content-Type', 'application/octet-stream') in a._async[
+            'make_response'
+        ].call_args[0][1]
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]).packets
-        self.assertEqual(len(packets), 1)
-        self.assertEqual(packets[0].packet_type, packet.OPEN)
-        self.assertIn('upgrades', packets[0].data)
-        self.assertEqual(packets[0].data['upgrades'], ['websocket'])
-        self.assertIn('sid', packets[0].data)
+            encoded_payload=a._async['make_response'].call_args[0][2]
+        ).packets
+        assert len(packets) == 1
+        assert packets[0].packet_type == packet.OPEN
+        assert 'upgrades' in packets[0].data
+        assert packets[0].data['upgrades'] == ['websocket']
+        assert 'sid' in packets[0].data
 
     @mock.patch('importlib.import_module')
     def test_connect_async_request_response_handlers(self, import_module):
         a = self.get_async_mock()
         a._async['translate_request'] = AsyncMock(
-            return_value=a._async['translate_request'].return_value)
+            return_value=a._async['translate_request'].return_value
+        )
         a._async['make_response'] = AsyncMock(
-            return_value=a._async['make_response'].return_value)
+            return_value=a._async['make_response'].return_value
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 1)
-        self.assertEqual(a._async['make_response'].mock.call_count, 1)
-        self.assertEqual(a._async['make_response'].mock.call_args[0][0],
-                         '200 OK')
-        self.assertIn(('Content-Type', 'application/octet-stream'),
-                      a._async['make_response'].mock.call_args[0][1])
-        packets = payload.Payload(encoded_payload=a._async[
-            'make_response'].mock.call_args[0][2]).packets
-        self.assertEqual(len(packets), 1)
-        self.assertEqual(packets[0].packet_type, packet.OPEN)
-        self.assertIn('upgrades', packets[0].data)
-        self.assertEqual(packets[0].data['upgrades'], ['websocket'])
-        self.assertIn('sid', packets[0].data)
+        assert len(s.sockets) == 1
+        assert a._async['make_response'].mock.call_count == 1
+        assert a._async['make_response'].mock.call_args[0][0] == '200 OK'
+        assert ('Content-Type', 'application/octet-stream') in a._async[
+            'make_response'
+        ].mock.call_args[0][1]
+        packets = payload.Payload(
+            encoded_payload=a._async['make_response'].mock.call_args[0][2]
+        ).packets
+        assert len(packets) == 1
+        assert packets[0].packet_type == packet.OPEN
+        assert 'upgrades' in packets[0].data
+        assert packets[0].data['upgrades'] == ['websocket']
+        assert 'sid' in packets[0].data
 
     @mock.patch('importlib.import_module')
     def test_connect_no_upgrades(self, import_module):
@@ -241,84 +248,103 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer(allow_upgrades=False)
         _run(s.handle_request('request'))
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]).packets
-        self.assertEqual(packets[0].data['upgrades'], [])
+            encoded_payload=a._async['make_response'].call_args[0][2]
+        ).packets
+        assert packets[0].data['upgrades'] == []
 
     @mock.patch('importlib.import_module')
     def test_connect_b64_with_1(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'b64=1'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=1'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        self.assertIn(('Content-Type', 'text/plain; charset=UTF-8'),
-                      a._async['make_response'].call_args[0][1])
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        assert ('Content-Type', 'text/plain; charset=UTF-8') in a._async[
+            'make_response'
+        ].call_args[0][1]
         _run(s.send('1', b'\x00\x01\x02', binary=True))
         a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=1'}
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'sid=1&b64=1',
+        }
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][2],
-                         b'6:b4AAEC')
+        assert a._async['make_response'].call_args[0][2] == b'6:b4AAEC'
 
     @mock.patch('importlib.import_module')
     def test_connect_b64_with_true(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'b64=true'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=true'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        self.assertIn(('Content-Type', 'text/plain; charset=UTF-8'),
-                      a._async['make_response'].call_args[0][1])
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        assert ('Content-Type', 'text/plain; charset=UTF-8') in a._async[
+            'make_response'
+        ].call_args[0][1]
         _run(s.send('1', b'\x00\x01\x02', binary=True))
         a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=true'}
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'sid=1&b64=true',
+        }
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][2],
-                         b'6:b4AAEC')
+        assert a._async['make_response'].call_args[0][2] == b'6:b4AAEC'
 
     @mock.patch('importlib.import_module')
     def test_connect_b64_with_0(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'b64=0'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=0'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        self.assertIn(('Content-Type', 'application/octet-stream'),
-                      a._async['make_response'].call_args[0][1])
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        assert ('Content-Type', 'application/octet-stream') in a._async[
+            'make_response'
+        ].call_args[0][1]
         _run(s.send('1', b'\x00\x01\x02', binary=True))
         a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=0'}
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'sid=1&b64=0',
+        }
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][2],
-                         b'\x01\x04\xff\x04\x00\x01\x02')
+        assert (
+            a._async['make_response'].call_args[0][2]
+            == b'\x01\x04\xff\x04\x00\x01\x02'
+        )
 
     @mock.patch('importlib.import_module')
     def test_connect_b64_with_false(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'b64=false'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=false'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
-        self.assertIn(('Content-Type', 'application/octet-stream'),
-                      a._async['make_response'].call_args[0][1])
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        assert ('Content-Type', 'application/octet-stream') in a._async[
+            'make_response'
+        ].call_args[0][1]
         _run(s.send('1', b'\x00\x01\x02', binary=True))
         a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=1&b64=false'}
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'sid=1&b64=false',
+        }
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][2],
-                         b'\x01\x04\xff\x04\x00\x01\x02')
+        assert (
+            a._async['make_response'].call_args[0][2]
+            == b'\x01\x04\xff\x04\x00\x01\x02'
+        )
 
     @mock.patch('importlib.import_module')
     def test_connect_custom_ping_times(self, import_module):
@@ -327,9 +353,10 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer(ping_timeout=123, ping_interval=456)
         _run(s.handle_request('request'))
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]).packets
-        self.assertEqual(packets[0].data['pingTimeout'], 123000)
-        self.assertEqual(packets[0].data['pingInterval'], 456000)
+            encoded_payload=a._async['make_response'].call_args[0][2]
+        ).packets
+        assert packets[0].data['pingTimeout'] == 123000
+        assert packets[0].data['pingInterval'] == 456000
 
     @mock.patch('engineio.asyncio_socket.AsyncSocket')
     @mock.patch('importlib.import_module')
@@ -340,15 +367,15 @@ class TestAsyncServer(unittest.TestCase):
         AsyncSocket.return_value.poll.side_effect = [exceptions.QueueEmpty]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('engineio.asyncio_socket.AsyncSocket')
     @mock.patch('importlib.import_module')
     def test_connect_transport_websocket(self, import_module, AsyncSocket):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'transport=websocket'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=websocket'}
+        )
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
         s = asyncio_server.AsyncServer()
@@ -356,16 +383,19 @@ class TestAsyncServer(unittest.TestCase):
         # force socket to stay open, so that we can check it later
         AsyncSocket().closed = False
         _run(s.handle_request('request'))
-        self.assertEqual(
-            s.sockets['123'].send.mock.call_args[0][0].packet_type,
-            packet.OPEN)
+        assert (
+            s.sockets['123'].send.mock.call_args[0][0].packet_type
+            == packet.OPEN
+        )
 
     @mock.patch('engineio.asyncio_socket.AsyncSocket')
     @mock.patch('importlib.import_module')
-    def test_connect_transport_websocket_closed(self, import_module,
-                                                AsyncSocket):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'transport=websocket'})
+    def test_connect_transport_websocket_closed(
+        self, import_module, AsyncSocket
+    ):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=websocket'}
+        )
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
         s = asyncio_server.AsyncServer()
@@ -378,18 +408,18 @@ class TestAsyncServer(unittest.TestCase):
 
         AsyncSocket().handle_get_request = mock_handle
         _run(s.handle_request('request'))
-        self.assertNotIn('123', s.sockets)  # socket should close on its own
+        assert '123' not in s.sockets  # socket should close on its own
 
     @mock.patch('importlib.import_module')
     def test_connect_transport_invalid(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'transport=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_count, 1)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_headers(self, import_module):
@@ -397,105 +427,111 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
+        assert ('Access-Control-Allow-Credentials', 'true') in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_allowed_origin(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'b'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'b'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=['a', 'b'])
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', 'b'), headers)
+        assert ('Access-Control-Allow-Origin', 'b') in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_not_allowed_origin(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'c'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'c'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=['a', 'b'])
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
-        self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+        assert ('Access-Control-Allow-Origin', 'c') not in headers
+        assert ('Access-Control-Allow-Origin', '*') not in headers
 
     @mock.patch('importlib.import_module')
-    def test_connect_cors_not_allowed_origin_async_response(self,
-                                                            import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'c'})
+    def test_connect_cors_not_allowed_origin_async_response(
+        self, import_module
+    ):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'c'}
+        )
         a._async['make_response'] = AsyncMock(
-            return_value=a._async['make_response'].return_value)
+            return_value=a._async['make_response'].return_value
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=['a', 'b'])
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].mock.call_args[0][0],
-                         '400 BAD REQUEST')
+        assert (
+            a._async['make_response'].mock.call_args[0][0] == '400 BAD REQUEST'
+        )
         headers = a._async['make_response'].mock.call_args[0][1]
-        self.assertNotIn(('Access-Control-Allow-Origin', 'c'), headers)
-        self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+        assert ('Access-Control-Allow-Origin', 'c') not in headers
+        assert ('Access-Control-Allow-Origin', '*') not in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_all_origins(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='*')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', 'foo'), headers)
-        self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
+        assert ('Access-Control-Allow-Origin', 'foo') in headers
+        assert ('Access-Control-Allow-Credentials', 'true') in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_one_origin(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'a'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'a'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='a')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', 'a'), headers)
-        self.assertIn(('Access-Control-Allow-Credentials', 'true'), headers)
+        assert ('Access-Control-Allow-Origin', 'a') in headers
+        assert ('Access-Control-Allow-Credentials', 'true') in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_one_origin_not_allowed(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'b'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'b'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='a')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertNotIn(('Access-Control-Allow-Origin', 'b'), headers)
-        self.assertNotIn(('Access-Control-Allow-Origin', '*'), headers)
+        assert ('Access-Control-Allow-Origin', 'b') not in headers
+        assert ('Access-Control-Allow-Origin', '*') not in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_headers_default_origin(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'wsgi.url_scheme': 'http',
-                                 'HTTP_HOST': 'foo',
-                                 'HTTP_ORIGIN': 'http://foo'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': '',
+                'wsgi.url_scheme': 'http',
+                'HTTP_HOST': 'foo',
+                'HTTP_ORIGIN': 'http://foo',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Origin', 'http://foo'),
-                      headers)
+        assert ('Access-Control-Allow-Origin', 'http://foo') in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_no_credentials(self, import_module):
@@ -503,36 +539,41 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_credentials=False)
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertNotIn(('Access-Control-Allow-Credentials', 'true'), headers)
+        assert ('Access-Control-Allow-Credentials', 'true') not in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_options(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'OPTIONS',
-                                 'QUERY_STRING': ''})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'OPTIONS', 'QUERY_STRING': ''}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_credentials=False)
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Access-Control-Allow-Methods',
-                       'OPTIONS, GET, POST'), headers)
+        assert (
+            'Access-Control-Allow-Methods',
+            'OPTIONS, GET, POST',
+        ) in headers
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_disabled(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': '',
-                                 'HTTP_ORIGIN': 'http://foo'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': '',
+                'HTTP_ORIGIN': 'http://foo',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=[])
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
-            self.assertFalse(header[0].startswith('Access-Control-'))
+            assert not header[0].startswith('Access-Control-')
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_default_no_origin(self, import_module):
@@ -540,11 +581,10 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=[])
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
-            self.assertNotEqual(header[0], 'Access-Control-Allow-Origin')
+            assert header[0] != 'Access-Control-Allow-Origin'
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_all_no_origin(self, import_module):
@@ -552,11 +592,10 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins='*')
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
-            self.assertNotEqual(header[0], 'Access-Control-Allow-Origin')
+            assert header[0] != 'Access-Control-Allow-Origin'
 
     @mock.patch('importlib.import_module')
     def test_connect_cors_disabled_no_origin(self, import_module):
@@ -564,11 +603,10 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cors_allowed_origins=[])
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
         for header in headers:
-            self.assertNotEqual(header[0], 'Access-Control-Allow-Origin')
+            assert header[0] != 'Access-Control-Allow-Origin'
 
     @mock.patch('importlib.import_module')
     def test_connect_event(self, import_module):
@@ -582,7 +620,7 @@ class TestAsyncServer(unittest.TestCase):
 
         s.on('connect', handler=mock_connect)
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 1)
+        assert len(s.sockets) == 1
 
     @mock.patch('importlib.import_module')
     def test_connect_event_rejects(self, import_module):
@@ -596,11 +634,9 @@ class TestAsyncServer(unittest.TestCase):
 
         s.on('connect')(mock_connect)
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '401 UNAUTHORIZED')
-        self.assertEqual(a._async['make_response'].call_args[0][2],
-                         b'"Unauthorized"')
+        assert len(s.sockets) == 0
+        assert a._async['make_response'].call_args[0][0] == '401 UNAUTHORIZED'
+        assert a._async['make_response'].call_args[0][2] == b'"Unauthorized"'
 
     @mock.patch('importlib.import_module')
     def test_connect_event_rejects_with_message(self, import_module):
@@ -614,11 +650,11 @@ class TestAsyncServer(unittest.TestCase):
 
         s.on('connect')(mock_connect)
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '401 UNAUTHORIZED')
-        self.assertEqual(a._async['make_response'].call_args[0][2],
-                         b'{"not": "allowed"}')
+        assert len(s.sockets) == 0
+        assert a._async['make_response'].call_args[0][0] == '401 UNAUTHORIZED'
+        assert (
+            a._async['make_response'].call_args[0][2] == b'{"not": "allowed"}'
+        )
 
     @mock.patch('importlib.import_module')
     def test_method_not_found(self, import_module):
@@ -626,31 +662,32 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '405 METHOD NOT FOUND')
+        assert len(s.sockets) == 0
+        assert (
+            a._async['make_response'].call_args[0][0] == '405 METHOD NOT FOUND'
+        )
 
     @mock.patch('importlib.import_module')
     def test_get_request_with_bad_sid(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert len(s.sockets) == 0
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
     def test_post_request_with_bad_sid(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'POST',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         _run(s.handle_request('request'))
-        self.assertEqual(len(s.sockets), 0)
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert len(s.sockets) == 0
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
     def test_send(self, import_module):
@@ -659,10 +696,11 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
         _run(s.send('foo', 'hello'))
-        self.assertEqual(mock_socket.send.mock.call_count, 1)
-        self.assertEqual(mock_socket.send.mock.call_args[0][0].packet_type,
-                         packet.MESSAGE)
-        self.assertEqual(mock_socket.send.mock.call_args[0][0].data, 'hello')
+        assert mock_socket.send.mock.call_count == 1
+        assert (
+            mock_socket.send.mock.call_args[0][0].packet_type == packet.MESSAGE
+        )
+        assert mock_socket.send.mock.call_args[0][0].data == 'hello'
 
     @mock.patch('importlib.import_module')
     def test_send_unknown_socket(self, import_module):
@@ -674,35 +712,40 @@ class TestAsyncServer(unittest.TestCase):
 
     @mock.patch('importlib.import_module')
     def test_get_request(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]).packets
-        self.assertEqual(len(packets), 1)
-        self.assertEqual(packets[0].packet_type, packet.MESSAGE)
+            encoded_payload=a._async['make_response'].call_args[0][2]
+        ).packets
+        assert len(packets) == 1
+        assert packets[0].packet_type == packet.MESSAGE
 
     @mock.patch('importlib.import_module')
     def test_get_request_custom_response(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request.mock.return_value = 'resp'
         r = _run(s.handle_request('request'))
-        self.assertEqual(r, 'resp')
+        assert r == 'resp'
 
     @mock.patch('importlib.import_module')
     def test_get_request_closes_socket(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -713,13 +756,14 @@ class TestAsyncServer(unittest.TestCase):
 
         mock_socket.handle_get_request = mock_get_request
         r = _run(s.handle_request('request'))
-        self.assertEqual(r, 'resp')
-        self.assertNotIn('foo', s.sockets)
+        assert r == 'resp'
+        assert 'foo' not in s.sockets
 
     @mock.patch('importlib.import_module')
     def test_get_request_error(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -729,24 +773,25 @@ class TestAsyncServer(unittest.TestCase):
 
         mock_socket.handle_get_request = mock_get_request
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
-        self.assertEqual(len(s.sockets), 0)
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+        assert len(s.sockets) == 0
 
     @mock.patch('importlib.import_module')
     def test_post_request(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'POST',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = self._get_mock_socket()
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0], '200 OK')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
 
     @mock.patch('importlib.import_module')
     def test_post_request_error(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'POST',
-                                 'QUERY_STRING': 'sid=foo'})
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
@@ -756,8 +801,7 @@ class TestAsyncServer(unittest.TestCase):
 
         mock_socket.handle_post_request = mock_post_request
         _run(s.handle_request('request'))
-        self.assertEqual(a._async['make_response'].call_args[0][0],
-                         '400 BAD REQUEST')
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @staticmethod
     def _gzip_decompress(b):
@@ -767,102 +811,133 @@ class TestAsyncServer(unittest.TestCase):
 
     @mock.patch('importlib.import_module')
     def test_gzip_compression(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo',
-                                 'HTTP_ACCEPT_ENCODING': 'gzip,deflate'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'sid=foo',
+                'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Content-Encoding', 'gzip'), headers)
+        assert ('Content-Encoding', 'gzip') in headers
         self._gzip_decompress(a._async['make_response'].call_args[0][2])
 
     @mock.patch('importlib.import_module')
     def test_deflate_compression(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo',
-                                 'HTTP_ACCEPT_ENCODING': 'deflate;q=1,gzip'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'sid=foo',
+                'HTTP_ACCEPT_ENCODING': 'deflate;q=1,gzip',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Content-Encoding', 'deflate'), headers)
+        assert ('Content-Encoding', 'deflate') in headers
         zlib.decompress(a._async['make_response'].call_args[0][2])
 
     @mock.patch('importlib.import_module')
     def test_gzip_compression_threshold(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo',
-                                 'HTTP_ACCEPT_ENCODING': 'gzip'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'sid=foo',
+                'HTTP_ACCEPT_ENCODING': 'gzip',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=1000)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         for header, value in headers:
-            self.assertNotEqual(header, 'Content-Encoding')
-        self.assertRaises(IOError, self._gzip_decompress,
-                          a._async['make_response'].call_args[0][2])
+            assert header != 'Content-Encoding'
+        with pytest.raises(IOError):
+            self._gzip_decompress(a._async['make_response'].call_args[0][2])
 
     @mock.patch('importlib.import_module')
     def test_compression_disabled(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo',
-                                 'HTTP_ACCEPT_ENCODING': 'gzip'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'sid=foo',
+                'HTTP_ACCEPT_ENCODING': 'gzip',
+            }
+        )
         import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer(http_compression=False,
-                                       compression_threshold=0)
+        s = asyncio_server.AsyncServer(
+            http_compression=False, compression_threshold=0
+        )
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         for header, value in headers:
-            self.assertNotEqual(header, 'Content-Encoding')
-        self.assertRaises(IOError, self._gzip_decompress,
-                          a._async['make_response'].call_args[0][2])
+            assert header != 'Content-Encoding'
+        with pytest.raises(IOError):
+            self._gzip_decompress(a._async['make_response'].call_args[0][2])
 
     @mock.patch('importlib.import_module')
     def test_compression_unknown(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo',
-                                 'HTTP_ACCEPT_ENCODING': 'rar'})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'sid=foo',
+                'HTTP_ACCEPT_ENCODING': 'rar',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         for header, value in headers:
-            self.assertNotEqual(header, 'Content-Encoding')
-        self.assertRaises(IOError, self._gzip_decompress,
-                          a._async['make_response'].call_args[0][2])
+            assert header != 'Content-Encoding'
+        with pytest.raises(IOError):
+            self._gzip_decompress(a._async['make_response'].call_args[0][2])
 
     @mock.patch('importlib.import_module')
     def test_compression_no_encoding(self, import_module):
-        a = self.get_async_mock({'REQUEST_METHOD': 'GET',
-                                 'QUERY_STRING': 'sid=foo',
-                                 'HTTP_ACCEPT_ENCODING': ''})
+        a = self.get_async_mock(
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'sid=foo',
+                'HTTP_ACCEPT_ENCODING': '',
+            }
+        )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(compression_threshold=0)
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
-        mock_socket.handle_get_request.mock.return_value = \
-            [packet.Packet(packet.MESSAGE, data='hello')]
+        mock_socket.handle_get_request.mock.return_value = [
+            packet.Packet(packet.MESSAGE, data='hello')
+        ]
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         for header, value in headers:
-            self.assertNotEqual(header, 'Content-Encoding')
-        self.assertRaises(IOError, self._gzip_decompress,
-                          a._async['make_response'].call_args[0][2])
+            assert header != 'Content-Encoding'
+        with pytest.raises(IOError):
+            self._gzip_decompress(a._async['make_response'].call_args[0][2])
 
     @mock.patch('importlib.import_module')
     def test_cookie(self, import_module):
@@ -872,7 +947,7 @@ class TestAsyncServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
-        self.assertIn(('Set-Cookie', 'sid=123'), headers)
+        assert ('Set-Cookie', 'sid=123') in headers
 
     @mock.patch('importlib.import_module')
     def test_no_cookie(self, import_module):
@@ -883,21 +958,21 @@ class TestAsyncServer(unittest.TestCase):
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         for header, value in headers:
-            self.assertNotEqual(header, 'Set-Cookie')
+            assert header != 'Set-Cookie'
 
     def test_logger(self):
         s = asyncio_server.AsyncServer(logger=False)
-        self.assertEqual(s.logger.getEffectiveLevel(), logging.ERROR)
+        assert s.logger.getEffectiveLevel() == logging.ERROR
         s.logger.setLevel(logging.NOTSET)
         s = asyncio_server.AsyncServer(logger=True)
-        self.assertEqual(s.logger.getEffectiveLevel(), logging.INFO)
+        assert s.logger.getEffectiveLevel() == logging.INFO
         s.logger.setLevel(logging.WARNING)
         s = asyncio_server.AsyncServer(logger=True)
-        self.assertEqual(s.logger.getEffectiveLevel(), logging.WARNING)
+        assert s.logger.getEffectiveLevel() == logging.WARNING
         s.logger.setLevel(logging.NOTSET)
         my_logger = logging.Logger('foo')
         s = asyncio_server.AsyncServer(logger=my_logger)
-        self.assertEqual(s.logger, my_logger)
+        assert s.logger == my_logger
 
     def test_custom_json(self):
         # Warning: this test cannot run in parallel with other tests, as it
@@ -914,9 +989,9 @@ class TestAsyncServer(unittest.TestCase):
 
         asyncio_server.AsyncServer(json=CustomJSON)
         pkt = packet.Packet(packet.MESSAGE, data={'foo': 'bar'})
-        self.assertEqual(pkt.encode(), b'4*** encoded ***')
+        assert pkt.encode() == b'4*** encoded ***'
         pkt2 = packet.Packet(encoded_packet=pkt.encode())
-        self.assertEqual(pkt2.data, '+++ decoded +++')
+        assert pkt2.data == '+++ decoded +++'
 
         # restore the default JSON module
         packet.Packet.json = json
@@ -931,7 +1006,7 @@ class TestAsyncServer(unittest.TestCase):
         s.start_background_task(foo, 'bar')
         pending = asyncio.Task.all_tasks()
         asyncio.get_event_loop().run_until_complete(asyncio.wait(pending))
-        self.assertEqual(r, ['bar'])
+        assert r == ['bar']
 
     def test_sleep(self):
         s = asyncio_server.AsyncServer()
@@ -947,7 +1022,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('message', handler=foo_handler)
         _run(s._trigger_event('message', 'bar'))
-        self.assertEqual(result, ['ok', 'bar'])
+        assert result == ['ok', 'bar']
 
     def test_trigger_event_coroutine(self):
         result = []
@@ -959,7 +1034,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('message', handler=foo_handler)
         _run(s._trigger_event('message', 'bar'))
-        self.assertEqual(result, ['ok', 'bar'])
+        assert result == ['ok', 'bar']
 
     def test_trigger_event_function_error(self):
         def connect_handler(arg):
@@ -971,8 +1046,8 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('connect', handler=connect_handler)
         s.on('message', handler=foo_handler)
-        self.assertFalse(_run(s._trigger_event('connect', '123')))
-        self.assertIsNone(_run(s._trigger_event('message', 'bar')))
+        assert not _run(s._trigger_event('connect', '123'))
+        assert _run(s._trigger_event('message', 'bar')) is None
 
     def test_trigger_event_coroutine_error(self):
         async def connect_handler(arg):
@@ -984,8 +1059,8 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('connect', handler=connect_handler)
         s.on('message', handler=foo_handler)
-        self.assertFalse(_run(s._trigger_event('connect', '123')))
-        self.assertIsNone(_run(s._trigger_event('message', 'bar')))
+        assert not _run(s._trigger_event('connect', '123'))
+        assert _run(s._trigger_event('message', 'bar')) is None
 
     def test_trigger_event_function_async(self):
         result = []
@@ -998,7 +1073,7 @@ class TestAsyncServer(unittest.TestCase):
         s.on('message', handler=foo_handler)
         fut = _run(s._trigger_event('message', 'bar', run_async=True))
         asyncio.get_event_loop().run_until_complete(fut)
-        self.assertEqual(result, ['ok', 'bar'])
+        assert result == ['ok', 'bar']
 
     def test_trigger_event_coroutine_async(self):
         result = []
@@ -1011,7 +1086,7 @@ class TestAsyncServer(unittest.TestCase):
         s.on('message', handler=foo_handler)
         fut = _run(s._trigger_event('message', 'bar', run_async=True))
         asyncio.get_event_loop().run_until_complete(fut)
-        self.assertEqual(result, ['ok', 'bar'])
+        assert result == ['ok', 'bar']
 
     def test_trigger_event_function_async_error(self):
         result = []
@@ -1023,10 +1098,9 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('message', handler=foo_handler)
         fut = _run(s._trigger_event('message', 'bar', run_async=True))
-        self.assertRaises(
-            ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
-            fut)
-        self.assertEqual(result, ['bar'])
+        with pytest.raises(ZeroDivisionError):
+            asyncio.get_event_loop().run_until_complete(fut)
+        assert result == ['bar']
 
     def test_trigger_event_coroutine_async_error(self):
         result = []
@@ -1038,23 +1112,23 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('message', handler=foo_handler)
         fut = _run(s._trigger_event('message', 'bar', run_async=True))
-        self.assertRaises(
-            ZeroDivisionError, asyncio.get_event_loop().run_until_complete,
-            fut)
-        self.assertEqual(result, ['bar'])
+        with pytest.raises(ZeroDivisionError):
+            asyncio.get_event_loop().run_until_complete(fut)
+        assert result == ['bar']
 
     def test_create_queue(self):
         s = asyncio_server.AsyncServer()
         q = s.create_queue()
         empty = s.get_queue_empty_exception()
-        self.assertRaises(empty, q.get_nowait)
+        with pytest.raises(empty):
+            q.get_nowait()
 
     def test_create_event(self):
         s = asyncio_server.AsyncServer()
         e = s.create_event()
-        self.assertFalse(e.is_set())
+        assert not e.is_set()
         e.set()
-        self.assertTrue(e.is_set())
+        assert e.is_set()
 
     @mock.patch('importlib.import_module')
     def test_service_task_started(self, import_module):
