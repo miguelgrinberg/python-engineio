@@ -460,7 +460,12 @@ class AsyncServer(server.Server):
                     if not socket.closing and not socket.closed:
                         await socket.check_ping_timeout()
                     await self.sleep(sleep_interval)
-            except (SystemExit, KeyboardInterrupt, asyncio.CancelledError):
+            except (
+                SystemExit,
+                KeyboardInterrupt,
+                asyncio.CancelledError,
+                GeneratorExit,
+            ):
                 self.logger.info('service task canceled')
                 break
             except:
