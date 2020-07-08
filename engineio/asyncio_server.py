@@ -463,7 +463,7 @@ class AsyncServer(server.Server):
             except (SystemExit, KeyboardInterrupt, asyncio.CancelledError):
                 self.logger.info('service task canceled')
                 break
-            except:
+            except Exception:
                 if asyncio.get_event_loop().is_closed():
                     self.logger.info('event loop is closed, exiting service '
                                      'task')
