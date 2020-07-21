@@ -531,14 +531,19 @@ class Client(object):
             self.ping_loop_event = self.create_event()
         else:
             self.ping_loop_event.clear()
+        ping_timout = 0
         while self.state == 'connected':
             if not self.pong_received:
-                self.logger.info(
-                    'PONG response has not been received, aborting')
-                if self.ws:
-                    self.ws.close(timeout=0)
-                self.queue.put(None)
-                break
+                ping_timout += self.ping_interval
+                if(ping_timout >= self.ping_timeout):
+                    self.logger.info(
+                        'PONG response has not been received, aborting')
+                    if self.ws:
+                        self.ws.close(timeout=0)
+                    self.queue.put(None)
+                    break
+            else:
+                ping_timout = 0
             self.pong_received = False
             self._send_packet(packet.Packet(packet.PING))
             self.ping_loop_event.wait(timeout=self.ping_interval)
