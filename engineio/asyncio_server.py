@@ -399,7 +399,10 @@ class AsyncServer(server.Server):
             s.connected = True
             headers = None
             if self.cookie:
-                headers = [('Set-Cookie', self.cookie + '=' + sid)]
+                headers = [(
+                    'Set-Cookie',
+                    self.cookie + '=' + sid + '; path=/; SameSite=Lax'
+                )]
             try:
                 return self._ok(await s.poll(), headers=headers, b64=b64,
                                 jsonp_index=jsonp_index)

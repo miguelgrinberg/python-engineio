@@ -947,7 +947,7 @@ class TestAsyncServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
-        assert ('Set-Cookie', 'sid=123') in headers
+        assert ('Set-Cookie', 'sid=123; path=/; SameSite=Lax') in headers
 
     @mock.patch('importlib.import_module')
     def test_no_cookie(self, import_module):
