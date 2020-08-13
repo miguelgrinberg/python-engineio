@@ -1486,7 +1486,5 @@ class TestClient(unittest.TestCase):
         client.connected_clients[0].is_asyncio_based.return_value = False
         client.connected_clients[1].is_asyncio_based.return_value = True
         client.signal_handler('sig', 'frame')
-        clients[0].disconnect.assert_called_once_with(abort=True)
-        clients[1].start_background_task.assert_called_once_with(
-            clients[1].disconnect, abort=True
-        )
+        clients[0].disconnect.assert_called_once_with()
+        clients[1].disconnect.assert_not_called()

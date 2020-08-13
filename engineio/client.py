@@ -35,10 +35,8 @@ def signal_handler(sig, frame):
     Disconnect all active clients and then invoke the original signal handler.
     """
     for client in connected_clients[:]:
-        if client.is_asyncio_based():
-            client.start_background_task(client.disconnect, abort=True)
-        else:
-            client.disconnect(abort=True)
+        if not client.is_asyncio_based():
+            client.disconnect()
     if callable(original_signal_handler):
         return original_signal_handler(sig, frame)
     else:  # pragma: no cover

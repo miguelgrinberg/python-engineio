@@ -1510,3 +1510,17 @@ class TestAsyncClient(unittest.TestCase):
         )
         _run(c._write_loop())
         assert c.state == 'connected'
+
+    @mock.patch('engineio.client.original_signal_handler')
+    def test_signal_handler(self, original_handler):
+        clients = [mock.MagicMock(), mock.MagicMock()]
+        client.connected_clients = clients[:]
+        client.connected_clients[0].is_asyncio_based.return_value = False
+        client.connected_clients[1].is_asyncio_based.return_value = True
+
+        async def test():
+            asyncio_client.async_signal_handler()
+
+        asyncio.get_event_loop().run_until_complete(test())
+        clients[0].disconnect.assert_not_called()
+        clients[1].disconnect.assert_called_once_with()

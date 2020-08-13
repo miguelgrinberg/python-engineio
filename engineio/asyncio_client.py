@@ -1,5 +1,7 @@
 import asyncio
+import signal
 import ssl
+import threading
 
 try:
     import aiohttp
@@ -11,6 +13,23 @@ from . import client
 from . import exceptions
 from . import packet
 from . import payload
+
+async_signal_handler_set = False
+
+
+def async_signal_handler():
+    """SIGINT handler.
+
+    Disconnect all active async clients.
+    """
+    async def _handler():
+        for c in client.connected_clients[:]:
+            if c.is_asyncio_based():
+                await c.disconnect()
+        else:  # pragma: no cover
+            pass
+
+    asyncio.ensure_future(_handler())
 
 
 class AsyncClient(client.Client):
@@ -61,6 +80,12 @@ class AsyncClient(client.Client):
             eio = engineio.Client()
             await eio.connect('http://localhost:5000')
         """
+        global async_signal_handler_set
+        if not async_signal_handler_set and \
+                threading.current_thread() == threading.main_thread():
+            asyncio.get_event_loop().add_signal_handler(signal.SIGINT,
+                                                        async_signal_handler)
+            async_signal_handler_set = True
         if self.state != 'disconnected':
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
