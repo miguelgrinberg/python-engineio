@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 3.13.2** - 2020-08-18
+
+- Improved signal handler for the async client [#523](https://github.com/miguelgrinberg/python-socketio/issues/523) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/eabfdaa9d1644d3346ec3ec7fae040c85029b75e))
+- Add SameSite attribute to Socket.IO cookie [#1344](https://github.com/miguelgrinberg/Flask-SocketIO/issues/1344) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2ec2bac6d7738b89ae0fe0645e30d50dd100cab1))
+- Handle GeneratorExit exception appropriately [#182](https://github.com/miguelgrinberg/python-engineio/issues/182) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c7ab55269e0cf94c7684675101d910d740f179cc)) (thanks **PaulWasTaken**!)
+- Simplify asserts in unit tests ([commit](https://github.com/miguelgrinberg/python-engineio/commit/638c1fa4d54a7cfa20711df5a1b3e8e1e3754c3d))
+- Use pytest as test runner ([commit](https://github.com/miguelgrinberg/python-engineio/commit/dcea3a09775cc054b4b937d6d8c1caff5af4f617))
+
 **Release 3.13.1** - 2020-07-02
 
 - Fix KeyError during WebSocket disconnection in AsyncServer [#179](https://github.com/miguelgrinberg/python-engineio/issues/179) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f43807b26ea1a185ff0b9f569dd586ca77b8da67))
