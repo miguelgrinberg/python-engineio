@@ -67,6 +67,8 @@ class Client(object):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param cert: String path to SSL client cert file (.pem) or tuple with
+                 ('cert', 'key') pair.
     """
     event_names = ['connect', 'disconnect', 'message']
 
@@ -74,7 +76,8 @@ class Client(object):
                  logger=False,
                  json=None,
                  request_timeout=5,
-                 ssl_verify=True):
+                 ssl_verify=True,
+                 cert=None):
         global original_signal_handler
         if original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
@@ -98,6 +101,7 @@ class Client(object):
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
+        self.cert = cert
 
         if json is not None:
             packet.Packet.json = json
@@ -478,7 +482,8 @@ class Client(object):
             self.http = requests.Session()
         try:
             return self.http.request(method, url, headers=headers, data=body,
-                                     timeout=timeout, verify=self.ssl_verify)
+                                     timeout=timeout, verify=self.ssl_verify,
+                                     cert=self.cert)
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
