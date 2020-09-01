@@ -49,6 +49,10 @@ class AsyncClient(client.Client):
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
+    :param http_session: an initialized ``aiohttp.ClientSession`` object to be
+                         used when sending requests to the server. Use it if
+                         you need to add special client options such as proxy
+                         servers, SSL certificates, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
@@ -57,7 +61,7 @@ class AsyncClient(client.Client):
     def is_asyncio_based(self):
         return True
 
-    async def connect(self, url, headers={}, transports=None,
+    async def connect(self, url, headers=None, transports=None,
                       engineio_path='engine.io'):
         """Connect to an Engine.IO server.
 
@@ -99,7 +103,7 @@ class AsyncClient(client.Client):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return await getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers or {}, engineio_path)
 
     async def wait(self):
         """Wait until the connection with the server ends.

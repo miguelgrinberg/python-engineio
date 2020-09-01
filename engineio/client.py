@@ -1,3 +1,4 @@
+from base64 import b64encode
 import logging
 try:
     import queue
@@ -63,6 +64,10 @@ class Client(object):
                  versions.
     :param request_timeout: A timeout in seconds for requests. The default is
                             5 seconds.
+    :param http_session: an initialized ``requests.Session`` object to be used
+                         when sending requests to the server. Use it if you
+                         need to add special client options such as proxy
+                         servers, SSL certificates, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
@@ -74,6 +79,7 @@ class Client(object):
                  logger=False,
                  json=None,
                  request_timeout=5,
+                 http_session=None,
                  ssl_verify=True):
         global original_signal_handler
         if original_signal_handler is None and \
@@ -89,7 +95,7 @@ class Client(object):
         self.ping_interval = None
         self.ping_timeout = None
         self.pong_received = True
-        self.http = None
+        self.http = http_session
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None
@@ -151,7 +157,7 @@ class Client(object):
             return set_handler
         set_handler(handler)
 
-    def connect(self, url, headers={}, transports=None,
+    def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):
         """Connect to an Engine.IO server.
 
@@ -185,7 +191,7 @@ class Client(object):
         self.transports = transports or valid_transports
         self.queue = self.create_queue()
         return getattr(self, '_connect_' + self.transports[0])(
-            url, headers, engineio_path)
+            url, headers or {}, engineio_path)
 
     def wait(self):
         """Wait until the connection with the server ends.
@@ -353,10 +359,12 @@ class Client(object):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
 
-        # get the cookies from the long-polling connection so that they can
-        # also be sent the the WebSocket route
+        # get cookies and other settings from the long-polling connection
+        # so that they are preserved when connecting to the WebSocket route
         cookies = None
+        extra_options = {}
         if self.http:
+            # cookies
             cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
                                  for cookie in self.http.cookies])
             for header, value in headers.items():
@@ -367,7 +375,49 @@ class Client(object):
                     del headers[header]
                     break
 
-        extra_options = {}
+            # auth
+            if 'Authorization' not in headers and self.http.auth is not None:
+                if not isinstance(self.http.auth, tuple):  # pragma: no cover
+                    raise ValueError('Only basic authentication is supported')
+                basic_auth = '{}:{}'.format(
+                    self.http.auth[0], self.http.auth[1]).encode('utf-8')
+                basic_auth = b64encode(basic_auth).decode('utf-8')
+                headers['Authorization'] = 'Basic ' + basic_auth
+
+            # cert
+            # this can be given as ('certfile', 'keyfile') or just 'certfile'
+            if isinstance(self.http.cert, tuple):
+                extra_options['sslopt'] = {
+                    'certfile': self.http.cert[0],
+                    'keyfile': self.http.cert[1]}
+            elif self.http.cert:
+                extra_options['sslopt'] = {'certfile': self.http.cert}
+
+            # proxies
+            if self.http.proxies:
+                proxy_url = None
+                if websocket_url.startswith('ws://'):
+                    proxy_url = self.http.proxies.get(
+                        'ws', self.http.proxies.get('http'))
+                else:  # wss://
+                    proxy_url = self.http.proxies.get(
+                        'wss', self.http.proxies.get('https'))
+                if proxy_url:
+                    parsed_url = urllib.parse.urlparse(
+                        proxy_url if '://' in proxy_url
+                        else 'scheme://' + proxy_url)
+                    print(parsed_url)
+                    extra_options['http_proxy_host'] = parsed_url.hostname
+                    extra_options['http_proxy_port'] = parsed_url.port
+                    extra_options['http_proxy_auth'] = (
+                        (parsed_url.username, parsed_url.password)
+                        if parsed_url.username or parsed_url.password
+                        else None)
+
+            # verify
+            if not self.http.verify:
+                self.ssl_verify = False
+
         if not self.ssl_verify:
             extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
         try:

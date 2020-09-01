@@ -1,7 +1,6 @@
 import asyncio
 import ssl
 import sys
-import time
 import unittest
 
 import six
@@ -347,7 +346,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = AsyncMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
-        time.sleep(0.1)
 
         c._ping_loop.mock.assert_called_once_with()
         c._read_loop_polling.mock.assert_called_once_with()
@@ -391,7 +389,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = AsyncMock()
         c.on('connect', on_connect)
         _run(c.connect('https://foo'))
-        time.sleep(0.1)
 
         c._ping_loop.mock.assert_called_once_with()
         c._read_loop_polling.mock.assert_called_once_with()
@@ -437,7 +434,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = AsyncMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
-        time.sleep(0.1)
         assert c._receive_packet.mock.call_count == 1
         assert (
             c._receive_packet.mock.call_args_list[0][0][0].packet_type
@@ -509,7 +505,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
-        time.sleep(0.1)
 
         c._connect_websocket.mock.assert_called_once_with(
             'http://foo', {}, 'engine.io'
@@ -590,7 +585,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('ws://foo', transports=['websocket']))
-        time.sleep(0.1)
 
         c._ping_loop.mock.assert_called_once_with()
         c._read_loop_polling.mock.assert_not_called()
@@ -633,7 +627,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('wss://foo', transports=['websocket']))
-        time.sleep(0.1)
 
         c._ping_loop.mock.assert_called_once_with()
         c._read_loop_polling.mock.assert_not_called()
@@ -681,7 +674,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('ws://foo', transports=['websocket']))
-        time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
             headers={},
@@ -717,7 +709,6 @@ class TestAsyncClient(unittest.TestCase):
                 transports=['websocket'],
             )
         )
-        time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
             headers={},
@@ -760,7 +751,6 @@ class TestAsyncClient(unittest.TestCase):
                 transports=['websocket'],
             )
         )
-        time.sleep(0.1)
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
             headers={'Foo': 'Bar'},
@@ -823,7 +813,6 @@ class TestAsyncClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         assert _run(c.connect('ws://foo', transports=['websocket']))
-        time.sleep(0.1)
 
         c._ping_loop.mock.assert_called_once_with()
         c._read_loop_polling.mock.assert_not_called()
