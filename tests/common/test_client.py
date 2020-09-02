@@ -1052,6 +1052,7 @@ class TestClient(unittest.TestCase):
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         assert c.connect('ws://foo', transports=['websocket'])
+        time.sleep(0.1)
 
         c._ping_loop.assert_called_once_with()
         c._read_loop_polling.assert_not_called()
