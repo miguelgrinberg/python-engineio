@@ -524,9 +524,9 @@ class Server(object):
             if self.cookie:
                 if isinstance(self.cookie, dict):
                     detail = (
-                        self.cookie.get('name', 'io') + '=' + sid +
-                        '; path=' + self.cookie.get('path', '/') +
-                        '; SameSite=' + self.cookie.get('samesite', 'Lax')
+                        self.cookie.get('name', 'io') + '=' + sid
+                        + '; path=' + self.cookie.get('path', '/')
+                        + '; SameSite=' + self.cookie.get('samesite', 'Lax')
                     )
                     if self.cookie.get('secure'):
                         detail += '; Secure'
