@@ -523,9 +523,9 @@ class Server(object):
             s.connected = True
             headers = None
             if self.cookie:
-                cookie_detail = self.cookie + '=' + sid + '; path=/; SameSite=' + self.cookie_samesite + ';'
+                cookie_detail = self.cookie + '=' + sid + '; path=/; SameSite=' + self.cookie_samesite
                 if self.cookie_secure:
-                    cookie_detail += ' Secure=True;'
+                    cookie_detail += '; Secure=True;'
                 headers = [(
                     'Set-Cookie',
                     cookie_detail
