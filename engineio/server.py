@@ -48,9 +48,14 @@ class Server(object):
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value. The default is
                                   1024 bytes.
-    :param cookie: Name of the HTTP cookie that contains the client session
-                   id. If set to ``None``, a cookie is not sent to the client.
-                   The default is ``'io'``.
+    :param cookie: If set to a string, it is The name of the HTTP cookie the
+                   server sends back tot he client containing the client
+                   session id. If set to a dictionary, the ``'name'`` key
+                   contains the cookie name and other keys define cookie
+                   attributes, where the value of each attribute can be a
+                   string, a callable with no arguments, or a boolean. If set
+                   to ``None``, a cookie is not sent to the client. The
+                   default is ``'io'``.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
@@ -486,6 +491,20 @@ class Server(object):
         """Generate a unique session id."""
         return uuid.uuid4().hex
 
+    def _generate_sid_cookie(self, sid, attributes):
+        """Generate the sid cookie."""
+        cookie = attributes.get('name', 'io') + '=' + sid
+        for attribute, value in attributes.items():
+            if attribute == 'name':
+                continue
+            if callable(value):
+                value = value()
+            if value is True:
+                cookie += '; ' + attribute
+            else:
+                cookie += '; ' + attribute + '=' + value
+        return cookie
+
     def _handle_connect(self, environ, start_response, transport, b64=False,
                         jsonp_index=None):
         """Handle a client connection request."""
@@ -521,10 +540,18 @@ class Server(object):
             s.connected = True
             headers = None
             if self.cookie:
-                headers = [(
-                    'Set-Cookie',
-                    self.cookie + '=' + sid + '; path=/; SameSite=Lax'
-                )]
+                if isinstance(self.cookie, dict):
+                    headers = [(
+                        'Set-Cookie',
+                        self._generate_sid_cookie(sid, self.cookie)
+                    )]
+                else:
+                    headers = [(
+                        'Set-Cookie',
+                        self._generate_sid_cookie(sid, {
+                            'name': self.cookie, 'path': '/', 'SameSite': 'Lax'
+                        })
+                    )]
             try:
                 return self._ok(s.poll(), headers=headers, b64=b64,
                                 jsonp_index=jsonp_index)

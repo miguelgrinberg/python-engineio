@@ -950,6 +950,26 @@ class TestAsyncServer(unittest.TestCase):
         assert ('Set-Cookie', 'sid=123; path=/; SameSite=Lax') in headers
 
     @mock.patch('importlib.import_module')
+    def test_cookie_dict(self, import_module):
+        def get_path():
+            return '/a'
+
+        a = self.get_async_mock()
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(cookie={
+            'name': 'test',
+            'path': get_path,
+            'SameSite': 'None',
+            'Secure': True,
+            'HttpOnly': True
+        })
+        s._generate_id = mock.MagicMock(return_value='123')
+        _run(s.handle_request('request'))
+        headers = a._async['make_response'].call_args[0][1]
+        assert ('Set-Cookie', 'test=123; path=/a; SameSite=None; Secure; '
+                'HttpOnly') in headers
+
+    @mock.patch('importlib.import_module')
     def test_no_cookie(self, import_module):
         a = self.get_async_mock()
         import_module.side_effect = [a]
