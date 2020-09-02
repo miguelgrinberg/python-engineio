@@ -48,9 +48,10 @@ class Server(object):
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value. The default is
                                   1024 bytes.
-    :param cookie: Name of the HTTP cookie that contains the client session
-                   id. If set to ``None``, a cookie is not sent to the client.
-                   The default is ``'io'``.
+    :param cookie: Either the name of the HTTP cookie that contains the client
+                   id or a dictionary which contains the cookie settings. If
+                   set to ``None``, a cookie is not sent to the client. The
+                   default is ``'io'``.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
@@ -104,8 +105,6 @@ class Server(object):
         self.async_handlers = async_handlers
         self.sockets = {}
         self.handlers = {}
-        self.cookie_samesite = kwargs.get('cookie_samesite', 'Lax')
-        self.cookie_secure = kwargs.get('cookie_secure', False)
         self.start_service_task = monitor_clients \
             if monitor_clients is not None else self._default_monitor_clients
         if json is not None:
@@ -523,15 +522,25 @@ class Server(object):
             s.connected = True
             headers = None
             if self.cookie:
-                cookie_detail = (self.cookie + '=' + sid +
-                                 '; path=/; SameSite=' +
-                                 self.cookie_samesite)
-                if self.cookie_secure:
-                    cookie_detail += '; Secure=True;'
-                headers = [(
-                    'Set-Cookie',
-                    cookie_detail
-                )]
+                if isinstance(self.cookie, dict):
+                    detail = (
+                        self.cookie.get('name', 'io') + '=' + sid +
+                        '; path=' + self.cookie.get('path', '/') +
+                        '; SameSite=' + self.cookie.get('samesite', 'Lax')
+                    )
+                    if self.cookie.get('secure'):
+                        detail += '; Secure'
+                    if self.cookie.get('httponly'):
+                        detail += '; HttpOnly'
+                    headers = [(
+                        'Set-Cookie',
+                        detail
+                    )]
+                else:
+                    headers = [(
+                        'Set-Cookie',
+                        self.cookie + '=' + sid + '; path=/; SameSite=Lax'
+                    )]
             try:
                 return self._ok(s.poll(), headers=headers, b64=b64,
                                 jsonp_index=jsonp_index)

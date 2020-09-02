@@ -1039,6 +1039,21 @@ class TestServer(unittest.TestCase):
         assert ('Set-Cookie', 'sid=123; path=/; SameSite=Lax') \
             in start_response.call_args[0][1]
 
+    def test_cookie_dict(self):
+        s = server.Server(cookie={
+            'name':'test',
+            'path': '/a',
+            'samesite': 'None',
+            'secure': True,
+            'httponly': True
+        })
+        s._generate_id = mock.MagicMock(return_value='123')
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert ('Set-Cookie', 'test=123; path=/a; SameSite=None; Secure; HttpOnly') \
+            in start_response.call_args[0][1]
+
     def test_no_cookie(self):
         s = server.Server(cookie=None)
         s._generate_id = mock.MagicMock(return_value='123')
