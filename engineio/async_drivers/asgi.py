@@ -163,6 +163,7 @@ async def translate_request(scope, receive, send):
         'SERVER_PORT': '0',
         'asgi.receive': receive,
         'asgi.send': send,
+        'asgi.scope': scope,
     }
 
     for hdr_name, hdr_value in scope['headers']:
