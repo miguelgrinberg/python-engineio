@@ -105,7 +105,7 @@ class Server(object):
         self.sockets = {}
         self.handlers = {}
         self.cookie_samesite = kwargs.get('cookie_samesite', 'Lax')
-        self.cookie_secure = kwargs.get('cookie_secure', 'False')
+        self.cookie_secure = kwargs.get('cookie_secure', False)
         self.start_service_task = monitor_clients \
             if monitor_clients is not None else self._default_monitor_clients
         if json is not None:
@@ -523,9 +523,12 @@ class Server(object):
             s.connected = True
             headers = None
             if self.cookie:
+                cookie_detail = self.cookie + '=' + sid + '; path=/; SameSite=' + self.cookie_samesite + ';'
+                if self.cookie_secure:
+                    cookie_detail += ' Secure=True;'
                 headers = [(
                     'Set-Cookie',
-                    self.cookie + '=' + sid + '; path=/; SameSite=' + self.cookie_samesite + '; Secure=' + self.cookie_secure + ';'
+                    cookie_detail
                 )]
             try:
                 return self._ok(s.poll(), headers=headers, b64=b64,
