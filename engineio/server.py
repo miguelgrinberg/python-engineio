@@ -104,6 +104,8 @@ class Server(object):
         self.async_handlers = async_handlers
         self.sockets = {}
         self.handlers = {}
+        self.cookie_samesite = kwargs.get('cookie_samesite', 'Lax')
+        self.cookie_secure = kwargs.get('cookie_secure', 'False')
         self.start_service_task = monitor_clients \
             if monitor_clients is not None else self._default_monitor_clients
         if json is not None:
@@ -523,7 +525,7 @@ class Server(object):
             if self.cookie:
                 headers = [(
                     'Set-Cookie',
-                    self.cookie + '=' + sid + '; path=/; SameSite=Lax'
+                    self.cookie + '=' + sid + '; path=/; SameSite=' + self.cookie_samesite + '; Secure=' + self.cookie_secure + ';'
                 )]
             try:
                 return self._ok(s.poll(), headers=headers, b64=b64,
