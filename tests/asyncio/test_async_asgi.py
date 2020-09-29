@@ -94,27 +94,31 @@ class AsgiTests(unittest.TestCase):
                 {'type': 'http.response.body', 'body': body.encode('utf-8')}
             )
 
-        check_path('/', 200, 'text/html', '<html></html>\n')
-        check_path('/foo', 200, 'text/plain', '<html></html>\n')
-        check_path('/static/index.html', 200, 'text/html', '<html></html>\n')
+        empty_html_body = '<html></html>\n'
+        if sys.platform.startswith("win"):
+            empty_html_body = '<html></html>\r\n'
+
+        check_path('/', 200, 'text/html', empty_html_body)
+        check_path('/foo', 200, 'text/plain', empty_html_body)
+        check_path('/static/index.html', 200, 'text/html', empty_html_body)
         check_path('/static/foo.bar', 404, 'text/plain', 'Not Found')
         check_path(
-            '/static/test/index.html', 200, 'text/html', '<html></html>\n'
+            '/static/test/index.html', 200, 'text/html', empty_html_body
         )
         check_path('/bar/foo', 404, 'text/plain', 'Not Found')
         check_path('', 404, 'text/plain', 'Not Found')
 
         app.static_files[''] = 'index.html'
-        check_path('/static/test/', 200, 'text/html', '<html></html>\n')
+        check_path('/static/test/', 200, 'text/html', empty_html_body)
 
         app.static_files[''] = {'filename': 'index.html'}
-        check_path('/static/test/', 200, 'text/html', '<html></html>\n')
+        check_path('/static/test/', 200, 'text/html', empty_html_body)
 
         app.static_files[''] = {
             'filename': 'index.html',
             'content_type': 'image/gif',
         }
-        check_path('/static/test/', 200, 'image/gif', '<html></html>\n')
+        check_path('/static/test/', 200, 'image/gif', empty_html_body)
 
         app.static_files[''] = {'filename': 'test.gif'}
         check_path('/static/test/', 404, 'text/plain', 'Not Found')

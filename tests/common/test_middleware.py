@@ -1,4 +1,5 @@
 import os
+import sys
 import unittest
 
 import six
@@ -58,32 +59,36 @@ class TestWSGIApp(unittest.TestCase):
                 status_code, [('Content-Type', content_type)]
             )
 
-        check_path('/', '200 OK', 'text/html', '<html></html>\n')
-        check_path('/foo', '200 OK', 'text/plain', '<html></html>\n')
+        empty_html_body = '<html></html>\n'
+        if sys.platform.startswith("win"):
+            empty_html_body = '<html></html>\r\n'
+
+        check_path('/', '200 OK', 'text/html', empty_html_body)
+        check_path('/foo', '200 OK', 'text/plain', empty_html_body)
         check_path(
-            '/static/index.html', '200 OK', 'text/html', '<html></html>\n'
+            '/static/index.html', '200 OK', 'text/html', empty_html_body
         )
         check_path(
             '/static/foo.bar', '404 Not Found', 'text/plain', 'Not Found'
         )
         check_path(
-            '/static/test/index.html', '200 OK', 'text/html', '<html></html>\n'
+            '/static/test/index.html', '200 OK', 'text/html', empty_html_body
         )
-        check_path('/static/test/', '200 OK', 'text/html', '<html></html>\n')
+        check_path('/static/test/', '200 OK', 'text/html', empty_html_body)
         check_path('/bar/foo', '404 Not Found', 'text/plain', 'Not Found')
         check_path('', '404 Not Found', 'text/plain', 'Not Found')
 
         m.static_files[''] = 'index.html'
-        check_path('/static/test/', '200 OK', 'text/html', '<html></html>\n')
+        check_path('/static/test/', '200 OK', 'text/html', empty_html_body)
 
         m.static_files[''] = {'filename': 'index.html'}
-        check_path('/static/test/', '200 OK', 'text/html', '<html></html>\n')
+        check_path('/static/test/', '200 OK', 'text/html', empty_html_body)
 
         m.static_files[''] = {
             'filename': 'index.html',
             'content_type': 'image/gif',
         }
-        check_path('/static/test/', '200 OK', 'image/gif', '<html></html>\n')
+        check_path('/static/test/', '200 OK', 'image/gif', empty_html_body)
 
         m.static_files[''] = {'filename': 'test.gif'}
         check_path('/static/test/', '404 Not Found', 'text/plain', 'Not Found')
