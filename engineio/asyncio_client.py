@@ -1,6 +1,7 @@
 import asyncio
 import signal
 import ssl
+import sys
 import threading
 
 try:
@@ -86,7 +87,9 @@ class AsyncClient(client.Client):
         """
         global async_signal_handler_set
         if not async_signal_handler_set and \
-                threading.current_thread() == threading.main_thread():
+                threading.current_thread() == threading.main_thread() and \
+                not sys.platform.startswith("win"):
+
             asyncio.get_event_loop().add_signal_handler(signal.SIGINT,
                                                         async_signal_handler)
             async_signal_handler_set = True
