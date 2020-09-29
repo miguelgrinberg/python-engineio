@@ -1,7 +1,6 @@
 import asyncio
 import signal
 import ssl
-import sys
 import threading
 
 try:
@@ -87,12 +86,15 @@ class AsyncClient(client.Client):
         """
         global async_signal_handler_set
         if not async_signal_handler_set and \
-                threading.current_thread() == threading.main_thread() and \
-                not sys.platform.startswith("win"):
+                threading.current_thread() == threading.main_thread():
 
-            asyncio.get_event_loop().add_signal_handler(signal.SIGINT,
-                                                        async_signal_handler)
-            async_signal_handler_set = True
+            try:
+                asyncio.get_event_loop() \
+                    .add_signal_handler(signal.SIGINT, async_signal_handler)
+                async_signal_handler_set = True
+            except NotImplementedError as error:
+                self.logger.debug(error)
+
         if self.state != 'disconnected':
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
