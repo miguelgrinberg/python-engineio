@@ -1,5 +1,4 @@
 import os
-import sys
 import unittest
 
 import six
@@ -60,8 +59,8 @@ class TestWSGIApp(unittest.TestCase):
             )
 
         empty_html_body = '<html></html>\n'
-        if sys.platform.startswith("win"):
-            empty_html_body = '<html></html>\r\n'
+        # if sys.platform.startswith("win"):
+        #     empty_html_body = '<html></html>\r\n'
 
         check_path('/', '200 OK', 'text/html', empty_html_body)
         check_path('/foo', '200 OK', 'text/plain', empty_html_body)

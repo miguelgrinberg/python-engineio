@@ -95,8 +95,8 @@ class AsgiTests(unittest.TestCase):
             )
 
         empty_html_body = '<html></html>\n'
-        if sys.platform.startswith("win"):
-            empty_html_body = '<html></html>\r\n'
+        # if sys.platform.startswith("win"):
+        #     empty_html_body = '<html></html>\r\n'
 
         check_path('/', 200, 'text/html', empty_html_body)
         check_path('/foo', 200, 'text/plain', empty_html_body)
