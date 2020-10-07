@@ -218,9 +218,13 @@ class AsyncClient(client.Client):
                 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
             self._reset()
+            try:
+                arg = await r.json()
+            except aiohttp.ClientError:
+                arg = None
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status), await r.json())
+                    r.status), arg)
         try:
             p = payload.Payload(encoded_payload=await r.read())
         except ValueError:

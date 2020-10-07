@@ -326,6 +326,21 @@ class TestClient(unittest.TestCase):
             assert exc.args[1] == {'foo': 'bar'}
 
     @mock.patch('engineio.client.Client._send_request')
+    def test_polling_connection_404_no_json(self, _send_request):
+        _send_request.return_value.status_code = 404
+        _send_request.return_value.json.side_effect = json.JSONDecodeError(
+            'error', '<html></html>', 0)
+        c = client.Client()
+        try:
+            c.connect('http://foo')
+        except exceptions.ConnectionError as exc:
+            assert len(exc.args) == 2
+            assert (
+                exc.args[0] == 'Unexpected status code 404 in server response'
+            )
+            assert exc.args[1] is None
+
+    @mock.patch('engineio.client.Client._send_request')
     def test_polling_connection_invalid_packet(self, _send_request):
         _send_request.return_value.status_code = 200
         _send_request.return_value.content = b'foo'

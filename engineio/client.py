@@ -1,4 +1,5 @@
 from base64 import b64encode
+from json import JSONDecodeError
 import logging
 try:
     import queue
@@ -300,9 +301,13 @@ class Client(object):
                 'Connection refused by the server')
         if r.status_code < 200 or r.status_code >= 300:
             self._reset()
+            try:
+                arg = r.json()
+            except JSONDecodeError:
+                arg = None
             raise exceptions.ConnectionError(
                 'Unexpected status code {} in server response'.format(
-                    r.status_code), r.json())
+                    r.status_code), arg)
         try:
             p = payload.Payload(encoded_payload=r.content)
         except ValueError:
