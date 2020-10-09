@@ -304,7 +304,7 @@ class TestAsyncClient(unittest.TestCase):
             assert (
                 exc.args[0] == 'Unexpected status code 404 in server response'
             )
-            assert exc.args[1] == None
+            assert exc.args[1] is None
 
     def test_polling_connection_invalid_packet(self):
         c = asyncio_client.AsyncClient()
