@@ -325,6 +325,27 @@ Or for ``asyncio``::
 The single argument passed to the method is the number of seconds to sleep
 for.
 
+Debugging and Troubleshooting
+-----------------------------
+
+To help you debug issues, the server can be configured to output logs to the
+terminal::
+
+    import engineio
+
+    # standard Python
+    eio = engineio.Server(logger=True)
+
+    # asyncio
+    eio = engineio.AsyncServer(logger=True)
+
+The ``logger`` argument can be set to ``True`` to output logs to ``stderr``, or
+to an object compatible with Python's ``logging`` package where the logs should
+be emitted to. A value of ``False`` disables logging.
+
+Logging can help identify the cause of connection problems, 400 responses,
+bad performance and other issues.
+
 .. _deployment-strategies:
 
 Deployment Strategies
