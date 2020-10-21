@@ -635,7 +635,8 @@ class AsyncClient(client.Client):
                             await self.ws.send_str(pkt.encode(
                                 always_bytes=False))
                         self.queue.task_done()
-                except aiohttp.client_exceptions.ServerDisconnectedError:
+                except (aiohttp.client_exceptions.ServerDisconnectedError,
+                        BrokenPipeError, OSError):
                     self.logger.info(
                         'Write loop: WebSocket connection was closed, '
                         'aborting')

@@ -741,7 +741,8 @@ class Client(object):
                         else:
                             self.ws.send(encoded_packet)
                         self.queue.task_done()
-                except websocket.WebSocketConnectionClosedException:
+                except (websocket.WebSocketConnectionClosedException,
+                        BrokenPipeError, OSError):
                     self.logger.warning(
                         'WebSocket connection was closed, aborting')
                     break
