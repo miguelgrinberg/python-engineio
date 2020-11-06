@@ -548,6 +548,7 @@ class TestServer(unittest.TestCase):
         environ = {
             'REQUEST_METHOD': 'GET',
             'QUERY_STRING': 'transport=websocket',
+            'HTTP_UPGRADE': 'websocket',
         }
         start_response = mock.MagicMock()
         # force socket to stay open, so that we can check it later
@@ -565,6 +566,7 @@ class TestServer(unittest.TestCase):
         environ = {
             'REQUEST_METHOD': 'GET',
             'QUERY_STRING': 'transport=websocket',
+            'HTTP_UPGRADE': 'websocket',
         }
         start_response = mock.MagicMock()
 
@@ -578,6 +580,16 @@ class TestServer(unittest.TestCase):
     def test_connect_transport_invalid(self):
         s = server.Server()
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
+
+    def test_connect_transport_websocket_without_upgrade(self):
+        s = server.Server()
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'transport=websocket',
+        }
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'

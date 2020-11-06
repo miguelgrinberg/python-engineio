@@ -235,7 +235,9 @@ class AsyncServer(server.Server):
         elif method == 'GET':
             if sid is None:
                 transport = query.get('transport', ['polling'])[0]
-                if transport != 'polling' and transport != 'websocket':
+                if (transport != 'polling' and transport != 'websocket') or \
+                        (transport != 'polling'
+                            and transport != environ.get('HTTP_UPGRADE')):
                     self.logger.warning('Invalid transport %s', transport)
                     r = self._bad_request()
                 else:

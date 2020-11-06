@@ -374,7 +374,11 @@ class TestAsyncServer(unittest.TestCase):
     @mock.patch('importlib.import_module')
     def test_connect_transport_websocket(self, import_module, AsyncSocket):
         a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=websocket'}
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'transport=websocket',
+                'HTTP_UPGRADE': 'websocket',
+            }
         )
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
@@ -394,7 +398,11 @@ class TestAsyncServer(unittest.TestCase):
         self, import_module, AsyncSocket
     ):
         a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=websocket'}
+            {
+                'REQUEST_METHOD': 'GET',
+                'QUERY_STRING': 'transport=websocket',
+                'HTTP_UPGRADE': 'websocket'
+            }
         )
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
@@ -414,6 +422,17 @@ class TestAsyncServer(unittest.TestCase):
     def test_connect_transport_invalid(self, import_module):
         a = self.get_async_mock(
             {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=foo'}
+        )
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        _run(s.handle_request('request'))
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+
+    @mock.patch('importlib.import_module')
+    def test_connect_transport_websocket_without_upgrade(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=websocket'}
         )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
