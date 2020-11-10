@@ -238,8 +238,8 @@ class AsyncClient(client.Client):
             'Polling connection accepted with ' + str(open_packet.data))
         self.sid = open_packet.data['sid']
         self.upgrades = open_packet.data['upgrades']
-        self.ping_interval = open_packet.data['pingInterval'] / 1000.0
-        self.ping_timeout = open_packet.data['pingTimeout'] / 1000.0
+        self.ping_interval = int(open_packet.data['pingInterval']) / 1000.0
+        self.ping_timeout = int(open_packet.data['pingTimeout']) / 1000.0
         self.current_transport = 'polling'
         self.base_url += '&sid=' + self.sid
 
@@ -358,8 +358,8 @@ class AsyncClient(client.Client):
                 'WebSocket connection accepted with ' + str(open_packet.data))
             self.sid = open_packet.data['sid']
             self.upgrades = open_packet.data['upgrades']
-            self.ping_interval = open_packet.data['pingInterval'] / 1000.0
-            self.ping_timeout = open_packet.data['pingTimeout'] / 1000.0
+            self.ping_interval = int(open_packet.data['pingInterval']) / 1000.0
+            self.ping_timeout = int(open_packet.data['pingTimeout']) / 1000.0
             self.current_transport = 'websocket'
 
             self.state = 'connected'
