@@ -240,7 +240,8 @@ class TestAsyncClient(unittest.TestCase):
 
         c = asyncio_client.AsyncClient()
         c.start_background_task(foo, 'bar')
-        pending = asyncio.Task.all_tasks()
+        pending = asyncio.all_tasks(loop=asyncio.get_event_loop()) \
+            if hasattr(asyncio, 'all_tasks') else asyncio.Task.all_tasks()
         asyncio.get_event_loop().run_until_complete(asyncio.wait(pending))
         assert r == ['bar']
 

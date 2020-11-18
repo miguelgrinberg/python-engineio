@@ -1,8 +1,11 @@
 python-engineio
 ===============
 
-.. image:: https://travis-ci.org/miguelgrinberg/python-engineio.svg?branch=master
-    :target: https://travis-ci.org/miguelgrinberg/python-engineio
+.. image:: https://github.com/miguelgrinberg/python-engineio/workflows/build/badge.svg
+    :target: https://github.com/miguelgrinberg/python-engineio/actions
+
+.. image:: https://codecov.io/gh/miguelgrinberg/python-engineio/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/miguelgrinberg/python-engineio
 
 Python implementation of the `Engine.IO`_ realtime client and server.
 
