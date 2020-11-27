@@ -23,6 +23,7 @@ def async_signal_handler():
     Disconnect all active async clients.
     """
     async def _handler():
+        asyncio.get_event_loop().stop()
         for c in client.connected_clients[:]:
             if c.is_asyncio_based():
                 await c.disconnect()
