@@ -81,27 +81,29 @@ class ASGIApp:
                 await self.not_found(receive, send)
 
     async def lifespan(self, receive, send):
-        event = await receive()
-        if event['type'] == 'lifespan.startup':
-            if self.on_startup:
-                try:
-                    await self.on_startup() \
-                        if asyncio.iscoroutinefunction(self.on_startup) else \
-                        self.on_startup()
-                except:
-                    await send({'type': 'lifespan.startup.failed'})
-                    return
-            await send({'type': 'lifespan.startup.complete'})
-        elif event['type'] == 'lifespan.shutdown':
-            if self.on_shutdown:
-                try:
-                    await self.on_shutdown() \
-                        if asyncio.iscoroutinefunction(self.on_shutdown) \
-                        else self.on_shutdown()
-                except:
-                    await send({'type': 'lifespan.shutdown.failed'})
-                    return
-            await send({'type': 'lifespan.shutdown.complete'})
+        while True:
+            event = await receive()
+            if event['type'] == 'lifespan.startup':
+                if self.on_startup:
+                    try:
+                        await self.on_startup() \
+                            if asyncio.iscoroutinefunction(self.on_startup) \
+                            else self.on_startup()
+                    except:
+                        await send({'type': 'lifespan.startup.failed'})
+                        return
+                await send({'type': 'lifespan.startup.complete'})
+            elif event['type'] == 'lifespan.shutdown':
+                if self.on_shutdown:
+                    try:
+                        await self.on_shutdown() \
+                            if asyncio.iscoroutinefunction(self.on_shutdown) \
+                            else self.on_shutdown()
+                    except:
+                        await send({'type': 'lifespan.shutdown.failed'})
+                        return
+                await send({'type': 'lifespan.shutdown.complete'})
+                return
 
     async def not_found(self, receive, send):
         """Return a 404 Not Found error to the client."""

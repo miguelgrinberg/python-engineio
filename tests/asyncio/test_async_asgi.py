@@ -125,10 +125,11 @@ class AsgiTests(unittest.TestCase):
     def test_lifespan_startup(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'},
+                                         {'type': 'lifespan.shutdown'}])
         send = AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.mock.assert_any_call(
             {'type': 'lifespan.startup.complete'}
         )
 
@@ -141,10 +142,11 @@ class AsgiTests(unittest.TestCase):
 
         app = async_asgi.ASGIApp('eio', on_startup=startup)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'},
+                                         {'type': 'lifespan.shutdown'}])
         send = AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.mock.assert_any_call(
             {'type': 'lifespan.startup.complete'}
         )
         assert up
@@ -158,10 +160,11 @@ class AsgiTests(unittest.TestCase):
 
         app = async_asgi.ASGIApp('eio', on_startup=startup)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'},
+                                         {'type': 'lifespan.shutdown'}])
         send = AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.mock.assert_any_call(
             {'type': 'lifespan.startup.complete'}
         )
         assert up
@@ -174,7 +177,7 @@ class AsgiTests(unittest.TestCase):
 
         app = async_asgi.ASGIApp('eio', on_startup=startup)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.startup'})
+        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'}])
         send = AsyncMock()
         _run(app(scope, receive, send))
         send.mock.assert_called_once_with({'type': 'lifespan.startup.failed'})
@@ -241,10 +244,13 @@ class AsgiTests(unittest.TestCase):
     def test_lifespan_invalid(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.foo'})
+        receive = AsyncMock(side_effect=[{'type': 'lifespan.foo'},
+                                         {'type': 'lifespan.shutdown'}])
         send = AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_not_called()
+        send.mock.assert_called_once_with(
+            {'type': 'lifespan.shutdown.complete'}
+        )
 
     def test_not_found(self):
         app = async_asgi.ASGIApp('eio')
