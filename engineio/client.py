@@ -85,8 +85,11 @@ class Client(object):
         global original_signal_handler
         if original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
-            original_signal_handler = signal.signal(signal.SIGINT,
-                                                    signal_handler)
+            if not hasattr(signal, 'SIGBREAK'):
+                sig = signal.SIGINT
+            else:  # pragma: no cover
+                sig = signal.SIGBREAK
+            original_signal_handler = signal.signal(sig, signal_handler)
         self.handlers = {}
         self.base_url = None
         self.transports = None
