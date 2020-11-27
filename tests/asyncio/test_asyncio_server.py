@@ -41,6 +41,11 @@ def _run(coro):
 class TestAsyncServer(unittest.TestCase):
     @staticmethod
     def get_async_mock(environ={'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}):
+        if environ.get('QUERY_STRING'):
+            if 'EIO=' not in environ['QUERY_STRING']:
+                environ['QUERY_STRING'] = 'EIO=3&' + environ['QUERY_STRING']
+        else:
+            environ['QUERY_STRING'] = 'EIO=3'
         a = mock.MagicMock()
         a._async = {
             'asyncio': True,
@@ -251,6 +256,19 @@ class TestAsyncServer(unittest.TestCase):
             encoded_payload=a._async['make_response'].call_args[0][2]
         ).packets
         assert packets[0].data['upgrades'] == []
+
+    @mock.patch('importlib.import_module')
+    def test_connect_bad_eio_version(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=5'}
+        )
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer()
+        _run(s.handle_request('request'))
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+        assert b'unsupported version' in \
+            a._async['make_response'].call_args[0][2]
 
     @mock.patch('importlib.import_module')
     def test_connect_b64_with_1(self, import_module):

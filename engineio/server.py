@@ -336,17 +336,25 @@ class Server(object):
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
                     self.logger.info(origin + ' is not an accepted origin.')
-                    r = self._bad_request()
+                    r = self._bad_request(
+                        origin + ' is not an accepted origin.')
                     start_response(r['status'], r['headers'])
                     return [r['response']]
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
-
-        sid = query['sid'][0] if 'sid' in query else None
         b64 = False
         jsonp = False
         jsonp_index = None
+
+        # make sure the client speaks a compatible Engine.IO version
+        sid = query['sid'][0] if 'sid' in query else None
+        if sid is None and query.get('EIO') not in [['2'], ['3']]:
+            r = self._bad_request(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols')
+            start_response(r['status'], r['headers'])
+            return [r['response']]
 
         if 'b64' in query:
             if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
@@ -612,11 +620,14 @@ class Server(object):
                     'headers': [('Content-Type', 'text/plain')],
                     'response': b'OK'}
 
-    def _bad_request(self):
+    def _bad_request(self, message=None):
         """Generate a bad request HTTP error response."""
+        if message is None:
+            message = 'Bad Request'
+        message = packet.Packet.json.dumps(message)
         return {'status': '400 BAD REQUEST',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': b'Bad Request'}
+                'response': message.encode('utf-8')}
 
     def _method_not_found(self):
         """Generate a method not found HTTP error response."""

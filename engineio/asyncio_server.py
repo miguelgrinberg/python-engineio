@@ -200,15 +200,10 @@ class AsyncServer(server.Server):
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
                     self.logger.info(origin + ' is not an accepted origin.')
-                    r = self._bad_request()
-                    make_response = self._async['make_response']
-                    if asyncio.iscoroutinefunction(make_response):
-                        response = await make_response(
-                            r['status'], r['headers'], r['response'], environ)
-                    else:
-                        response = make_response(r['status'], r['headers'],
-                                                 r['response'], environ)
-                    return response
+                    return await self._make_response(
+                        self._bad_request(
+                            origin + ' is not an accepted origin.'),
+                        environ)
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
@@ -217,6 +212,14 @@ class AsyncServer(server.Server):
         b64 = False
         jsonp = False
         jsonp_index = None
+
+        # make sure the client speaks a compatible Engine.IO version
+        sid = query['sid'][0] if 'sid' in query else None
+        if sid is None and query.get('EIO') not in [['2'], ['3']]:
+            return await self._make_response(self._bad_request(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols'
+            ), environ)
 
         if 'b64' in query:
             if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
@@ -297,16 +300,7 @@ class AsyncServer(server.Server):
                         getattr(self, '_' + encoding)(r['response'])
                     r['headers'] += [('Content-Encoding', encoding)]
                     break
-        cors_headers = self._cors_headers(environ)
-        make_response = self._async['make_response']
-        if asyncio.iscoroutinefunction(make_response):
-            response = await make_response(r['status'],
-                                           r['headers'] + cors_headers,
-                                           r['response'], environ)
-        else:
-            response = make_response(r['status'], r['headers'] + cors_headers,
-                                     r['response'], environ)
-        return response
+        return await self._make_response(r, environ)
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
@@ -364,6 +358,21 @@ class AsyncServer(server.Server):
         an instance of ``asyncio.Event``.
         """
         return asyncio.Event(*args, **kwargs)
+
+    async def _make_response(self, response_dict, environ):
+        cors_headers = self._cors_headers(environ)
+        make_response = self._async['make_response']
+        if asyncio.iscoroutinefunction(make_response):
+            response = await make_response(
+                response_dict['status'],
+                response_dict['headers'] + cors_headers,
+                response_dict['response'], environ)
+        else:
+            response = make_response(
+                response_dict['status'],
+                response_dict['headers'] + cors_headers,
+                response_dict['response'], environ)
+        return response
 
     async def _handle_connect(self, environ, transport, b64=False,
                               jsonp_index=None):
