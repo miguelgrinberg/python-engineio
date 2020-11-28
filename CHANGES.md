@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 3.14.1** - 2020-11-28
+
+- Catch more connection exceptions in the asyncio client [#561](https://github.com/miguelgrinberg/python-socketio/issues/561) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0d8d3a66292e2bc71b5af5b3e2162fde02c3f487))
+- Revert "On Windows use SIGBREAK to break client" since the fix was not effective ([commit](https://github.com/miguelgrinberg/python-engineio/commit/788cf86a0b6223546b085966e800466a25fe07e1))
+
 **Release 3.14.0** - 2020-11-28
 
 - Reject incorrect Engine.IO protocol versions ([commit](https://github.com/miguelgrinberg/python-engineio/commit/00330bbc4292f50e5a7726f28c028f6cd7c90aa5))
