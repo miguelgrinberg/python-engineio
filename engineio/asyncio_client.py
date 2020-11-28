@@ -307,7 +307,8 @@ class AsyncClient(client.Client):
                     websocket_url + self._get_url_timestamp(),
                     headers=headers)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
-                aiohttp.client_exceptions.ServerConnectionError):
+                aiohttp.client_exceptions.ServerConnectionError,
+                aiohttp.client_exceptions.ClientConnectionError):
             if upgrade:
                 self.logger.warning(
                     'WebSocket upgrade failed: connection error')
