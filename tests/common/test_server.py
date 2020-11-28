@@ -1160,6 +1160,15 @@ class TestServer(unittest.TestCase):
         e.set()
         assert e.is_set()
 
+    def test_log_error_once(self):
+        s = server.Server(logger=mock.MagicMock())
+        s._log_error_once('foo', 'foo-key')
+        s._log_error_once('foo', 'foo-key')
+        s.logger.error.assert_called_with(
+            'foo (further occurrences of this error will be logged with '
+            'level INFO)')
+        s.logger.info.assert_called_with('foo')
+
     def test_service_task_started(self):
         s = server.Server(monitor_clients=True)
         s._service_task = mock.MagicMock()

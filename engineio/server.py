@@ -109,6 +109,7 @@ class Server(object):
         self.async_handlers = async_handlers
         self.sockets = {}
         self.handlers = {}
+        self.log_message_keys = set()
         self.start_service_task = monitor_clients \
             if monitor_clients is not None else self._default_monitor_clients
         if json is not None:
@@ -335,7 +336,8 @@ class Server(object):
                 allowed_origins = self._cors_allowed_origins(environ)
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
-                    self.logger.info(origin + ' is not an accepted origin.')
+                    self._log_error_once(
+                        origin + ' is not an accepted origin.', 'bad-origin')
                     r = self._bad_request(
                         origin + ' is not an accepted origin.')
                     start_response(r['status'], r['headers'])
@@ -350,6 +352,9 @@ class Server(object):
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
         if sid is None and query.get('EIO') not in [['2'], ['3']]:
+            self._log_error_once(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols', 'bad-version')
             r = self._bad_request(
                 'The client is using an unsupported version of the Socket.IO '
                 'or Engine.IO protocols')
@@ -368,23 +373,25 @@ class Server(object):
                 pass
 
         if jsonp and jsonp_index is None:
-            self.logger.warning('Invalid JSONP index number')
-            r = self._bad_request()
+            self._log_error_once('Invalid JSONP index number',
+                                 'bad-jsonp-index')
+            r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
             if sid is None:
                 transport = query.get('transport', ['polling'])[0]
                 if (transport != 'polling' and transport != 'websocket') or \
                         (transport != 'polling'
                             and transport != environ.get('HTTP_UPGRADE')):
-                    self.logger.warning('Invalid transport %s', transport)
-                    r = self._bad_request()
+                    self._log_error_once('Invalid transport ' + transport,
+                                         'bad-transport')
+                    r = self._bad_request('Invalid transport ' + transport)
                 else:
                     r = self._handle_connect(environ, start_response,
                                              transport, b64, jsonp_index)
             else:
                 if sid not in self.sockets:
-                    self.logger.warning('Invalid session %s', sid)
-                    r = self._bad_request()
+                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                    r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
                     try:
@@ -403,8 +410,8 @@ class Server(object):
                         del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self.logger.warning('Invalid session %s', sid)
-                r = self._bad_request()
+                self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                r = self._bad_request('Invalid session ' + sid)
             else:
                 socket = self._get_socket(sid)
                 try:
@@ -696,6 +703,16 @@ class Server(object):
     def _deflate(self, response):
         """Apply deflate compression to a response."""
         return zlib.compress(response)
+
+    def _log_error_once(self, message, message_key):
+        """Log message with logging.ERROR level the first time, then log
+        with given level."""
+        if message_key not in self.log_message_keys:
+            self.logger.error(message + ' (further occurrences of this error '
+                              'will be logged with level INFO)')
+            self.log_message_keys.add(message_key)
+        else:
+            self.logger.info(message)
 
     def _service_task(self):  # pragma: no cover
         """Monitor connected clients and clean up those that time out."""

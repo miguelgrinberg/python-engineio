@@ -199,7 +199,8 @@ class AsyncServer(server.Server):
                 allowed_origins = self._cors_allowed_origins(environ)
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
-                    self.logger.info(origin + ' is not an accepted origin.')
+                    self._log_error_once(
+                        origin + ' is not an accepted origin.', 'bad-origin')
                     return await self._make_response(
                         self._bad_request(
                             origin + ' is not an accepted origin.'),
@@ -216,6 +217,10 @@ class AsyncServer(server.Server):
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
         if sid is None and query.get('EIO') not in [['2'], ['3']]:
+            self._log_error_once(
+                'The client is using an unsupported version of the Socket.IO '
+                'or Engine.IO protocols', 'bad-version'
+            )
             return await self._make_response(self._bad_request(
                 'The client is using an unsupported version of the Socket.IO '
                 'or Engine.IO protocols'
@@ -233,23 +238,25 @@ class AsyncServer(server.Server):
                 pass
 
         if jsonp and jsonp_index is None:
-            self.logger.warning('Invalid JSONP index number')
-            r = self._bad_request()
+            self._log_error_once('Invalid JSONP index number',
+                                 'bad-jsonp-index')
+            r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
             if sid is None:
                 transport = query.get('transport', ['polling'])[0]
                 if (transport != 'polling' and transport != 'websocket') or \
                         (transport != 'polling'
                             and transport != environ.get('HTTP_UPGRADE')):
-                    self.logger.warning('Invalid transport %s', transport)
-                    r = self._bad_request()
+                    self._log_error_once('Invalid transport ' + transport,
+                                         'bad-transport')
+                    r = self._bad_request('Invalid transport ' + transport)
                 else:
                     r = await self._handle_connect(environ, transport,
                                                    b64, jsonp_index)
             else:
                 if sid not in self.sockets:
-                    self.logger.warning('Invalid session %s', sid)
-                    r = self._bad_request()
+                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                    r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
                     try:
@@ -267,8 +274,8 @@ class AsyncServer(server.Server):
                         del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self.logger.warning('Invalid session %s', sid)
-                r = self._bad_request()
+                self._log_error_once('Invalid session ' + sid, 'bad-sid')
+                r = self._bad_request('Invalid session ' + sid)
             else:
                 socket = self._get_socket(sid)
                 try:
