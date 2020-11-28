@@ -17,7 +17,7 @@ else:  # pragma: no cover
     get_tornado_handler = None
     ASGIApp = None
 
-__version__ = '3.13.3dev'
+__version__ = '3.14.0'
 
 __all__ = ['__version__', 'Server', 'WSGIApp', 'Middleware', 'Client']
 if AsyncServer is not None:  # pragma: no cover

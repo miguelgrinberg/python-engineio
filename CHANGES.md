@@ -1,5 +1,22 @@
 # python-engineio change log
 
+**Release 3.14.0** - 2020-11-28
+
+- Reject incorrect Engine.IO protocol versions ([commit](https://github.com/miguelgrinberg/python-engineio/commit/00330bbc4292f50e5a7726f28c028f6cd7c90aa5))
+- Accept an initialized requests or aiohttp session object ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f371ad17f3a261366cde124f926bf62dc191a9ea))
+- Handle ping interval and timeout given as strings [#201](https://github.com/miguelgrinberg/python-engineio/issues/201) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1751039070da3fee381568f2b017aa83bef36bf1)) (thanks **Akash Vibhute**!)
+- Handle websocket connections without upgrade header [#72](https://github.com/miguelgrinberg/python-engineio/issues/72) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/da4afaa6ed80f7cce6e102a51ff03390267b51a1))
+- Catch broken pipes and OS errors in websocket thread [#177](https://github.com/miguelgrinberg/python-engineio/issues/177) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0dde7d7ae19478a56610b3a06f76419013e60d62))
+- Expose ASGI scope in connect environ [#192](https://github.com/miguelgrinberg/python-engineio/issues/192) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3a58d406427a5ac99803c4b4d516b5478022b3c6)) (thanks **Korijn van Golen**!)
+- Emit ASGI lifespan shutdown event [#200](https://github.com/miguelgrinberg/python-engineio/issues/200) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2fb17746e72c74a2bce6a1169b6f841ac3473ea9))
+- Add option to set cookie SameSite and Secure settings. ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8f175760eb95b9c67548c5d9969765f710d40296)) (thanks **Billy Felton**!)
+- Stop event loop when client is interrupted with Ctrl-C [#197](https://github.com/miguelgrinberg/python-engineio/issues/197) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/402402f7c19760e84d0c32abc8e729baff51623d))
+- Do not try to install signal handler if unsupported [#199](https://github.com/miguelgrinberg/python-engineio/issues/199) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c0a1c2801cb35e6d192ddf542f79359c823655aa)) (thanks **Philippe**!)
+- On Windows use SIGBREAK to break client [#570](https://github.com/miguelgrinberg/python-socketio/issues/570) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f5fda518d8943be7846321275760a589a1e63bc0))
+- Client: handle error responses with invalid JSON [#553](https://github.com/miguelgrinberg/python-socketio/issues/553) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f543839512b960c904f73cf5ea2a647b058c8bf7))
+- Added troubleshooting section to the documentation ([commit](https://github.com/miguelgrinberg/python-engineio/commit/32e0e2992f9d109dbad7124b615e97d6e8b3285d))
+- Move builds to GitHub actions ([commit](https://github.com/miguelgrinberg/python-engineio/commit/232f165a2d2b41b62f540ed6b77c8db722c6dc4f))
+
 **Release 3.13.2** - 2020-08-18
 
 - Improved signal handler for the async client [#523](https://github.com/miguelgrinberg/python-socketio/issues/523) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/eabfdaa9d1644d3346ec3ec7fae040c85029b75e))
