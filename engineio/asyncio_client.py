@@ -122,21 +122,16 @@ class AsyncClient(client.Client):
         if self.read_loop_task:
             await self.read_loop_task
 
-    async def send(self, data, binary=None):
+    async def send(self, data):
         """Send a message to a client.
 
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
 
         Note: this method is a coroutine.
         """
-        await self._send_packet(packet.Packet(packet.MESSAGE, data=data,
-                                              binary=binary))
+        await self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
     async def disconnect(self, abort=False):
         """Disconnect from the server.
@@ -227,7 +222,8 @@ class AsyncClient(client.Client):
                 'Unexpected status code {} in server response'.format(
                     r.status), arg)
         try:
-            p = payload.Payload(encoded_payload=await r.read())
+            p = payload.Payload(encoded_payload=(await r.read()).decode(
+                'utf-8'))
         except ValueError:
             six.raise_from(exceptions.ConnectionError(
                 'Unexpected response from server'), None)
@@ -257,7 +253,6 @@ class AsyncClient(client.Client):
                 # upgrade to websocket succeeded, we're done here
                 return
 
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
@@ -316,8 +311,7 @@ class AsyncClient(client.Client):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            p = packet.Packet(packet.PING, data='probe').encode(
-                always_bytes=False)
+            p = packet.Packet(packet.PING, data='probe').encode()
             try:
                 await ws.send_str(p)
             except Exception as e:  # pragma: no cover
@@ -337,7 +331,7 @@ class AsyncClient(client.Client):
                 self.logger.warning(
                     'WebSocket upgrade failed: no PONG packet')
                 return False
-            p = packet.Packet(packet.UPGRADE).encode(always_bytes=False)
+            p = packet.Packet(packet.UPGRADE).encode()
             try:
                 await ws.send_str(p)
             except Exception as e:  # pragma: no cover
@@ -369,7 +363,6 @@ class AsyncClient(client.Client):
             await self._trigger_event('connect', run_async=False)
 
         self.ws = ws
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_websocket)
@@ -384,8 +377,8 @@ class AsyncClient(client.Client):
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
         if pkt.packet_type == packet.MESSAGE:
             await self._trigger_event('message', pkt.data, run_async=True)
-        elif pkt.packet_type == packet.PONG:
-            self.pong_received = True
+        elif pkt.packet_type == packet.PING:
+            await self._send_packet(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.CLOSE:
             await self.disconnect(abort=True)
         elif pkt.packet_type == packet.NOOP:
@@ -462,33 +455,6 @@ class AsyncClient(client.Client):
                             return False
         return ret
 
-    async def _ping_loop(self):
-        """This background task sends a PING to the server at the requested
-        interval.
-        """
-        self.pong_received = True
-        if self.ping_loop_event is None:
-            self.ping_loop_event = self.create_event()
-        else:
-            self.ping_loop_event.clear()
-        while self.state == 'connected':
-            if not self.pong_received:
-                self.logger.info(
-                    'PONG response has not been received, aborting')
-                if self.ws:
-                    await self.ws.close()
-                await self.queue.put(None)
-                break
-            self.pong_received = False
-            await self._send_packet(packet.Packet(packet.PING))
-            try:
-                await asyncio.wait_for(self.ping_loop_event.wait(),
-                                       self.ping_interval)
-            except (asyncio.TimeoutError,
-                    asyncio.CancelledError):  # pragma: no cover
-                pass
-        self.logger.info('Exiting ping task')
-
     async def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
         while self.state == 'connected':
@@ -508,7 +474,8 @@ class AsyncClient(client.Client):
                 await self.queue.put(None)
                 break
             try:
-                p = payload.Payload(encoded_payload=await r.read())
+                p = payload.Payload(encoded_payload=(await r.read()).decode(
+                    'utf-8'))
             except ValueError:
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
@@ -519,10 +486,6 @@ class AsyncClient(client.Client):
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
@@ -537,9 +500,17 @@ class AsyncClient(client.Client):
         while self.state == 'connected':
             p = None
             try:
-                p = (await self.ws.receive()).data
+                p = await asyncio.wait_for(
+                    self.ws.receive(),
+                    timeout=self.ping_interval + self.ping_timeout)
+                p = p.data
                 if p is None:  # pragma: no cover
                     raise RuntimeError('WebSocket read returned None')
+            except asyncio.TimeoutError:
+                self.logger.warning(
+                    'Server has stopped communicating, aborting')
+                await self.queue.put(None)
+                break
             except aiohttp.client_exceptions.ServerDisconnectedError:
                 self.logger.info(
                     'Read loop: WebSocket connection was closed, aborting')
@@ -551,8 +522,6 @@ class AsyncClient(client.Client):
                     str(e))
                 await self.queue.put(None)
                 break
-            if isinstance(p, six.text_type):  # pragma: no cover
-                p = p.encode('utf-8')
             try:
                 pkt = packet.Packet(encoded_packet=p)
             except Exception as e:  # pragma: no cover
@@ -564,10 +533,6 @@ class AsyncClient(client.Client):
 
         self.logger.info('Waiting for write loop task to end')
         await self.write_loop_task
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        await self.ping_loop_task
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
@@ -631,11 +596,9 @@ class AsyncClient(client.Client):
                 try:
                     for pkt in packets:
                         if pkt.binary:
-                            await self.ws.send_bytes(pkt.encode(
-                                always_bytes=False))
+                            await self.ws.send_bytes(pkt.encode())
                         else:
-                            await self.ws.send_str(pkt.encode(
-                                always_bytes=False))
+                            await self.ws.send_str(pkt.encode())
                         self.queue.task_done()
                 except (aiohttp.client_exceptions.ServerDisconnectedError,
                         BrokenPipeError, OSError):

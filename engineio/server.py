@@ -29,15 +29,14 @@ class Server(object):
                        "gevent_uwsgi", then "gevent", and finally "threading".
                        The first async mode that has all its dependencies
                        installed is the one that is chosen.
-    :param ping_timeout: The time in seconds that the client waits for the
-                         server to respond before disconnecting. The default
-                         is 60 seconds.
-    :param ping_interval: The interval in seconds at which the client pings
-                          the server. The default is 25 seconds. For advanced
+    :param ping_interval: The interval in seconds at which the server pings
+                          the client. The default is 25 seconds. For advanced
                           control, a two element tuple can be given, where
                           the first number is the ping interval and the second
-                          is a grace period added by the server. The default
-                          grace period is 5 seconds.
+                          is a grace period added by the server.
+    :param ping_timeout: The time in seconds that the client waits for the
+                         server to respond before disconnecting. The default
+                         is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport. The default is 1,000,000
                                  bytes.
@@ -86,7 +85,7 @@ class Server(object):
     event_names = ['connect', 'disconnect', 'message']
     _default_monitor_clients = True
 
-    def __init__(self, async_mode=None, ping_timeout=60, ping_interval=25,
+    def __init__(self, async_mode=None, ping_interval=25, ping_timeout=5,
                  max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
@@ -98,7 +97,7 @@ class Server(object):
             self.ping_interval_grace_period = ping_interval[1]
         else:
             self.ping_interval = ping_interval
-            self.ping_interval_grace_period = 5
+            self.ping_interval_grace_period = 0
         self.max_http_buffer_size = max_http_buffer_size
         self.allow_upgrades = allow_upgrades
         self.http_compression = http_compression
@@ -537,11 +536,12 @@ class Server(object):
         s = socket.Socket(self, sid)
         self.sockets[sid] = s
 
-        pkt = packet.Packet(
-            packet.OPEN, {'sid': sid,
-                          'upgrades': self._upgrades(sid, transport),
-                          'pingTimeout': int(self.ping_timeout * 1000),
-                          'pingInterval': int(self.ping_interval * 1000)})
+        pkt = packet.Packet(packet.OPEN, {
+            'sid': sid,
+            'upgrades': self._upgrades(sid, transport),
+            'pingTimeout': int(self.ping_timeout * 1000),
+            'pingInterval': int((self.ping_interval +
+                                 self.ping_interval_grace_period) * 1000)})
         s.send(pkt)
 
         ret = self._trigger_event('connect', sid, environ, run_async=False)

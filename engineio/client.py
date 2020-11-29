@@ -95,13 +95,10 @@ class Client(object):
         self.upgrades = None
         self.ping_interval = None
         self.ping_timeout = None
-        self.pong_received = True
         self.http = http_session
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None
-        self.ping_loop_task = None
-        self.ping_loop_event = None
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
@@ -203,7 +200,7 @@ class Client(object):
         if self.read_loop_task:
             self.read_loop_task.join()
 
-    def send(self, data, binary=None):
+    def send(self, data):
         """Send a message to a client.
 
         :param data: The data to send to the client. Data can be of type
@@ -214,8 +211,7 @@ class Client(object):
                        (Python 3) are sent as text, and str (Python 2) and
                        bytes (Python 3) are sent as binary.
         """
-        self._send_packet(packet.Packet(packet.MESSAGE, data=data,
-                                        binary=binary))
+        self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
     def disconnect(self, abort=False):
         """Disconnect from the server.
@@ -309,7 +305,7 @@ class Client(object):
                 'Unexpected status code {} in server response'.format(
                     r.status_code), arg)
         try:
-            p = payload.Payload(encoded_payload=r.content)
+            p = payload.Payload(encoded_payload=r.content.decode('utf-8'))
         except ValueError:
             six.raise_from(exceptions.ConnectionError(
                 'Unexpected response from server'), None)
@@ -340,7 +336,6 @@ class Client(object):
                 return
 
         # start background tasks associated with this client
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_polling)
@@ -411,7 +406,6 @@ class Client(object):
                     parsed_url = urllib.parse.urlparse(
                         proxy_url if '://' in proxy_url
                         else 'scheme://' + proxy_url)
-                    print(parsed_url)
                     extra_options['http_proxy_host'] = parsed_url.hostname
                     extra_options['http_proxy_port'] = parsed_url.port
                     extra_options['http_proxy_auth'] = (
@@ -428,7 +422,9 @@ class Client(object):
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, enable_multithread=True, **extra_options)
+                cookie=cookies, enable_multithread=True,
+                timeout=self.ping_interval + self.ping_timeout,
+                **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
@@ -491,7 +487,6 @@ class Client(object):
         self.ws = ws
 
         # start background tasks associated with this client
-        self.ping_loop_task = self.start_background_task(self._ping_loop)
         self.write_loop_task = self.start_background_task(self._write_loop)
         self.read_loop_task = self.start_background_task(
             self._read_loop_websocket)
@@ -506,8 +501,8 @@ class Client(object):
             pkt.data if not isinstance(pkt.data, bytes) else '<binary>')
         if pkt.packet_type == packet.MESSAGE:
             self._trigger_event('message', pkt.data, run_async=True)
-        elif pkt.packet_type == packet.PONG:
-            self.pong_received = True
+        elif pkt.packet_type == packet.PING:
+            self._send_packet(packet.Packet(packet.PONG, pkt.data))
         elif pkt.packet_type == packet.CLOSE:
             self.disconnect(abort=True)
         elif pkt.packet_type == packet.NOOP:
@@ -575,28 +570,6 @@ class Client(object):
         """Generate the Engine.IO query string timestamp."""
         return '&t=' + str(time.time())
 
-    def _ping_loop(self):
-        """This background task sends a PING to the server at the requested
-        interval.
-        """
-        self.pong_received = True
-        if self.ping_loop_event is None:
-            self.ping_loop_event = self.create_event()
-        else:
-            self.ping_loop_event.clear()
-        while self.state == 'connected':
-            if not self.pong_received:
-                self.logger.info(
-                    'PONG response has not been received, aborting')
-                if self.ws:
-                    self.ws.close(timeout=0)
-                self.queue.put(None)
-                break
-            self.pong_received = False
-            self._send_packet(packet.Packet(packet.PING))
-            self.ping_loop_event.wait(timeout=self.ping_interval)
-        self.logger.info('Exiting ping task')
-
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
         while self.state == 'connected':
@@ -616,7 +589,7 @@ class Client(object):
                 self.queue.put(None)
                 break
             try:
-                p = payload.Payload(encoded_payload=r.content)
+                p = payload.Payload(encoded_payload=r.content.decode('utf-8'))
             except ValueError:
                 self.logger.warning(
                     'Unexpected packet from server, aborting')
@@ -627,10 +600,6 @@ class Client(object):
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
@@ -646,6 +615,11 @@ class Client(object):
             p = None
             try:
                 p = self.ws.recv()
+            except websocket.WebSocketTimeoutException:
+                self.logger.warning(
+                    'Server has stopped communicating, aborting')
+                self.queue.put(None)
+                break
             except websocket.WebSocketConnectionClosedException:
                 self.logger.warning(
                     'WebSocket connection was closed, aborting')
@@ -657,8 +631,6 @@ class Client(object):
                     str(e))
                 self.queue.put(None)
                 break
-            if isinstance(p, six.text_type):  # pragma: no cover
-                p = p.encode('utf-8')
             try:
                 pkt = packet.Packet(encoded_packet=p)
             except Exception as e:  # pragma: no cover
@@ -670,10 +642,6 @@ class Client(object):
 
         self.logger.info('Waiting for write loop task to end')
         self.write_loop_task.join()
-        self.logger.info('Waiting for ping loop task to end')
-        if self.ping_loop_event:  # pragma: no cover
-            self.ping_loop_event.set()
-        self.ping_loop_task.join()
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
@@ -735,7 +703,7 @@ class Client(object):
                 # websocket
                 try:
                     for pkt in packets:
-                        encoded_packet = pkt.encode(always_bytes=False)
+                        encoded_packet = pkt.encode()
                         if pkt.binary:
                             self.ws.send_binary(encoded_packet)
                         else:
