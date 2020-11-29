@@ -46,7 +46,7 @@ class AsyncServer(server.Server):
                    contains the cookie name and other keys define cookie
                    attributes, where the value of each attribute can be a
                    string, a callable with no arguments, or a boolean. If set
-                   to ``None`` (the default), a cookie is not sent to the 
+                   to ``None`` (the default), a cookie is not sent to the
                    client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin

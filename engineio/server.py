@@ -53,7 +53,7 @@ class Server(object):
                    contains the cookie name and other keys define cookie
                    attributes, where the value of each attribute can be a
                    string, a callable with no arguments, or a boolean. If set
-                   to ``None`` (the default), a cookie is not sent to the 
+                   to ``None`` (the default), a cookie is not sent to the
                    client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
@@ -531,8 +531,8 @@ class Server(object):
             'sid': sid,
             'upgrades': self._upgrades(sid, transport),
             'pingTimeout': int(self.ping_timeout * 1000),
-            'pingInterval': int((self.ping_interval +
-                                 self.ping_interval_grace_period) * 1000)})
+            'pingInterval': int(
+                self.ping_interval + self.ping_interval_grace_period) * 1000})
         s.send(pkt)
         s.schedule_ping()
 

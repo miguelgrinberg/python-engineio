@@ -109,8 +109,7 @@ class Client(object):
             self.logger = logger
         else:
             self.logger = default_logger
-            if not logging.root.handlers and \
-                    self.logger.level == logging.NOTSET:
+            if self.logger.level == logging.NOTSET:
                 if logger:
                     self.logger.setLevel(logging.INFO)
                 else:
@@ -422,9 +421,7 @@ class Client(object):
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, enable_multithread=True,
-                timeout=self.ping_interval + self.ping_timeout,
-                **extra_options)
+                cookie=cookies, enable_multithread=True, **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
@@ -485,6 +482,7 @@ class Client(object):
             connected_clients.append(self)
             self._trigger_event('connect', run_async=False)
         self.ws = ws
+        self.ws.settimeout(self.ping_interval + self.ping_timeout)
 
         # start background tasks associated with this client
         self.write_loop_task = self.start_background_task(self._write_loop)
