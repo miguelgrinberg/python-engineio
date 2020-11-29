@@ -43,3 +43,5 @@ tags
 .vscode
 htmlcov
 *.swp
+node_modules
+.python-version

@@ -29,3 +29,8 @@ tornado
 -------
 
 Examples that are compatible with the Tornado framework.
+
+javascript
+----------
+
+Examples that use the JavaScript version of Engine.IO for compatiblity testing.
