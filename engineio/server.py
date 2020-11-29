@@ -1,11 +1,10 @@
 import gzip
 import importlib
+import io
 import logging
+import urllib
 import uuid
 import zlib
-
-import six
-from six.moves import urllib
 
 from . import exceptions
 from . import packet
@@ -293,7 +292,7 @@ class Server(object):
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            for client in six.itervalues(self.sockets):
+            for client in self.sockets.values():
                 client.close()
             self.sockets = {}
 
@@ -658,7 +657,7 @@ class Server(object):
             allowed_origins = default_origins
         elif self.cors_allowed_origins == '*':
             allowed_origins = None
-        elif isinstance(self.cors_allowed_origins, six.string_types):
+        elif isinstance(self.cors_allowed_origins, str):
             allowed_origins = [self.cors_allowed_origins]
         else:
             allowed_origins = self.cors_allowed_origins
@@ -686,7 +685,7 @@ class Server(object):
 
     def _gzip(self, response):
         """Apply gzip compression to a response."""
-        bytesio = six.BytesIO()
+        bytesio = io.BytesIO()
         with gzip.GzipFile(fileobj=bytesio, mode='w') as gz:
             gz.write(response)
         return bytesio.getvalue()

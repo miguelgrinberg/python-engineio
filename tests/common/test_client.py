@@ -3,23 +3,15 @@ import logging
 import ssl
 import time
 import unittest
+from unittest import mock
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
+import pytest
 import websocket
 
 from engineio import client
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
-import pytest
-
-if six.PY2:
-    ConnectionError = OSError
 
 
 class TestClient(unittest.TestCase):
@@ -187,7 +179,7 @@ class TestClient(unittest.TestCase):
         c.send(b'foo')
         assert saved_packets[0].packet_type == packet.MESSAGE
         assert saved_packets[0].data == 'foo'
-        assert saved_packets[0].binary == (False if six.PY3 else True)
+        assert saved_packets[0].binary == False
         assert saved_packets[1].packet_type == packet.MESSAGE
         assert saved_packets[1].data == 'foo'
         assert not saved_packets[1].binary
@@ -1034,8 +1026,7 @@ class TestClient(unittest.TestCase):
     @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_upgrade_successful(self, create_connection):
         create_connection.return_value.recv.return_value = packet.Packet(
-            packet.PONG, six.text_type('probe')
-        ).encode()
+            packet.PONG, 'probe').encode()
         c = client.Client()
         c.ping_interval = 1
         c.ping_timeout = 2
@@ -1060,7 +1051,7 @@ class TestClient(unittest.TestCase):
         assert c.transport() == 'websocket'
         assert c.ws == create_connection.return_value
         assert create_connection.return_value.send.call_args_list[0] == (
-            (packet.Packet(packet.PING, six.text_type('probe')).encode(),),
+            (packet.Packet(packet.PING, 'probe').encode(),),
         )  # ping
         assert create_connection.return_value.send.call_args_list[1] == (
             (packet.Packet(packet.UPGRADE).encode(),),

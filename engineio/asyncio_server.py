@@ -1,7 +1,5 @@
 import asyncio
-
-import six
-from six.moves import urllib
+import urllib
 
 from . import exceptions
 from . import packet
@@ -175,7 +173,7 @@ class AsyncServer(server.Server):
                     del self.sockets[sid]
         else:
             await asyncio.wait([client.close()
-                                for client in six.itervalues(self.sockets)])
+                                for client in self.sockets.values()])
             self.sockets = {}
 
     async def handle_request(self, *args, **kwargs):

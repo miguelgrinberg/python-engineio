@@ -1,10 +1,9 @@
 import unittest
 
-import six
+import pytest
 
 from engineio import packet
 from engineio import payload
-import pytest
 
 
 class TestPayload(unittest.TestCase):
@@ -18,14 +17,14 @@ class TestPayload(unittest.TestCase):
         assert p.encode() == ''
 
     def test_encode_payload_text(self):
-        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
+        pkt = packet.Packet(packet.MESSAGE, data='abc')
         p = payload.Payload([pkt])
         assert p.packets == [pkt]
         assert p.encode() == '4abc'
 
     def test_encode_payload_text_multiple(self):
-        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
-        pkt2 = packet.Packet(packet.MESSAGE, data=six.text_type('def'))
+        pkt = packet.Packet(packet.MESSAGE, data='abc')
+        pkt2 = packet.Packet(packet.MESSAGE, data='def')
         p = payload.Payload([pkt, pkt2])
         assert p.packets == [pkt, pkt2]
         assert p.encode() == '4abc\x1e4def'
@@ -44,14 +43,14 @@ class TestPayload(unittest.TestCase):
         assert p.encode() == 'bAAEC\x1ebAwQFBg=='
 
     def test_encode_payload_text_binary_multiple(self):
-        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
+        pkt = packet.Packet(packet.MESSAGE, data='abc')
         pkt2 = packet.Packet(packet.MESSAGE, data=b'\x03\x04\x05\x06')
         p = payload.Payload([pkt, pkt2, pkt2, pkt])
         assert p.packets == [pkt, pkt2, pkt2, pkt]
         assert p.encode() == '4abc\x1ebAwQFBg==\x1ebAwQFBg==\x1e4abc'
 
     def test_encode_jsonp_payload(self):
-        pkt = packet.Packet(packet.MESSAGE, data=six.text_type('abc'))
+        pkt = packet.Packet(packet.MESSAGE, data='abc')
         p = payload.Payload([pkt])
         assert p.packets == [pkt]
         assert p.encode(jsonp_index=233) == '___eio[233]("4abc");'

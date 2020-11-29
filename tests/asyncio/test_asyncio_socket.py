@@ -2,19 +2,14 @@ import asyncio
 import sys
 import time
 import unittest
+from unittest import mock
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
+import pytest
 
 from engineio import asyncio_socket
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
-import pytest
 
 
 def AsyncMock(*args, **kwargs):
@@ -297,7 +292,7 @@ class TestSocket(unittest.TestCase):
         ws = mock.MagicMock()
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
-        probe = six.text_type('probe')
+        probe = 'probe'
         ws.wait.mock.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.NOOP).encode(),
@@ -331,8 +326,8 @@ class TestSocket(unittest.TestCase):
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
         s.queue.join = AsyncMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
+        foo = 'foo'
+        bar = 'bar'
         s.poll = AsyncMock(
             side_effect=[[packet.Packet(packet.MESSAGE, data=bar)], None]
         )
@@ -360,9 +355,9 @@ class TestSocket(unittest.TestCase):
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
-        probe = six.text_type('probe')
+        foo = 'foo'
+        bar = 'bar'
+        probe = 'probe'
         s.poll = AsyncMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
@@ -394,7 +389,7 @@ class TestSocket(unittest.TestCase):
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
-        probe = six.text_type('probe')
+        probe = 'probe'
         ws = mock.MagicMock()
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
@@ -410,8 +405,8 @@ class TestSocket(unittest.TestCase):
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
-        probe = six.text_type('probe')
-        foo = six.text_type('foo')
+        probe = 'probe'
+        foo = 'foo'
         ws = mock.MagicMock()
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
@@ -441,8 +436,8 @@ class TestSocket(unittest.TestCase):
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
         s.queue.join = AsyncMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
+        foo = 'foo'
+        bar = 'bar'
         s.poll = AsyncMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
@@ -466,8 +461,8 @@ class TestSocket(unittest.TestCase):
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
         s.queue.join = AsyncMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
+        foo = 'foo'
+        bar = 'bar'
         s.poll = AsyncMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],

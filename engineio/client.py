@@ -9,9 +9,8 @@ import signal
 import ssl
 import threading
 import time
+import urllib
 
-import six
-from six.moves import urllib
 try:
     import requests
 except ImportError:  # pragma: no cover
@@ -26,9 +25,6 @@ from . import payload
 
 default_logger = logging.getLogger('engineio.client')
 connected_clients = []
-
-if six.PY2:  # pragma: no cover
-    ConnectionError = OSError
 
 
 def signal_handler(sig, frame):
@@ -179,7 +175,7 @@ class Client(object):
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
         if transports is not None:
-            if isinstance(transports, six.string_types):
+            if isinstance(transports, str):
                 transports = [transports]
             transports = [transport for transport in transports
                           if transport in valid_transports]
@@ -302,8 +298,8 @@ class Client(object):
         try:
             p = payload.Payload(encoded_payload=r.content.decode('utf-8'))
         except ValueError:
-            six.raise_from(exceptions.ConnectionError(
-                'Unexpected response from server'), None)
+            raise exceptions.ConnectionError(
+                'Unexpected response from server') from None
         open_packet = p.packets[0]
         if open_packet.packet_type != packet.OPEN:
             raise exceptions.ConnectionError(
@@ -426,8 +422,7 @@ class Client(object):
             else:
                 raise exceptions.ConnectionError('Connection error')
         if upgrade:
-            p = packet.Packet(packet.PING,
-                              data=six.text_type('probe')).encode()
+            p = packet.Packet(packet.PING, data='probe').encode()
             try:
                 ws.send(p)
             except Exception as e:  # pragma: no cover

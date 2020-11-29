@@ -1,5 +1,4 @@
 import asyncio
-import six
 import sys
 import time
 
@@ -97,7 +96,7 @@ class AsyncSocket(socket.Socket):
         except exceptions.QueueEmpty:
             exc = sys.exc_info()
             await self.close(wait=False)
-            six.reraise(*exc)
+            raise exc[1].with_traceback(exc[2])
         return packets
 
     async def handle_post_request(self, environ):
@@ -159,9 +158,7 @@ class AsyncSocket(socket.Socket):
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
                 self.upgrading = False
                 return
-            await ws.send(packet.Packet(
-                packet.PONG,
-                data=six.text_type('probe')).encode())
+            await ws.send(packet.Packet(packet.PONG, data='probe').encode())
             await self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             try:

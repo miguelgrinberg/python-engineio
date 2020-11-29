@@ -1,17 +1,10 @@
+import asyncio
 import os
 import sys
 import unittest
+from unittest import mock
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
-
-if sys.version_info >= (3, 5):
-    import asyncio
-    from engineio.async_drivers import asgi as async_asgi
+from engineio.async_drivers import asgi as async_asgi
 
 
 def AsyncMock(*args, **kwargs):

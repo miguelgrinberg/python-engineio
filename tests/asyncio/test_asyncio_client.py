@@ -2,24 +2,19 @@ import asyncio
 import ssl
 import sys
 import unittest
+from unittest import mock
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
 try:
     import aiohttp
 except ImportError:
     aiohttp = None
+import pytest
 
 from engineio import asyncio_client
 from engineio import client
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
-import pytest
 
 
 def AsyncMock(*args, **kwargs):
@@ -146,7 +141,7 @@ class TestAsyncClient(unittest.TestCase):
         _run(c.send(b'foo'))
         assert saved_packets[0].packet_type == packet.MESSAGE
         assert saved_packets[0].data == 'foo'
-        assert saved_packets[0].binary == (False if six.PY3 else True)
+        assert saved_packets[0].binary == False
         assert saved_packets[1].packet_type == packet.MESSAGE
         assert saved_packets[1].data == 'foo'
         assert not saved_packets[1].binary

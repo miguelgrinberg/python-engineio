@@ -1,4 +1,3 @@
-import six
 import sys
 import time
 
@@ -112,7 +111,7 @@ class Socket(object):
         except exceptions.QueueEmpty:
             exc = sys.exc_info()
             self.close(wait=False)
-            six.reraise(*exc)
+            raise exc[1].with_traceback(exc[2])
         return packets
 
     def handle_post_request(self, environ):
@@ -179,9 +178,7 @@ class Socket(object):
                     '%s: Failed websocket upgrade, no PING packet', self.sid)
                 self.upgrading = False
                 return []
-            ws.send(packet.Packet(
-                packet.PONG,
-                data=six.text_type('probe')).encode())
+            ws.send(packet.Packet(packet.PONG, data='probe').encode())
             self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             pkt = ws.wait()

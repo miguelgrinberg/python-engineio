@@ -1,24 +1,20 @@
 import asyncio
 import gzip
+import io
 import json
 import logging
 import sys
 import unittest
+from unittest import mock
 import zlib
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
+import pytest
 
 from engineio import asyncio_server
 from engineio.async_drivers import aiohttp as async_aiohttp
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
-import pytest
 
 
 def AsyncMock(*args, **kwargs):
@@ -770,7 +766,7 @@ class TestAsyncServer(unittest.TestCase):
 
     @staticmethod
     def _gzip_decompress(b):
-        bytesio = six.BytesIO(b)
+        bytesio = io.BytesIO(b)
         with gzip.GzipFile(fileobj=bytesio, mode='r') as gz:
             return gz.read()
 

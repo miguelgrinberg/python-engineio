@@ -7,7 +7,6 @@ try:
     import aiohttp
 except ImportError:  # pragma: no cover
     aiohttp = None
-import six
 
 from . import client
 from . import exceptions
@@ -100,7 +99,7 @@ class AsyncClient(client.Client):
             raise ValueError('Client is not in a disconnected state')
         valid_transports = ['polling', 'websocket']
         if transports is not None:
-            if isinstance(transports, six.text_type):
+            if isinstance(transports, str):
                 transports = [transports]
             transports = [transport for transport in transports
                           if transport in valid_transports]
@@ -225,8 +224,8 @@ class AsyncClient(client.Client):
             p = payload.Payload(encoded_payload=(await r.read()).decode(
                 'utf-8'))
         except ValueError:
-            six.raise_from(exceptions.ConnectionError(
-                'Unexpected response from server'), None)
+            raise exceptions.ConnectionError(
+                'Unexpected response from server') from None
         open_packet = p.packets[0]
         if open_packet.packet_type != packet.OPEN:
             raise exceptions.ConnectionError(

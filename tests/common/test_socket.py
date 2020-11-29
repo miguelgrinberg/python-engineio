@@ -1,18 +1,14 @@
+import io
 import time
 import unittest
+from unittest import mock
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
+import pytest
 
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
 from engineio import socket
-import pytest
 
 
 class TestSocket(unittest.TestCase):
@@ -191,7 +187,7 @@ class TestSocket(unittest.TestCase):
             'REQUEST_METHOD': 'POST',
             'QUERY_STRING': 'sid=foo',
             'CONTENT_LENGTH': len(p),
-            'wsgi.input': six.BytesIO(p),
+            'wsgi.input': io.BytesIO(p),
         }
         s.handle_post_request(environ)
         assert s.receive.call_count == 2
@@ -208,7 +204,7 @@ class TestSocket(unittest.TestCase):
             'REQUEST_METHOD': 'POST',
             'QUERY_STRING': 'sid=foo',
             'CONTENT_LENGTH': len(p),
-            'wsgi.input': six.BytesIO(p),
+            'wsgi.input': io.BytesIO(p),
         }
         with pytest.raises(exceptions.ContentTooLongError):
             s.handle_post_request(environ)
@@ -277,7 +273,7 @@ class TestSocket(unittest.TestCase):
         s.connected = True
         s.queue.join = mock.MagicMock(return_value=None)
         ws = mock.MagicMock()
-        probe = six.text_type('probe')
+        probe = 'probe'
         ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.NOOP).encode(),
@@ -319,8 +315,8 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = False
         s.queue.join = mock.MagicMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
+        foo = 'foo'
+        bar = 'bar'
         s.poll = mock.MagicMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
@@ -350,9 +346,9 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         s.queue.join = mock.MagicMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
-        probe = six.text_type('probe')
+        foo = 'foo'
+        bar = 'bar'
+        probe = 'probe'
         s.poll = mock.MagicMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
@@ -383,7 +379,7 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         s.queue.join = mock.MagicMock(return_value=None)
-        probe = six.text_type('probe')
+        probe = 'probe'
         ws = mock.MagicMock()
         ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
@@ -398,8 +394,8 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         s.queue.join = mock.MagicMock(return_value=None)
-        probe = six.text_type('probe')
-        foo = six.text_type('foo')
+        probe = 'probe'
+        foo = 'foo'
         ws = mock.MagicMock()
         ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
@@ -429,8 +425,8 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = False
         s.queue.join = mock.MagicMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
+        foo = 'foo'
+        bar = 'bar'
         s.poll = mock.MagicMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
@@ -453,8 +449,8 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = False
         s.queue.join = mock.MagicMock(return_value=None)
-        foo = six.text_type('foo')
-        bar = six.text_type('bar')
+        foo = 'foo'
+        bar = 'bar'
         s.poll = mock.MagicMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],

@@ -29,9 +29,7 @@ setup(
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    install_requires=[
-        'six>=1.9.0',
-    ],
+    install_requires=[],
     extras_require={
         'client': [
             'requests>=2.21.0',

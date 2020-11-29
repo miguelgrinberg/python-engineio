@@ -1,18 +1,10 @@
 import sys
 import unittest
+from unittest import mock
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
-
-if sys.version_info >= (3, 5):
-    from engineio.async_drivers import aiohttp as async_aiohttp
+from engineio.async_drivers import aiohttp as async_aiohttp
 
 
-@unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
 class AiohttpTests(unittest.TestCase):
     def test_create_route(self):
         app = mock.MagicMock()

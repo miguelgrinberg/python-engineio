@@ -1,23 +1,14 @@
-try:
-    import asyncio
-except ImportError:
-    pass
+import asyncio
 import sys
 import unittest
-
-import six
+from unittest import mock
 
 try:
     import tornado.web
 except ImportError:
     pass
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
 
-if sys.version_info >= (3, 5):
-    from engineio.async_drivers import tornado as async_tornado
+from engineio.async_drivers import tornado as async_tornado
 
 
 def _run(coro):

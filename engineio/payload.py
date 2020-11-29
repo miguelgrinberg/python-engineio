@@ -1,6 +1,6 @@
-from . import packet
+import urllib
 
-from six.moves import urllib
+from . import packet
 
 
 class Payload(object):

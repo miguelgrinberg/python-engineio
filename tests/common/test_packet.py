@@ -1,7 +1,6 @@
 import unittest
 
 import pytest
-import six
 
 from engineio import packet
 
@@ -19,7 +18,7 @@ class TestPacket(unittest.TestCase):
         assert pkt.encode() == '6'
 
     def test_encode_text_packet(self):
-        data = six.text_type('text')
+        data = 'text'
         pkt = packet.Packet(packet.MESSAGE, data=data)
         assert pkt.packet_type == packet.MESSAGE
         assert pkt.data == data

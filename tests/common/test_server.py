@@ -1,25 +1,20 @@
 import gzip
 import importlib
+import io
 import json
 import logging
 import sys
 import time
 import unittest
+from unittest import mock
 import zlib
 
-import six
-
-if six.PY3:
-    from unittest import mock
-else:
-    import mock
+import pytest
 
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
 from engineio import server
-import pytest
-
 
 original_import_module = importlib.import_module
 
@@ -89,7 +84,7 @@ class TestServer(unittest.TestCase):
             'async_handlers': False,
         }
         s = server.Server(**kwargs)
-        for arg in six.iterkeys(kwargs):
+        for arg in kwargs.keys():
             assert getattr(s, arg) == kwargs[arg]
         assert s.ping_interval_grace_period == 0
 
@@ -372,7 +367,7 @@ class TestServer(unittest.TestCase):
             mock_sockets[sid] = self._get_mock_socket()
             s.sockets[sid] = mock_sockets[sid]
         s.disconnect()
-        for socket in six.itervalues(mock_sockets):
+        for socket in mock_sockets.values():
             assert socket.close.call_count == 1
         assert s.sockets == {}
 
@@ -890,7 +885,7 @@ class TestServer(unittest.TestCase):
 
     @staticmethod
     def _gzip_decompress(b):
-        bytesio = six.BytesIO(b)
+        bytesio = io.BytesIO(b)
         with gzip.GzipFile(fileobj=bytesio, mode='r') as gz:
             return gz.read()
 

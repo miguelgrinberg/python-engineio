@@ -7,7 +7,6 @@ try:  # pragma: no cover
 except ImportError:
     HTTPResponse = None
     WebSocketProtocol = None
-import six
 
 
 def create_route(app, engineio_server, engineio_endpoint):  # pragma: no cover
@@ -129,8 +128,8 @@ class WebSocket(object):  # pragma: no cover
 
     async def wait(self):
         data = await self._sock.recv()
-        if not isinstance(data, six.binary_type) and \
-                not isinstance(data, six.text_type):
+        if not isinstance(data, bytes) and \
+                not isinstance(data, str):
             raise IOError()
         return data
 

@@ -1,12 +1,10 @@
 import base64
 import json as _json
 
-import six
-
 (OPEN, CLOSE, PING, PONG, MESSAGE, UPGRADE, NOOP) = (0, 1, 2, 3, 4, 5, 6)
 packet_names = ['OPEN', 'CLOSE', 'PING', 'PONG', 'MESSAGE', 'UPGRADE', 'NOOP']
 
-binary_types = (six.binary_type, bytearray)
+binary_types = (bytes, bytearray)
 
 
 class Packet(object):
@@ -17,7 +15,7 @@ class Packet(object):
     def __init__(self, packet_type=NOOP, data=None, encoded_packet=None):
         self.packet_type = packet_type
         self.data = data
-        if isinstance(data, six.text_type):
+        if isinstance(data, str):
             self.binary = False
         elif isinstance(data, binary_types):
             self.binary = True
@@ -37,8 +35,8 @@ class Packet(object):
             else:
                 encoded_packet = self.data
         else:
-            encoded_packet = six.text_type(self.packet_type)
-            if isinstance(self.data, six.string_types):
+            encoded_packet = str(self.packet_type)
+            if isinstance(self.data, str):
                 encoded_packet += self.data
             elif isinstance(self.data, dict) or isinstance(self.data, list):
                 encoded_packet += self.json.dumps(self.data,
