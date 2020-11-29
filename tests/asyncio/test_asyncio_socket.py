@@ -58,11 +58,15 @@ class TestSocket(unittest.TestCase):
         mock_server._async['make_response'].return_value = 'response'
         mock_server._trigger_event = AsyncMock()
 
+        def bg_task(target, *args, **kwargs):
+            return asyncio.ensure_future(target(*args, **kwargs))
+
         def create_queue(*args, **kwargs):
             queue = asyncio.Queue(*args, **kwargs)
             queue.Empty = asyncio.QueueEmpty
             return queue
 
+        mock_server.start_background_task = bg_task
         mock_server.create_queue = create_queue
         return mock_server
 
@@ -108,13 +112,41 @@ class TestSocket(unittest.TestCase):
         assert _run(s.poll()) == [pkt]
         assert _run(s.poll()) == []
 
-    def test_ping_pong(self):
+    def test_schedule_ping(self):
+        mock_server = self._get_mock_server()
+        mock_server.ping_interval = 0.01
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s.send = AsyncMock()
+
+        async def schedule_ping():
+            s.schedule_ping()
+            await asyncio.sleep(0.05)
+    
+        _run(schedule_ping())
+        assert s.last_ping is not None
+        assert s.send.mock.call_args_list[0][0][0].encode() == '2'
+
+    def test_schedule_ping_closed_socket(self):
+        mock_server = self._get_mock_server()
+        mock_server.ping_interval = 0.01
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s.send = AsyncMock()
+        s.closed = True
+
+        async def schedule_ping():
+            s.schedule_ping()
+            await asyncio.sleep(0.05)
+    
+        _run(schedule_ping())
+        assert s.last_ping is None
+        s.send.mock.assert_not_called()
+
+    def test_pong(self):
         mock_server = self._get_mock_server()
         s = asyncio_socket.AsyncSocket(mock_server, 'sid')
-        _run(s.receive(packet.Packet(packet.PING, data='abc')))
-        r = _run(s.poll())
-        assert len(r) == 1
-        assert r[0].encode(), b'3abc'
+        s.schedule_ping = mock.MagicMock()
+        _run(s.receive(packet.Packet(packet.PONG, data='abc')))
+        s.schedule_ping.assert_called_once_with()
 
     def test_message_sync_handler(self):
         mock_server = self._get_mock_server()
@@ -172,7 +204,7 @@ class TestSocket(unittest.TestCase):
         mock_server.max_http_buffer_size = 1000
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
-        p = payload.Payload(packets=[pkt1, pkt2]).encode()
+        p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         s = asyncio_socket.AsyncSocket(mock_server, 'foo')
         s.receive = AsyncMock()
         environ = {
@@ -188,7 +220,7 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
-        p = payload.Payload(packets=[pkt1, pkt2]).encode()
+        p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         mock_server.max_http_buffer_size = len(p) - 1
         s = asyncio_socket.AsyncSocket(mock_server, 'foo')
         s.receive = AsyncMock()
@@ -253,9 +285,7 @@ class TestSocket(unittest.TestCase):
         s.connected = True
         ws = mock.MagicMock()
         ws.wait = AsyncMock()
-        ws.wait.mock.return_value = packet.Packet(packet.NOOP).encode(
-            always_bytes=False
-        )
+        ws.wait.mock.return_value = packet.Packet(packet.NOOP).encode()
         _run(s._websocket_handler(ws))
         assert not s.upgraded
 
@@ -269,12 +299,12 @@ class TestSocket(unittest.TestCase):
         ws.wait = AsyncMock()
         probe = six.text_type('probe')
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.NOOP).encode(always_bytes=False),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.NOOP).encode(),
         ]
         _run(s._websocket_handler(ws))
         ws.send.mock.assert_called_once_with(
-            packet.Packet(packet.PONG, data=probe).encode(always_bytes=False)
+            packet.Packet(packet.PONG, data=probe).encode()
         )
         assert _run(s.queue.get()).packet_type == packet.NOOP
         assert not s.upgraded
@@ -310,7 +340,7 @@ class TestSocket(unittest.TestCase):
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
         _run(s._websocket_handler(ws))
@@ -343,9 +373,9 @@ class TestSocket(unittest.TestCase):
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.UPGRADE).encode(always_bytes=False),
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE).encode(),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
         _run(s._websocket_handler(ws))
@@ -369,10 +399,8 @@ class TestSocket(unittest.TestCase):
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.UPGRADE, data=b'2').encode(
-                always_bytes=False
-            ),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
         _run(s._websocket_handler(ws))
         assert s.upgraded
@@ -388,27 +416,25 @@ class TestSocket(unittest.TestCase):
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.UPGRADE, data=b'2').encode(
-                always_bytes=False
-            ),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
         s.upgrading = True
         _run(s.send(packet.Packet(packet.MESSAGE, data=foo)))
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=sid'}
         packets = _run(s.handle_get_request(environ))
         assert len(packets) == 1
-        assert packets[0].encode() == b'6'
+        assert packets[0].encode() == '6'
         packets = _run(s.poll())
         assert len(packets) == 1
-        assert packets[0].encode() == b'4foo'
+        assert packets[0].encode() == '4foo'
 
         _run(s._websocket_handler(ws))
         assert s.upgraded
         assert not s.upgrading
         packets = _run(s.handle_get_request(environ))
         assert len(packets) == 1
-        assert packets[0].encode() == b'6'
+        assert packets[0].encode() == '6'
 
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()
@@ -428,7 +454,7 @@ class TestSocket(unittest.TestCase):
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             RuntimeError,
         ]
         ws.send.mock.side_effect = [None, RuntimeError]
@@ -452,8 +478,8 @@ class TestSocket(unittest.TestCase):
         ws.send = AsyncMock()
         ws.wait = AsyncMock()
         ws.wait.mock.side_effect = [
-            packet.Packet(packet.OPEN).encode(always_bytes=False),
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.OPEN).encode(),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
         _run(s._websocket_handler(ws))

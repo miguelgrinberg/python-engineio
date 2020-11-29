@@ -125,7 +125,7 @@ class AsyncSocket(socket.Socket):
     def schedule_ping(self):
         async def send_ping():
             self.last_ping = None
-            await self.server.sleep(self.server.ping_interval)
+            await asyncio.sleep(self.server.ping_interval)
             if not self.closing and not self.closed:
                 self.last_ping = time.time()
                 await self.send(packet.Packet(packet.PING))
