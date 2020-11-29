@@ -1333,6 +1333,8 @@ class TestClient(unittest.TestCase):
 
     def test_read_loop_websocket(self):
         c = client.Client()
+        c.ping_interval = 1
+        c.ping_timeout = 2
         c.state = 'connected'
         c.queue = mock.MagicMock()
         c.ws = mock.MagicMock()
