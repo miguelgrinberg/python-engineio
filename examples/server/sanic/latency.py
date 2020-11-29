@@ -16,7 +16,7 @@ async def index(request):
 
 @eio.on('message')
 async def message(sid, data):
-    await eio.send(sid, 'pong', binary=False)
+    await eio.send(sid, 'pong')
 
 
 app.static('/static', './static')

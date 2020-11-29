@@ -19,7 +19,7 @@ class MainHandler(tornado.web.RequestHandler):
 
 @eio.on('message')
 async def message(sid, data):
-    await eio.send(sid, 'pong', binary=False)
+    await eio.send(sid, 'pong')
 
 
 def main():

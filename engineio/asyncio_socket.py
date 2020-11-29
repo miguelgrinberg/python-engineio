@@ -13,8 +13,9 @@ class AsyncSocket(socket.Socket):
     async def poll(self):
         """Wait for packets to send to the client."""
         try:
-            packets = [await asyncio.wait_for(self.queue.get(),
-                                              self.server.ping_timeout)]
+            packets = [await asyncio.wait_for(
+                self.queue.get(),
+                self.server.ping_interval + self.server.ping_timeout)]
             self.queue.task_done()
         except (asyncio.TimeoutError, asyncio.CancelledError):
             raise exceptions.QueueEmpty()
@@ -38,9 +39,8 @@ class AsyncSocket(socket.Socket):
                                 self.sid, packet.packet_names[pkt.packet_type],
                                 pkt.data if not isinstance(pkt.data, bytes)
                                 else '<binary>')
-        if pkt.packet_type == packet.PING:
-            self.last_ping = time.time()
-            await self.send(packet.Packet(packet.PONG, pkt.data))
+        if pkt.packet_type == packet.PONG:
+            self.schedule_ping()
         elif pkt.packet_type == packet.MESSAGE:
             await self.server._trigger_event(
                 'message', self.sid, pkt.data,
@@ -53,14 +53,11 @@ class AsyncSocket(socket.Socket):
             raise exceptions.UnknownPacketError()
 
     async def check_ping_timeout(self):
-        """Make sure the client is still sending pings.
-
-        This helps detect disconnections for long-polling clients.
-        """
+        """Make sure the client is still sending pings."""
         if self.closed:
             raise exceptions.SocketIsClosedError()
-        if time.time() - self.last_ping > self.server.ping_interval + \
-                self.server.ping_interval_grace_period:
+        if self.last_ping and \
+                time.time() - self.last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             # Passing abort=False here will cause close() to write a
@@ -109,7 +106,7 @@ class AsyncSocket(socket.Socket):
         if length > self.server.max_http_buffer_size:
             raise exceptions.ContentTooLongError()
         else:
-            body = await environ['wsgi.input'].read(length)
+            body = (await environ['wsgi.input'].read(length)).decode('utf-8')
             p = payload.Payload(encoded_payload=body)
             for pkt in p.packets:
                 await self.receive(pkt)
@@ -124,6 +121,16 @@ class AsyncSocket(socket.Socket):
             self.closed = True
             if wait:
                 await self.queue.join()
+
+    def schedule_ping(self):
+        async def send_ping():
+            self.last_ping = None
+            await self.server.sleep(self.server.ping_interval)
+            if not self.closing and not self.closed:
+                self.last_ping = time.time()
+                await self.send(packet.Packet(packet.PING))
+
+        self.server.start_background_task(send_ping)
 
     async def _upgrade_websocket(self, environ):
         """Upgrade the connection from polling to websocket."""
@@ -154,7 +161,7 @@ class AsyncSocket(socket.Socket):
                 return
             await ws.send(packet.Packet(
                 packet.PONG,
-                data=six.text_type('probe')).encode(always_bytes=False))
+                data=six.text_type('probe')).encode())
             await self.queue.put(packet.Packet(packet.NOOP))  # end poll
 
             try:
@@ -190,7 +197,7 @@ class AsyncSocket(socket.Socket):
                     break
                 try:
                     for pkt in packets:
-                        await ws.send(pkt.encode(always_bytes=False))
+                        await ws.send(pkt.encode())
                 except:
                     break
         writer_task = asyncio.ensure_future(writer())
@@ -202,7 +209,9 @@ class AsyncSocket(socket.Socket):
             p = None
             wait_task = asyncio.ensure_future(ws.wait())
             try:
-                p = await asyncio.wait_for(wait_task, self.server.ping_timeout)
+                p = await asyncio.wait_for(
+                    wait_task,
+                    self.server.ping_interval + self.server.ping_timeout)
             except asyncio.CancelledError:  # pragma: no cover
                 # there is a bug (https://bugs.python.org/issue30508) in
                 # asyncio that causes a "Task exception never retrieved" error
@@ -221,8 +230,6 @@ class AsyncSocket(socket.Socket):
             if p is None:
                 # connection closed by client
                 break
-            if isinstance(p, six.text_type):  # pragma: no cover
-                p = p.encode('utf-8')
             pkt = packet.Packet(encoded_packet=p)
             try:
                 await self.receive(pkt)

@@ -11,7 +11,7 @@ app = engineio.ASGIApp(eio, static_files={
 
 @eio.on('message')
 async def message(sid, data):
-    await eio.send(sid, 'pong', binary=False)
+    await eio.send(sid, 'pong')
 
 
 if __name__ == '__main__':

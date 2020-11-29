@@ -79,17 +79,13 @@ class AsyncServer(server.Server):
         engineio_path = engineio_path.strip('/')
         self._async['create_route'](app, self, '/{}/'.format(engineio_path))
 
-    async def send(self, sid, data, binary=None):
+    async def send(self, sid, data):
         """Send a message to a client.
 
         :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
 
         Note: this method is a coroutine.
         """
@@ -99,8 +95,7 @@ class AsyncServer(server.Server):
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        await socket.send(packet.Packet(packet.MESSAGE, data=data,
-                                        binary=binary))
+        await socket.send(packet.Packet(packet.MESSAGE, data=data))
 
     async def get_session(self, sid):
         """Return the user session for a client.
@@ -217,7 +212,6 @@ class AsyncServer(server.Server):
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
 
         sid = query['sid'][0] if 'sid' in query else None
-        b64 = False
         jsonp = False
         jsonp_index = None
 
@@ -233,9 +227,6 @@ class AsyncServer(server.Server):
                 'or Engine.IO protocols'
             ), environ)
 
-        if 'b64' in query:
-            if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
-                b64 = True
         if 'j' in query:
             jsonp = True
             try:
@@ -258,7 +249,7 @@ class AsyncServer(server.Server):
                 if transport == 'polling' \
                         or transport == upgrade_header == 'websocket':
                     r = await self._handle_connect(environ, transport,
-                                                   b64, jsonp_index)
+                                                   jsonp_index)
                 else:
                     self._log_error_once('Invalid transport ' + transport,
                                          'bad-transport')
@@ -272,8 +263,7 @@ class AsyncServer(server.Server):
                     try:
                         packets = await socket.handle_get_request(environ)
                         if isinstance(packets, list):
-                            r = self._ok(packets, b64=b64,
-                                         jsonp_index=jsonp_index)
+                            r = self._ok(packets, jsonp_index=jsonp_index)
                         else:
                             r = packets
                     except exceptions.EngineIOError:
@@ -383,16 +373,15 @@ class AsyncServer(server.Server):
             response = await make_response(
                 response_dict['status'],
                 response_dict['headers'] + cors_headers,
-                response_dict['response'], environ)
+                response_dict['response'].encode('utf-8'), environ)
         else:
             response = make_response(
                 response_dict['status'],
                 response_dict['headers'] + cors_headers,
-                response_dict['response'], environ)
+                response_dict['response'].encode('utf-8'), environ)
         return response
 
-    async def _handle_connect(self, environ, transport, b64=False,
-                              jsonp_index=None):
+    async def _handle_connect(self, environ, transport, jsonp_index=None):
         """Handle a client connection request."""
         if self.start_service_task:
             # start the service task to monitor connected clients
@@ -409,6 +398,7 @@ class AsyncServer(server.Server):
                           'pingTimeout': int(self.ping_timeout * 1000),
                           'pingInterval': int(self.ping_interval * 1000)})
         await s.send(pkt)
+        s.schedule_ping()
 
         ret = await self._trigger_event('connect', sid, environ,
                                         run_async=False)
@@ -440,7 +430,7 @@ class AsyncServer(server.Server):
                         })
                     )]
             try:
-                return self._ok(await s.poll(), headers=headers, b64=b64,
+                return self._ok(await s.poll(), headers=headers,
                                 jsonp_index=jsonp_index)
             except exceptions.QueueEmpty:
                 return self._bad_request()

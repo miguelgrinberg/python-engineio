@@ -202,17 +202,13 @@ class Server(object):
             return set_handler
         set_handler(handler)
 
-    def send(self, sid, data, binary=None):
+    def send(self, sid, data):
         """Send a message to a client.
 
         :param sid: The session id of the recipient client.
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
         """
         try:
             socket = self._get_socket(sid)
@@ -220,7 +216,7 @@ class Server(object):
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        socket.send(packet.Packet(packet.MESSAGE, data=data, binary=binary))
+        socket.send(packet.Packet(packet.MESSAGE, data=data))
 
     def get_session(self, sid):
         """Return the user session for a client.
@@ -344,7 +340,6 @@ class Server(object):
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
-        b64 = False
         jsonp = False
         jsonp_index = None
 
@@ -360,9 +355,6 @@ class Server(object):
             start_response(r['status'], r['headers'])
             return [r['response']]
 
-        if 'b64' in query:
-            if query['b64'][0] == "1" or query['b64'][0].lower() == "true":
-                b64 = True
         if 'j' in query:
             jsonp = True
             try:
@@ -385,7 +377,7 @@ class Server(object):
                 if transport == 'polling' \
                         or transport == upgrade_header == 'websocket':
                     r = self._handle_connect(environ, start_response,
-                                             transport, b64, jsonp_index)
+                                             transport, jsonp_index)
                 else:
                     self._log_error_once('Invalid transport ' + transport,
                                          'bad-transport')
@@ -400,8 +392,7 @@ class Server(object):
                         packets = socket.handle_get_request(
                             environ, start_response)
                         if isinstance(packets, list):
-                            r = self._ok(packets, b64=b64,
-                                         jsonp_index=jsonp_index)
+                            r = self._ok(packets, jsonp_index=jsonp_index)
                         else:
                             r = packets
                     except exceptions.EngineIOError:
@@ -524,7 +515,7 @@ class Server(object):
                 cookie += '; ' + attribute + '=' + value
         return cookie
 
-    def _handle_connect(self, environ, start_response, transport, b64=False,
+    def _handle_connect(self, environ, start_response, transport,
                         jsonp_index=None):
         """Handle a client connection request."""
         if self.start_service_task:
@@ -543,6 +534,7 @@ class Server(object):
             'pingInterval': int((self.ping_interval +
                                  self.ping_interval_grace_period) * 1000)})
         s.send(pkt)
+        s.schedule_ping()
 
         ret = self._trigger_event('connect', sid, environ, run_async=False)
         if ret is not None and ret is not True:
@@ -573,7 +565,7 @@ class Server(object):
                         })
                     )]
             try:
-                return self._ok(s.poll(), headers=headers, b64=b64,
+                return self._ok(s.poll(), headers=headers,
                                 jsonp_index=jsonp_index)
             except exceptions.QueueEmpty:
                 return self._bad_request()
@@ -612,23 +604,20 @@ class Server(object):
             raise KeyError('Session is disconnected')
         return s
 
-    def _ok(self, packets=None, headers=None, b64=False, jsonp_index=None):
+    def _ok(self, packets=None, headers=None, jsonp_index=None):
         """Generate a successful HTTP response."""
         if packets is not None:
             if headers is None:
                 headers = []
-            if b64:
-                headers += [('Content-Type', 'text/plain; charset=UTF-8')]
-            else:
-                headers += [('Content-Type', 'application/octet-stream')]
+            headers += [('Content-Type', 'text/plain; charset=UTF-8')]
             return {'status': '200 OK',
                     'headers': headers,
                     'response': payload.Payload(packets=packets).encode(
-                        b64=b64, jsonp_index=jsonp_index)}
+                        jsonp_index=jsonp_index)}
         else:
             return {'status': '200 OK',
                     'headers': [('Content-Type', 'text/plain')],
-                    'response': b'OK'}
+                    'response': 'OK'}
 
     def _bad_request(self, message=None):
         """Generate a bad request HTTP error response."""
@@ -643,7 +632,7 @@ class Server(object):
         """Generate a method not found HTTP error response."""
         return {'status': '405 METHOD NOT FOUND',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': b'Method Not Found'}
+                'response': 'Method Not Found'}
 
     def _unauthorized(self, message=None):
         """Generate a unauthorized HTTP error response."""

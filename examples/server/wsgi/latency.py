@@ -18,7 +18,7 @@ def index():
 
 @eio.on('message')
 def message(sid, data):
-    eio.send(sid, 'pong', binary=False)
+    eio.send(sid, 'pong')
 
 
 if __name__ == '__main__':
