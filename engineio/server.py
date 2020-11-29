@@ -351,7 +351,7 @@ class Server(object):
 
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
-        if sid is None and query.get('EIO') not in [['2'], ['3']]:
+        if sid is None and query.get('EIO') != ['4']:
             self._log_error_once(
                 'The client is using an unsupported version of the Socket.IO '
                 'or Engine.IO protocols', 'bad-version')

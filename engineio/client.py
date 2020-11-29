@@ -565,7 +565,7 @@ class Client(object):
             scheme += 's'
 
         return ('{scheme}://{netloc}/{path}/?{query}'
-                '{sep}transport={transport}&EIO=3').format(
+                '{sep}transport={transport}&EIO=4').format(
                     scheme=scheme, netloc=parsed_url.netloc,
                     path=engineio_path, query=parsed_url.query,
                     sep='&' if parsed_url.query else '',

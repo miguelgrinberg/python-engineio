@@ -413,14 +413,14 @@ class TestServer(unittest.TestCase):
 
     def test_jsonp_with_bad_index(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&j=abc'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&j=abc'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
 
     def test_jsonp_index(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&j=233'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&j=233'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
@@ -429,7 +429,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         assert len(s.sockets) == 1
@@ -449,7 +449,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_no_upgrades(self):
         s = server.Server(allow_upgrades=False)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         packets = payload.Payload(encoded_payload=r[0]).packets
@@ -457,7 +457,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_bad_eio_version(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=5'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=1'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         assert start_response.call_args[0][0], '400 BAD REQUEST'
@@ -466,7 +466,7 @@ class TestServer(unittest.TestCase):
     def test_connect_b64_with_1(self):
         s = server.Server(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&b64=1'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=1'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0], '200 OK'
@@ -476,14 +476,14 @@ class TestServer(unittest.TestCase):
         ) in start_response.call_args[0][1]
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=3&sid=1&b64=1'}
+                   'QUERY_STRING': 'EIO=4&sid=1&b64=1'}
         r = s.handle_request(environ, start_response)
         assert r[0] == b'6:b4AAEC'
 
     def test_connect_b64_with_true(self):
         s = server.Server(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&b64=true'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=true'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0], '200 OK'
@@ -493,14 +493,14 @@ class TestServer(unittest.TestCase):
         ) in start_response.call_args[0][1]
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=3&sid=1&b64=true'}
+                   'QUERY_STRING': 'EIO=4&sid=1&b64=true'}
         r = s.handle_request(environ, start_response)
         assert r[0] == b'6:b4AAEC'
 
     def test_connect_b64_with_0(self):
         s = server.Server(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&b64=0'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=0'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0], '200 OK'
@@ -510,14 +510,14 @@ class TestServer(unittest.TestCase):
         ) in start_response.call_args[0][1]
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=3&sid=1&b64=0'}
+                   'QUERY_STRING': 'EIO=4&sid=1&b64=0'}
         r = s.handle_request(environ, start_response)
         assert r[0] == b'\x01\x04\xff\x04\x00\x01\x02'
 
     def test_connect_b64_with_false(self):
         s = server.Server(allow_upgrades=False)
         s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&b64=false'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=false'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0], '200 OK'
@@ -527,13 +527,13 @@ class TestServer(unittest.TestCase):
         ) in start_response.call_args[0][1]
         s.send('1', b'\x00\x01\x02', binary=True)
         environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=3&sid=1&b64=false'}
+                   'QUERY_STRING': 'EIO=4&sid=1&b64=false'}
         r = s.handle_request(environ, start_response)
         assert r[0] == b'\x01\x04\xff\x04\x00\x01\x02'
 
     def test_connect_custom_ping_times(self):
         s = server.Server(ping_timeout=123, ping_interval=456)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         packets = payload.Payload(encoded_payload=r[0]).packets
@@ -545,7 +545,7 @@ class TestServer(unittest.TestCase):
     )
     def test_connect_bad_poll(self, poll):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
@@ -559,7 +559,7 @@ class TestServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&transport=websocket',
+            'QUERY_STRING': 'EIO=4&transport=websocket',
             'HTTP_UPGRADE': 'websocket',
         }
         start_response = mock.MagicMock()
@@ -595,7 +595,7 @@ class TestServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&transport=websocket',
+            'QUERY_STRING': 'EIO=4&transport=websocket',
             'HTTP_UPGRADE': 'websocket',
         }
         start_response = mock.MagicMock()
@@ -610,7 +610,7 @@ class TestServer(unittest.TestCase):
     def test_connect_transport_invalid(self):
         s = server.Server()
         environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=3&transport=foo'}
+                   'QUERY_STRING': 'EIO=4&transport=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
@@ -619,7 +619,7 @@ class TestServer(unittest.TestCase):
         s = server.Server()
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&transport=websocket',
+            'QUERY_STRING': 'EIO=4&transport=websocket',
         }
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
@@ -627,7 +627,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_headers(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
@@ -638,7 +638,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(cors_allowed_origins=['a', 'b'])
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ORIGIN': 'b',
         }
         start_response = mock.MagicMock()
@@ -651,7 +651,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(cors_allowed_origins=['a', 'b'])
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ORIGIN': 'c',
         }
         start_response = mock.MagicMock()
@@ -665,7 +665,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(cors_allowed_origins='*')
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ORIGIN': 'foo',
         }
         start_response = mock.MagicMock()
@@ -679,7 +679,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(cors_allowed_origins='a')
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ORIGIN': 'a',
         }
         start_response = mock.MagicMock()
@@ -693,7 +693,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(cors_allowed_origins='a')
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ORIGIN': 'b',
         }
         start_response = mock.MagicMock()
@@ -707,7 +707,7 @@ class TestServer(unittest.TestCase):
         s = server.Server()
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'wsgi.url_scheme': 'http',
             'HTTP_HOST': 'foo',
             'HTTP_ORIGIN': 'http://foo',
@@ -722,7 +722,7 @@ class TestServer(unittest.TestCase):
         s = server.Server()
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'wsgi.url_scheme': 'http',
             'HTTP_HOST': 'foo',
             'HTTP_ORIGIN': 'https://bar',
@@ -737,7 +737,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_no_credentials(self):
         s = server.Server(cors_credentials=False)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
@@ -746,7 +746,7 @@ class TestServer(unittest.TestCase):
 
     def test_cors_options(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'OPTIONS', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'OPTIONS', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
@@ -760,7 +760,7 @@ class TestServer(unittest.TestCase):
         s = server.Server()
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ACCESS_CONTROL_REQUEST_HEADERS': 'Foo, Bar',
         }
         start_response = mock.MagicMock()
@@ -773,7 +773,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(cors_allowed_origins=[])
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3',
+            'QUERY_STRING': 'EIO=4',
             'HTTP_ORIGIN': 'http://foo',
         }
         start_response = mock.MagicMock()
@@ -785,7 +785,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_default_no_origin(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
@@ -794,7 +794,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_all_no_origin(self):
         s = server.Server(cors_allowed_origins='*')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
@@ -803,7 +803,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_cors_disabled_no_origin(self):
         s = server.Server(cors_allowed_origins=[])
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         headers = start_response.call_args[0][1]
@@ -815,7 +815,7 @@ class TestServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         mock_event = mock.MagicMock(return_value=None)
         s.on('connect')(mock_event)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         mock_event.assert_called_once_with('123', environ)
@@ -826,7 +826,7 @@ class TestServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         mock_event = mock.MagicMock(return_value=False)
         s.on('connect')(mock_event)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         ret = s.handle_request(environ, start_response)
         assert len(s.sockets) == 0
@@ -838,7 +838,7 @@ class TestServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         mock_event = mock.MagicMock(return_value='not allowed')
         s.on('connect')(mock_event)
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         ret = s.handle_request(environ, start_response)
         assert len(s.sockets) == 0
@@ -847,21 +847,21 @@ class TestServer(unittest.TestCase):
 
     def test_method_not_found(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'PUT', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'PUT', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '405 METHOD NOT FOUND'
 
     def test_get_request_with_bad_sid(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
 
     def test_post_request_with_bad_sid(self):
         s = server.Server()
-        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
@@ -887,7 +887,7 @@ class TestServer(unittest.TestCase):
             return_value=[packet.Packet(packet.MESSAGE, data='hello')]
         )
         s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
@@ -901,7 +901,7 @@ class TestServer(unittest.TestCase):
         mock_socket = self._get_mock_socket()
         mock_socket.handle_get_request = mock.MagicMock(side_effect=['resp'])
         s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         assert s.handle_request(environ, start_response) == 'resp'
 
@@ -915,7 +915,7 @@ class TestServer(unittest.TestCase):
 
         mock_socket.handle_get_request = mock_get_request
         s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         assert s.handle_request(environ, start_response) == 'resp'
         assert 'foo' not in s.sockets
@@ -927,7 +927,7 @@ class TestServer(unittest.TestCase):
             side_effect=[exceptions.QueueEmpty]
         )
         s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
@@ -938,7 +938,7 @@ class TestServer(unittest.TestCase):
         mock_socket = self._get_mock_socket()
         mock_socket.handle_post_request = mock.MagicMock()
         s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
@@ -950,7 +950,7 @@ class TestServer(unittest.TestCase):
             side_effect=[exceptions.EngineIOError]
         )
         s.sockets['foo'] = mock_socket
-        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=3&sid=foo'}
+        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=4&sid=foo'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
@@ -971,7 +971,7 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'] = mock_socket
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&sid=foo',
+            'QUERY_STRING': 'EIO=4&sid=foo',
             'HTTP_ACCEPT_ENCODING': 'gzip,deflate',
         }
         start_response = mock.MagicMock()
@@ -988,7 +988,7 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'] = mock_socket
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&sid=foo',
+            'QUERY_STRING': 'EIO=4&sid=foo',
             'HTTP_ACCEPT_ENCODING': 'deflate;q=1,gzip',
         }
         start_response = mock.MagicMock()
@@ -1007,7 +1007,7 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'] = mock_socket
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&sid=foo',
+            'QUERY_STRING': 'EIO=4&sid=foo',
             'HTTP_ACCEPT_ENCODING': 'gzip',
         }
         start_response = mock.MagicMock()
@@ -1026,7 +1026,7 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'] = mock_socket
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&sid=foo',
+            'QUERY_STRING': 'EIO=4&sid=foo',
             'HTTP_ACCEPT_ENCODING': 'gzip',
         }
         start_response = mock.MagicMock()
@@ -1045,7 +1045,7 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'] = mock_socket
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&sid=foo',
+            'QUERY_STRING': 'EIO=4&sid=foo',
             'HTTP_ACCEPT_ENCODING': 'rar',
         }
         start_response = mock.MagicMock()
@@ -1064,7 +1064,7 @@ class TestServer(unittest.TestCase):
         s.sockets['foo'] = mock_socket
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&sid=foo',
+            'QUERY_STRING': 'EIO=4&sid=foo',
             'HTTP_ACCEPT_ENCODING': '',
         }
         start_response = mock.MagicMock()
@@ -1077,7 +1077,7 @@ class TestServer(unittest.TestCase):
     def test_cookie(self):
         s = server.Server(cookie='sid')
         s._generate_id = mock.MagicMock(return_value='123')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert ('Set-Cookie', 'sid=123; path=/; SameSite=Lax') \
@@ -1095,7 +1095,7 @@ class TestServer(unittest.TestCase):
             'HttpOnly': True
         })
         s._generate_id = mock.MagicMock(return_value='123')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         assert ('Set-Cookie', 'test=123; path=/a; SameSite=None; Secure; '
@@ -1104,7 +1104,7 @@ class TestServer(unittest.TestCase):
     def test_no_cookie(self):
         s = server.Server(cookie=None)
         s._generate_id = mock.MagicMock(return_value='123')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         for header, value in start_response.call_args[0][1]:
@@ -1190,7 +1190,7 @@ class TestServer(unittest.TestCase):
     def test_service_task_started(self):
         s = server.Server(monitor_clients=True)
         s._service_task = mock.MagicMock()
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=3'}
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         s._service_task.assert_called_once_with()

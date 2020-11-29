@@ -306,7 +306,7 @@ class TestClient(unittest.TestCase):
             c.connect('http://foo', headers={'Foo': 'Bar'})
         _send_request.assert_called_once_with(
             'GET',
-            'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
+            'http://foo/engine.io/?transport=polling&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
             timeout=5,
         )
@@ -402,7 +402,7 @@ class TestClient(unittest.TestCase):
         assert c in client.connected_clients
         assert (
             c.base_url
-            == 'http://foo/engine.io/?transport=polling&EIO=3&sid=123'
+            == 'http://foo/engine.io/?transport=polling&EIO=4&sid=123'
         )
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -444,7 +444,7 @@ class TestClient(unittest.TestCase):
         assert c in client.connected_clients
         assert (
             c.base_url
-            == 'https://foo/engine.io/?transport=polling&EIO=3&sid=123'
+            == 'https://foo/engine.io/?transport=polling&EIO=4&sid=123'
         )
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -514,7 +514,7 @@ class TestClient(unittest.TestCase):
         assert c in client.connected_clients
         assert (
             c.base_url
-            == 'http://foo/engine.io/?transport=polling&EIO=3&sid=123'
+            == 'http://foo/engine.io/?transport=polling&EIO=4&sid=123'
         )
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -570,7 +570,7 @@ class TestClient(unittest.TestCase):
                 'http://foo', transports=['websocket'], headers={'Foo': 'Bar'}
             )
         create_connection.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             header={'Foo': 'Bar'},
             cookie=None,
             enable_multithread=True,
@@ -590,7 +590,7 @@ class TestClient(unittest.TestCase):
                 'http://foo', transports=['websocket'], headers={'Foo': 'Bar'}
             )
         create_connection.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             header={'Foo': 'Bar'},
             cookie=None,
             enable_multithread=True,
@@ -606,7 +606,7 @@ class TestClient(unittest.TestCase):
         c.sid = '123'
         assert not c.connect('http://foo', transports=['websocket'])
         create_connection.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&sid=123&t=123.456',
             header={},
             cookie=None,
             enable_multithread=True,
@@ -648,7 +648,7 @@ class TestClient(unittest.TestCase):
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
         assert c in client.connected_clients
-        assert c.base_url == 'ws://foo/engine.io/?transport=websocket&EIO=3'
+        assert c.base_url == 'ws://foo/engine.io/?transport=websocket&EIO=4'
         assert c.sid == '123'
         assert c.ping_interval == 1
         assert c.ping_timeout == 2
@@ -691,7 +691,7 @@ class TestClient(unittest.TestCase):
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
         assert c in client.connected_clients
-        assert c.base_url == 'wss://foo/engine.io/?transport=websocket&EIO=3'
+        assert c.base_url == 'wss://foo/engine.io/?transport=websocket&EIO=4'
         assert c.sid == '123'
         assert c.ping_interval == 1
         assert c.ping_timeout == 2
@@ -1179,35 +1179,35 @@ class TestClient(unittest.TestCase):
         c = client.Client()
         assert (
             c._get_engineio_url('http://foo', 'bar', 'polling')
-            == 'http://foo/bar/?transport=polling&EIO=3'
+            == 'http://foo/bar/?transport=polling&EIO=4'
         )
         assert (
             c._get_engineio_url('http://foo', 'bar', 'websocket')
-            == 'ws://foo/bar/?transport=websocket&EIO=3'
+            == 'ws://foo/bar/?transport=websocket&EIO=4'
         )
         assert (
             c._get_engineio_url('ws://foo', 'bar', 'polling')
-            == 'http://foo/bar/?transport=polling&EIO=3'
+            == 'http://foo/bar/?transport=polling&EIO=4'
         )
         assert (
             c._get_engineio_url('ws://foo', 'bar', 'websocket')
-            == 'ws://foo/bar/?transport=websocket&EIO=3'
+            == 'ws://foo/bar/?transport=websocket&EIO=4'
         )
         assert (
             c._get_engineio_url('https://foo', 'bar', 'polling')
-            == 'https://foo/bar/?transport=polling&EIO=3'
+            == 'https://foo/bar/?transport=polling&EIO=4'
         )
         assert (
             c._get_engineio_url('https://foo', 'bar', 'websocket')
-            == 'wss://foo/bar/?transport=websocket&EIO=3'
+            == 'wss://foo/bar/?transport=websocket&EIO=4'
         )
         assert (
             c._get_engineio_url('http://foo?baz=1', 'bar', 'polling')
-            == 'http://foo/bar/?baz=1&transport=polling&EIO=3'
+            == 'http://foo/bar/?baz=1&transport=polling&EIO=4'
         )
         assert (
             c._get_engineio_url('http://foo#baz', 'bar', 'polling')
-            == 'http://foo/bar/?transport=polling&EIO=3'
+            == 'http://foo/bar/?transport=polling&EIO=4'
         )
 
     def test_ping_loop_disconnected(self):

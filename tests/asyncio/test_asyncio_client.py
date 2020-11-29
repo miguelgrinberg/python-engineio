@@ -270,7 +270,7 @@ class TestAsyncClient(unittest.TestCase):
             _run(c.connect('http://foo', headers={'Foo': 'Bar'}))
         c._send_request.mock.assert_called_once_with(
             'GET',
-            'http://foo/engine.io/?transport=polling&EIO=3&t=123.456',
+            'http://foo/engine.io/?transport=polling&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
             timeout=5,
         )
@@ -372,7 +372,7 @@ class TestAsyncClient(unittest.TestCase):
         assert c in client.connected_clients
         assert (
             c.base_url
-            == 'http://foo/engine.io/?transport=polling&EIO=3&sid=123'
+            == 'http://foo/engine.io/?transport=polling&EIO=4&sid=123'
         )
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -415,7 +415,7 @@ class TestAsyncClient(unittest.TestCase):
         assert c in client.connected_clients
         assert (
             c.base_url
-            == 'https://foo/engine.io/?transport=polling&EIO=3&sid=123'
+            == 'https://foo/engine.io/?transport=polling&EIO=4&sid=123'
         )
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -488,7 +488,7 @@ class TestAsyncClient(unittest.TestCase):
         assert c in client.connected_clients
         assert (
             c.base_url
-            == 'http://foo/engine.io/?transport=polling&EIO=3&sid=123'
+            == 'http://foo/engine.io/?transport=polling&EIO=4&sid=123'
         )
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -549,7 +549,7 @@ class TestAsyncClient(unittest.TestCase):
                 )
             )
         c.http.ws_connect.mock.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
         )
 
@@ -563,7 +563,7 @@ class TestAsyncClient(unittest.TestCase):
         c.sid = '123'
         assert not _run(c.connect('http://foo', transports=['websocket']))
         c.http.ws_connect.mock.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&sid=123&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&sid=123&t=123.456',
             headers={},
         )
 
@@ -609,7 +609,7 @@ class TestAsyncClient(unittest.TestCase):
         c._write_loop.mock.assert_called_once_with()
         on_connect.assert_called_once_with()
         assert c in client.connected_clients
-        assert c.base_url == 'ws://foo/engine.io/?transport=websocket&EIO=3'
+        assert c.base_url == 'ws://foo/engine.io/?transport=websocket&EIO=4'
         assert c.sid == '123'
         assert c.ping_interval == 1
         assert c.ping_timeout == 2
@@ -617,7 +617,7 @@ class TestAsyncClient(unittest.TestCase):
         assert c.transport() == 'websocket'
         assert c.ws == ws
         c.http.ws_connect.mock.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
         )
 
@@ -651,7 +651,7 @@ class TestAsyncClient(unittest.TestCase):
         c._write_loop.mock.assert_called_once_with()
         on_connect.assert_called_once_with()
         assert c in client.connected_clients
-        assert c.base_url == 'wss://foo/engine.io/?transport=websocket&EIO=3'
+        assert c.base_url == 'wss://foo/engine.io/?transport=websocket&EIO=4'
         assert c.sid == '123'
         assert c.ping_interval == 1
         assert c.ping_timeout == 2
@@ -692,7 +692,7 @@ class TestAsyncClient(unittest.TestCase):
         c.on('connect', on_connect)
         _run(c.connect('ws://foo', transports=['websocket']))
         c.http.ws_connect.mock.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
         )
 
@@ -727,7 +727,7 @@ class TestAsyncClient(unittest.TestCase):
             )
         )
         c.http.ws_connect.mock.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(
@@ -769,7 +769,7 @@ class TestAsyncClient(unittest.TestCase):
             )
         )
         c.http.ws_connect.mock.assert_called_once_with(
-            'ws://foo/engine.io/?transport=websocket&EIO=3&t=123.456',
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(

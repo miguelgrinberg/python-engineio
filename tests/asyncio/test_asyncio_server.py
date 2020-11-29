@@ -43,9 +43,9 @@ class TestAsyncServer(unittest.TestCase):
     def get_async_mock(environ={'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}):
         if environ.get('QUERY_STRING'):
             if 'EIO=' not in environ['QUERY_STRING']:
-                environ['QUERY_STRING'] = 'EIO=3&' + environ['QUERY_STRING']
+                environ['QUERY_STRING'] = 'EIO=4&' + environ['QUERY_STRING']
         else:
-            environ['QUERY_STRING'] = 'EIO=3'
+            environ['QUERY_STRING'] = 'EIO=4'
         a = mock.MagicMock()
         a._async = {
             'asyncio': True,
@@ -260,7 +260,7 @@ class TestAsyncServer(unittest.TestCase):
     @mock.patch('importlib.import_module')
     def test_connect_bad_eio_version(self, import_module):
         a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=5'}
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=1'}
         )
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
