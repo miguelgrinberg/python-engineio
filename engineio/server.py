@@ -48,14 +48,14 @@ class Server(object):
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value. The default is
                                   1024 bytes.
-    :param cookie: If set to a string, it is The name of the HTTP cookie the
+    :param cookie: If set to a string, it is the name of the HTTP cookie the
                    server sends back tot he client containing the client
                    session id. If set to a dictionary, the ``'name'`` key
                    contains the cookie name and other keys define cookie
                    attributes, where the value of each attribute can be a
                    string, a callable with no arguments, or a boolean. If set
-                   to ``None``, a cookie is not sent to the client. The
-                   default is ``'io'``.
+                   to ``None`` (the default), a cookie is not sent to the 
+                   client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
@@ -89,7 +89,7 @@ class Server(object):
     def __init__(self, async_mode=None, ping_timeout=60, ping_interval=25,
                  max_http_buffer_size=100000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
-                 cookie='io', cors_allowed_origins=None,
+                 cookie=None, cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,
                  async_handlers=True, monitor_clients=None, **kwargs):
         self.ping_timeout = ping_timeout

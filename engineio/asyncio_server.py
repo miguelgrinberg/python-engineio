@@ -39,8 +39,14 @@ class AsyncServer(server.Server):
                              polling transport.
     :param compression_threshold: Only compress messages when their byte size
                                   is greater than this value.
-    :param cookie: Name of the HTTP cookie that contains the client session
-                   id. If set to ``None``, a cookie is not sent to the client.
+    :param cookie: If set to a string, it is the name of the HTTP cookie the
+                   server sends back tot he client containing the client
+                   session id. If set to a dictionary, the ``'name'`` key
+                   contains the cookie name and other keys define cookie
+                   attributes, where the value of each attribute can be a
+                   string, a callable with no arguments, or a boolean. If set
+                   to ``None`` (the default), a cookie is not sent to the 
+                   client.
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
