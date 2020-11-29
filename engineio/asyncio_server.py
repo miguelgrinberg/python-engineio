@@ -373,12 +373,12 @@ class AsyncServer(server.Server):
             response = await make_response(
                 response_dict['status'],
                 response_dict['headers'] + cors_headers,
-                response_dict['response'].encode('utf-8'), environ)
+                response_dict['response'], environ)
         else:
             response = make_response(
                 response_dict['status'],
                 response_dict['headers'] + cors_headers,
-                response_dict['response'].encode('utf-8'), environ)
+                response_dict['response'], environ)
         return response
 
     async def _handle_connect(self, environ, transport, jsonp_index=None):

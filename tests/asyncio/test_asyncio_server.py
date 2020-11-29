@@ -207,12 +207,12 @@ class TestAsyncServer(unittest.TestCase):
         assert len(s.sockets) == 1
         assert a._async['make_response'].call_count == 1
         assert a._async['make_response'].call_args[0][0] == '200 OK'
-        assert ('Content-Type', 'application/octet-stream') in a._async[
+        assert ('Content-Type', 'text/plain; charset=UTF-8') in a._async[
             'make_response'
         ].call_args[0][1]
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]
-        ).packets
+            encoded_payload=a._async['make_response'].call_args[0][2].decode(
+                'utf-8')).packets
         assert len(packets) == 1
         assert packets[0].packet_type == packet.OPEN
         assert 'upgrades' in packets[0].data
@@ -234,12 +234,12 @@ class TestAsyncServer(unittest.TestCase):
         assert len(s.sockets) == 1
         assert a._async['make_response'].mock.call_count == 1
         assert a._async['make_response'].mock.call_args[0][0] == '200 OK'
-        assert ('Content-Type', 'application/octet-stream') in a._async[
+        assert ('Content-Type', 'text/plain; charset=UTF-8') in a._async[
             'make_response'
         ].mock.call_args[0][1]
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].mock.call_args[0][2]
-        ).packets
+            encoded_payload=a._async['make_response'].mock.call_args[0][
+                2].decode('utf-8')).packets
         assert len(packets) == 1
         assert packets[0].packet_type == packet.OPEN
         assert 'upgrades' in packets[0].data
@@ -253,8 +253,8 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer(allow_upgrades=False)
         _run(s.handle_request('request'))
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]
-        ).packets
+            encoded_payload=a._async['make_response'].call_args[0][2].decode(
+                'utf-8')).packets
         assert packets[0].data['upgrades'] == []
 
     @mock.patch('importlib.import_module')
@@ -271,108 +271,14 @@ class TestAsyncServer(unittest.TestCase):
             a._async['make_response'].call_args[0][2]
 
     @mock.patch('importlib.import_module')
-    def test_connect_b64_with_1(self, import_module):
-        a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=1'}
-        )
-        import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        _run(s.handle_request('request'))
-        assert a._async['make_response'].call_count == 1
-        assert a._async['make_response'].call_args[0][0] == '200 OK'
-        assert ('Content-Type', 'text/plain; charset=UTF-8') in a._async[
-            'make_response'
-        ].call_args[0][1]
-        _run(s.send('1', b'\x00\x01\x02', binary=True))
-        a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'sid=1&b64=1',
-        }
-        _run(s.handle_request('request'))
-        assert a._async['make_response'].call_args[0][2] == b'6:b4AAEC'
-
-    @mock.patch('importlib.import_module')
-    def test_connect_b64_with_true(self, import_module):
-        a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=true'}
-        )
-        import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        _run(s.handle_request('request'))
-        assert a._async['make_response'].call_count == 1
-        assert a._async['make_response'].call_args[0][0] == '200 OK'
-        assert ('Content-Type', 'text/plain; charset=UTF-8') in a._async[
-            'make_response'
-        ].call_args[0][1]
-        _run(s.send('1', b'\x00\x01\x02', binary=True))
-        a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'sid=1&b64=true',
-        }
-        _run(s.handle_request('request'))
-        assert a._async['make_response'].call_args[0][2] == b'6:b4AAEC'
-
-    @mock.patch('importlib.import_module')
-    def test_connect_b64_with_0(self, import_module):
-        a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=0'}
-        )
-        import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        _run(s.handle_request('request'))
-        assert a._async['make_response'].call_count == 1
-        assert a._async['make_response'].call_args[0][0] == '200 OK'
-        assert ('Content-Type', 'application/octet-stream') in a._async[
-            'make_response'
-        ].call_args[0][1]
-        _run(s.send('1', b'\x00\x01\x02', binary=True))
-        a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'sid=1&b64=0',
-        }
-        _run(s.handle_request('request'))
-        assert (
-            a._async['make_response'].call_args[0][2]
-            == b'\x01\x04\xff\x04\x00\x01\x02'
-        )
-
-    @mock.patch('importlib.import_module')
-    def test_connect_b64_with_false(self, import_module):
-        a = self.get_async_mock(
-            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'b64=false'}
-        )
-        import_module.side_effect = [a]
-        s = asyncio_server.AsyncServer(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        _run(s.handle_request('request'))
-        assert a._async['make_response'].call_count == 1
-        assert a._async['make_response'].call_args[0][0] == '200 OK'
-        assert ('Content-Type', 'application/octet-stream') in a._async[
-            'make_response'
-        ].call_args[0][1]
-        _run(s.send('1', b'\x00\x01\x02', binary=True))
-        a._async['translate_request'].return_value = {
-            'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'sid=1&b64=false',
-        }
-        _run(s.handle_request('request'))
-        assert (
-            a._async['make_response'].call_args[0][2]
-            == b'\x01\x04\xff\x04\x00\x01\x02'
-        )
-
-    @mock.patch('importlib.import_module')
     def test_connect_custom_ping_times(self, import_module):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(ping_timeout=123, ping_interval=456)
         _run(s.handle_request('request'))
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]
-        ).packets
+            encoded_payload=a._async['make_response'].call_args[0][2].decode(
+                'utf-8')).packets
         assert packets[0].data['pingTimeout'] == 123000
         assert packets[0].data['pingInterval'] == 456000
 
@@ -783,7 +689,7 @@ class TestAsyncServer(unittest.TestCase):
         _run(s.handle_request('request'))
         assert a._async['make_response'].call_args[0][0] == '200 OK'
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2]
+            encoded_payload=a._async['make_response'].call_args[0][2].decode('utf-8')
         ).packets
         assert len(packets) == 1
         assert packets[0].packet_type == packet.MESSAGE
@@ -1068,7 +974,7 @@ class TestAsyncServer(unittest.TestCase):
 
         asyncio_server.AsyncServer(json=CustomJSON)
         pkt = packet.Packet(packet.MESSAGE, data={'foo': 'bar'})
-        assert pkt.encode() == b'4*** encoded ***'
+        assert pkt.encode() == '4*** encoded ***'
         pkt2 = packet.Packet(encoded_packet=pkt.encode())
         assert pkt2.data == '+++ decoded +++'
 

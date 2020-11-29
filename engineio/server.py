@@ -117,8 +117,7 @@ class Server(object):
             self.logger = logger
         else:
             self.logger = default_logger
-            if not logging.root.handlers and \
-                    self.logger.level == logging.NOTSET:
+            if self.logger.level == logging.NOTSET:
                 if logger:
                     self.logger.setLevel(logging.INFO)
                 else:
@@ -613,11 +612,11 @@ class Server(object):
             return {'status': '200 OK',
                     'headers': headers,
                     'response': payload.Payload(packets=packets).encode(
-                        jsonp_index=jsonp_index)}
+                        jsonp_index=jsonp_index).encode('utf-8')}
         else:
             return {'status': '200 OK',
                     'headers': [('Content-Type', 'text/plain')],
-                    'response': 'OK'}
+                    'response': b'OK'}
 
     def _bad_request(self, message=None):
         """Generate a bad request HTTP error response."""
@@ -632,7 +631,7 @@ class Server(object):
         """Generate a method not found HTTP error response."""
         return {'status': '405 METHOD NOT FOUND',
                 'headers': [('Content-Type', 'text/plain')],
-                'response': 'Method Not Found'}
+                'response': b'Method Not Found'}
 
     def _unauthorized(self, message=None):
         """Generate a unauthorized HTTP error response."""

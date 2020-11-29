@@ -91,7 +91,7 @@ class TestServer(unittest.TestCase):
         s = server.Server(**kwargs)
         for arg in six.iterkeys(kwargs):
             assert getattr(s, arg) == kwargs[arg]
-        assert s.ping_interval_grace_period == 5
+        assert s.ping_interval_grace_period == 0
 
     def test_create_with_grace_period(self):
         s = server.Server(ping_interval=(1, 2))
@@ -437,10 +437,10 @@ class TestServer(unittest.TestCase):
         assert start_response.call_args[0][0] == '200 OK'
         assert (
             'Content-Type',
-            'application/octet-stream',
+            'text/plain; charset=UTF-8',
         ) in start_response.call_args[0][1]
         assert len(r) == 1
-        packets = payload.Payload(encoded_payload=r[0]).packets
+        packets = payload.Payload(encoded_payload=r[0].decode('utf-8')).packets
         assert len(packets) == 1
         assert packets[0].packet_type == packet.OPEN
         assert 'upgrades' in packets[0].data
@@ -452,7 +452,7 @@ class TestServer(unittest.TestCase):
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
-        packets = payload.Payload(encoded_payload=r[0]).packets
+        packets = payload.Payload(encoded_payload=r[0].decode('utf-8')).packets
         assert packets[0].data['upgrades'] == []
 
     def test_connect_bad_eio_version(self):
@@ -463,80 +463,12 @@ class TestServer(unittest.TestCase):
         assert start_response.call_args[0][0], '400 BAD REQUEST'
         assert b'unsupported version' in r[0]
 
-    def test_connect_b64_with_1(self):
-        s = server.Server(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=1'}
-        start_response = mock.MagicMock()
-        s.handle_request(environ, start_response)
-        assert start_response.call_args[0][0], '200 OK'
-        assert (
-            'Content-Type',
-            'text/plain; charset=UTF-8',
-        ) in start_response.call_args[0][1]
-        s.send('1', b'\x00\x01\x02', binary=True)
-        environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=4&sid=1&b64=1'}
-        r = s.handle_request(environ, start_response)
-        assert r[0] == b'6:b4AAEC'
-
-    def test_connect_b64_with_true(self):
-        s = server.Server(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=true'}
-        start_response = mock.MagicMock()
-        s.handle_request(environ, start_response)
-        assert start_response.call_args[0][0], '200 OK'
-        assert (
-            'Content-Type',
-            'text/plain; charset=UTF-8',
-        ) in start_response.call_args[0][1]
-        s.send('1', b'\x00\x01\x02', binary=True)
-        environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=4&sid=1&b64=true'}
-        r = s.handle_request(environ, start_response)
-        assert r[0] == b'6:b4AAEC'
-
-    def test_connect_b64_with_0(self):
-        s = server.Server(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=0'}
-        start_response = mock.MagicMock()
-        s.handle_request(environ, start_response)
-        assert start_response.call_args[0][0], '200 OK'
-        assert (
-            'Content-Type',
-            'application/octet-stream',
-        ) in start_response.call_args[0][1]
-        s.send('1', b'\x00\x01\x02', binary=True)
-        environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=4&sid=1&b64=0'}
-        r = s.handle_request(environ, start_response)
-        assert r[0] == b'\x01\x04\xff\x04\x00\x01\x02'
-
-    def test_connect_b64_with_false(self):
-        s = server.Server(allow_upgrades=False)
-        s._generate_id = mock.MagicMock(return_value='1')
-        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&b64=false'}
-        start_response = mock.MagicMock()
-        s.handle_request(environ, start_response)
-        assert start_response.call_args[0][0], '200 OK'
-        assert (
-            'Content-Type',
-            'application/octet-stream',
-        ) in start_response.call_args[0][1]
-        s.send('1', b'\x00\x01\x02', binary=True)
-        environ = {'REQUEST_METHOD': 'GET',
-                   'QUERY_STRING': 'EIO=4&sid=1&b64=false'}
-        r = s.handle_request(environ, start_response)
-        assert r[0] == b'\x01\x04\xff\x04\x00\x01\x02'
-
     def test_connect_custom_ping_times(self):
         s = server.Server(ping_timeout=123, ping_interval=456)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
-        packets = payload.Payload(encoded_payload=r[0]).packets
+        packets = payload.Payload(encoded_payload=r[0].decode('utf-8')).packets
         assert packets[0].data['pingTimeout'] == 123000
         assert packets[0].data['pingInterval'] == 456000
 
@@ -577,7 +509,7 @@ class TestServer(unittest.TestCase):
         s._generate_id = mock.MagicMock(return_value='123')
         environ = {
             'REQUEST_METHOD': 'GET',
-            'QUERY_STRING': 'EIO=3&transport=websocket',
+            'QUERY_STRING': 'EIO=4&transport=websocket',
             'HTTP_UPGRADE': 'WebSocket',
         }
         start_response = mock.MagicMock()
@@ -892,7 +824,7 @@ class TestServer(unittest.TestCase):
         r = s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
         assert len(r) == 1
-        packets = payload.Payload(encoded_payload=r[0]).packets
+        packets = payload.Payload(encoded_payload=r[0].decode('utf-8')).packets
         assert len(packets) == 1
         assert packets[0].packet_type == packet.MESSAGE
 
@@ -1139,7 +1071,7 @@ class TestServer(unittest.TestCase):
 
         server.Server(json=CustomJSON)
         pkt = packet.Packet(packet.MESSAGE, data={'foo': 'bar'})
-        assert pkt.encode() == b'4*** encoded ***'
+        assert pkt.encode() == '4*** encoded ***'
         pkt2 = packet.Packet(encoded_packet=pkt.encode())
         assert pkt2.data == '+++ decoded +++'
 

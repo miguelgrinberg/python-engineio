@@ -205,10 +205,6 @@ class Client(object):
         :param data: The data to send to the client. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
-        :param binary: ``True`` to send packet as binary, ``False`` to send
-                       as text. If not given, unicode (Python 2) and str
-                       (Python 3) are sent as text, and str (Python 2) and
-                       bytes (Python 3) are sent as binary.
         """
         self._send_packet(packet.Packet(packet.MESSAGE, data=data))
 
