@@ -98,13 +98,33 @@ class TestSocket(unittest.TestCase):
         assert s.poll() == [pkt]
         assert s.poll() == []
 
-    def test_ping_pong(self):
+    def test_schedule_ping(self):
+        mock_server = self._get_mock_server()
+        mock_server.ping_interval = 0.01
+        s = socket.Socket(mock_server, 'sid')
+        s.send = mock.MagicMock()
+        s.schedule_ping()
+        time.sleep(0.05)
+        assert s.last_ping is not None
+        assert s.send.call_args_list[0][0][0].encode() == '2'
+
+    def test_schedule_ping_closed_socket(self):
+        mock_server = self._get_mock_server()
+        mock_server.ping_interval = 0.01
+        s = socket.Socket(mock_server, 'sid')
+        s.send = mock.MagicMock()
+        s.closed = True
+        s.schedule_ping()
+        time.sleep(0.05)
+        assert s.last_ping is None
+        s.send.assert_not_called()
+
+    def test_pong(self):
         mock_server = self._get_mock_server()
         s = socket.Socket(mock_server, 'sid')
-        s.receive(packet.Packet(packet.PING, data='abc'))
-        r = s.poll()
-        assert len(r) == 1
-        assert r[0].encode(), b'3abc'
+        s.schedule_ping = mock.MagicMock()
+        s.receive(packet.Packet(packet.PONG))
+        s.schedule_ping.assert_called_once_with()
 
     def test_message_async_handler(self):
         mock_server = self._get_mock_server()
@@ -164,7 +184,7 @@ class TestSocket(unittest.TestCase):
         mock_server.max_http_buffer_size = 1000
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
-        p = payload.Payload(packets=[pkt1, pkt2]).encode()
+        p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         s = socket.Socket(mock_server, 'foo')
         s.receive = mock.MagicMock()
         environ = {
@@ -180,7 +200,7 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
-        p = payload.Payload(packets=[pkt1, pkt2]).encode()
+        p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         mock_server.max_http_buffer_size = len(p) - 1
         s = socket.Socket(mock_server, 'foo')
         s.receive = mock.MagicMock()
@@ -247,9 +267,7 @@ class TestSocket(unittest.TestCase):
         s = socket.Socket(mock_server, 'sid')
         s.connected = True
         ws = mock.MagicMock()
-        ws.wait.return_value = packet.Packet(packet.NOOP).encode(
-            always_bytes=False
-        )
+        ws.wait.return_value = packet.Packet(packet.NOOP).encode()
         s._websocket_handler(ws)
         assert not s.upgraded
 
@@ -261,12 +279,12 @@ class TestSocket(unittest.TestCase):
         ws = mock.MagicMock()
         probe = six.text_type('probe')
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.NOOP).encode(always_bytes=False),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.NOOP).encode(),
         ]
         s._websocket_handler(ws)
         ws.send.assert_called_once_with(
-            packet.Packet(packet.PONG, data=probe).encode(always_bytes=False)
+            packet.Packet(packet.PONG, data=probe).encode()
         )
         assert s.queue.get().packet_type == packet.NOOP
         assert not s.upgraded
@@ -311,7 +329,7 @@ class TestSocket(unittest.TestCase):
         )
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
         s._websocket_handler(ws)
@@ -343,9 +361,9 @@ class TestSocket(unittest.TestCase):
         )
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.UPGRADE).encode(always_bytes=False),
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE).encode(),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
         s._websocket_handler(ws)
@@ -368,10 +386,8 @@ class TestSocket(unittest.TestCase):
         probe = six.text_type('probe')
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.UPGRADE, data=b'2').encode(
-                always_bytes=False
-            ),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
         s._websocket_handler(ws)
         self._join_bg_tasks()
@@ -386,10 +402,8 @@ class TestSocket(unittest.TestCase):
         foo = six.text_type('foo')
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.PING, data=probe).encode(always_bytes=False),
-            packet.Packet(packet.UPGRADE, data=b'2').encode(
-                always_bytes=False
-            ),
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
         s.upgrading = True
         s.send(packet.Packet(packet.MESSAGE, data=foo))
@@ -397,10 +411,10 @@ class TestSocket(unittest.TestCase):
         start_response = mock.MagicMock()
         packets = s.handle_get_request(environ, start_response)
         assert len(packets) == 1
-        assert packets[0].encode() == b'6'
+        assert packets[0].encode() == '6'
         packets = s.poll()
         assert len(packets) == 1
-        assert packets[0].encode() == b'4foo'
+        assert packets[0].encode() == '4foo'
 
         s._websocket_handler(ws)
         self._join_bg_tasks()
@@ -408,7 +422,7 @@ class TestSocket(unittest.TestCase):
         assert not s.upgrading
         packets = s.handle_get_request(environ, start_response)
         assert len(packets) == 1
-        assert packets[0].encode() == b'6'
+        assert packets[0].encode() == '6'
 
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()
@@ -426,7 +440,7 @@ class TestSocket(unittest.TestCase):
         )
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             RuntimeError,
         ]
         ws.send.side_effect = [None, RuntimeError]
@@ -449,8 +463,8 @@ class TestSocket(unittest.TestCase):
         )
         ws = mock.MagicMock()
         ws.wait.side_effect = [
-            packet.Packet(packet.OPEN).encode(always_bytes=False),
-            packet.Packet(packet.MESSAGE, data=foo).encode(always_bytes=False),
+            packet.Packet(packet.OPEN).encode(),
+            packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
         s._websocket_handler(ws)
