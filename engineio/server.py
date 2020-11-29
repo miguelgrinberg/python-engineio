@@ -39,7 +39,7 @@ class Server(object):
                           is a grace period added by the server. The default
                           grace period is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport. The default is 100,000,000
+                                 polling transport. The default is 1,000,000
                                  bytes.
     :param allow_upgrades: Whether to allow transport upgrades or not. The
                            default is ``True``.
@@ -87,7 +87,7 @@ class Server(object):
     _default_monitor_clients = True
 
     def __init__(self, async_mode=None, ping_timeout=60, ping_interval=25,
-                 max_http_buffer_size=100000000, allow_upgrades=True,
+                 max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,

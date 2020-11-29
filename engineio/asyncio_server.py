@@ -33,7 +33,8 @@ class AsyncServer(server.Server):
                           is a grace period added by the server. The default
                           grace period is 5 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport.
+                                 polling transport. The default is 1,000,000
+                                 bytes.
     :param allow_upgrades: Whether to allow transport upgrades or not.
     :param http_compression: Whether to compress packages when using the
                              polling transport.
