@@ -244,15 +244,18 @@ class AsyncServer(server.Server):
         elif method == 'GET':
             if sid is None:
                 transport = query.get('transport', ['polling'])[0]
-                if (transport != 'polling' and transport != 'websocket') or \
-                        (transport != 'polling'
-                            and transport != environ.get('HTTP_UPGRADE')):
+                # transport must be one of: 'polling' or 'websocket'.
+                # If 'websocket', the HTTP_UPGRADE header must match.
+                # Some tech likes to use 'WebSocket', so ignore case.
+                upgrade_header = environ.get('HTTP_UPGRADE', '').lower()
+                if transport == 'polling' \
+                        or transport == upgrade_header == 'websocket':
+                    r = await self._handle_connect(environ, transport,
+                                                   b64, jsonp_index)
+                else:
                     self._log_error_once('Invalid transport ' + transport,
                                          'bad-transport')
                     r = self._bad_request('Invalid transport ' + transport)
-                else:
-                    r = await self._handle_connect(environ, transport,
-                                                   b64, jsonp_index)
             else:
                 if sid not in self.sockets:
                     self._log_error_once('Invalid session ' + sid, 'bad-sid')

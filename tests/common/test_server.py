@@ -572,6 +572,24 @@ class TestServer(unittest.TestCase):
         'engineio.socket.Socket',
         return_value=mock.MagicMock(connected=False, closed=False),
     )
+    def test_http_upgrade_case_insensitive(self, Socket):
+        s = server.Server()
+        s._generate_id = mock.MagicMock(return_value='123')
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'EIO=3&transport=websocket',
+            'HTTP_UPGRADE': 'WebSocket',
+        }
+        start_response = mock.MagicMock()
+        # force socket to stay open, so that we can check it later
+        Socket().closed = False
+        s.handle_request(environ, start_response)
+        assert s.sockets['123'].send.call_args[0][0].packet_type == packet.OPEN
+
+    @mock.patch(
+        'engineio.socket.Socket',
+        return_value=mock.MagicMock(connected=False, closed=False),
+    )
     def test_connect_transport_websocket_closed(self, Socket):
         s = server.Server()
         s._generate_id = mock.MagicMock(return_value='123')
