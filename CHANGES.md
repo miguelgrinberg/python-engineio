@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 3.14.2** - 2020-11-30
+
+- Log first occurrence of bad request errors at level ERROR for higher visibility ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3fc702f459554ccbdfaaad2673b6063d2ef4485e))
+
 **Release 3.14.1** - 2020-11-28
 
 - Catch more connection exceptions in the asyncio client [#561](https://github.com/miguelgrinberg/python-socketio/issues/561) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0d8d3a66292e2bc71b5af5b3e2162fde02c3f487))
