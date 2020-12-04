@@ -303,7 +303,7 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
         s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         # force socket to stay open, so that we can check it later
         AsyncSocket().closed = False
         _run(s.handle_request('request'))
@@ -325,7 +325,7 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
         s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         # force socket to stay open, so that we can check it later
         AsyncSocket().closed = False
         _run(s.handle_request('request'))
@@ -349,7 +349,7 @@ class TestAsyncServer(unittest.TestCase):
         import_module.side_effect = [a]
         AsyncSocket.return_value = self._get_mock_socket()
         s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
 
         # this mock handler just closes the socket, as it would happen on a
         # real websocket exchange
@@ -574,7 +574,7 @@ class TestAsyncServer(unittest.TestCase):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
 
         def mock_connect(sid, environ):
             return True
@@ -588,7 +588,7 @@ class TestAsyncServer(unittest.TestCase):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
 
         def mock_connect(sid, environ):
             return False
@@ -604,7 +604,7 @@ class TestAsyncServer(unittest.TestCase):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
 
         def mock_connect(sid, environ):
             return {'not': 'allowed'}
@@ -905,7 +905,7 @@ class TestAsyncServer(unittest.TestCase):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cookie='sid')
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         assert ('Set-Cookie', 'sid=123; path=/; SameSite=Lax') in headers
@@ -924,7 +924,7 @@ class TestAsyncServer(unittest.TestCase):
             'Secure': True,
             'HttpOnly': True
         })
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         assert ('Set-Cookie', 'test=123; path=/a; SameSite=None; Secure; '
@@ -935,7 +935,7 @@ class TestAsyncServer(unittest.TestCase):
         a = self.get_async_mock()
         import_module.side_effect = [a]
         s = asyncio_server.AsyncServer(cookie=None)
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         _run(s.handle_request('request'))
         headers = a._async['make_response'].call_args[0][1]
         for header, value in headers:

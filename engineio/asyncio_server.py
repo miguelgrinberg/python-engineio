@@ -386,7 +386,7 @@ class AsyncServer(server.Server):
             self.start_service_task = False
             self.start_background_task(self._service_task)
 
-        sid = self._generate_id()
+        sid = self.generate_id()
         s = asyncio_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
 

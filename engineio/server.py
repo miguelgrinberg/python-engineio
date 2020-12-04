@@ -1,9 +1,10 @@
+import base64
 import gzip
 import importlib
 import io
 import logging
+import secrets
 import urllib
-import uuid
 import zlib
 
 from . import exceptions
@@ -83,6 +84,7 @@ class Server(object):
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
     _default_monitor_clients = True
+    sequence_number = 0
 
     def __init__(self, async_mode=None, ping_interval=25, ping_timeout=5,
                  max_http_buffer_size=1000000, allow_upgrades=True,
@@ -495,9 +497,12 @@ class Server(object):
         """
         return self._async['event'](*args, **kwargs)
 
-    def _generate_id(self):
+    def generate_id(self):
         """Generate a unique session id."""
-        return uuid.uuid4().hex
+        id = base64.b64encode(
+            secrets.token_bytes(12) + self.sequence_number.to_bytes(3, 'big'))
+        self.sequence_number = (self.sequence_number + 1) & 0xffffff
+        return id.decode('utf-8').replace('/', '_').replace('+', '-')
 
     def _generate_sid_cookie(self, sid, attributes):
         """Generate the sid cookie."""
@@ -521,7 +526,7 @@ class Server(object):
             self.start_service_task = False
             self.start_background_task(self._service_task)
 
-        sid = self._generate_id()
+        sid = self.generate_id()
         s = socket.Socket(self, sid)
         self.sockets[sid] = s
 

@@ -287,7 +287,7 @@ class TestServer(unittest.TestCase):
 
     def test_generate_id(self):
         s = server.Server()
-        assert s._generate_id() != s._generate_id()
+        assert s.generate_id() != s.generate_id()
 
     def test_on_event(self):
         s = server.Server()
@@ -483,7 +483,7 @@ class TestServer(unittest.TestCase):
     )
     def test_connect_transport_websocket(self, Socket):
         s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         environ = {
             'REQUEST_METHOD': 'GET',
             'QUERY_STRING': 'EIO=4&transport=websocket',
@@ -501,7 +501,7 @@ class TestServer(unittest.TestCase):
     )
     def test_http_upgrade_case_insensitive(self, Socket):
         s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         environ = {
             'REQUEST_METHOD': 'GET',
             'QUERY_STRING': 'EIO=4&transport=websocket',
@@ -519,7 +519,7 @@ class TestServer(unittest.TestCase):
     )
     def test_connect_transport_websocket_closed(self, Socket):
         s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         environ = {
             'REQUEST_METHOD': 'GET',
             'QUERY_STRING': 'EIO=4&transport=websocket',
@@ -739,7 +739,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_event(self):
         s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         mock_event = mock.MagicMock(return_value=None)
         s.on('connect')(mock_event)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
@@ -750,7 +750,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_event_rejects(self):
         s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         mock_event = mock.MagicMock(return_value=False)
         s.on('connect')(mock_event)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
@@ -762,7 +762,7 @@ class TestServer(unittest.TestCase):
 
     def test_connect_event_rejects_with_message(self):
         s = server.Server()
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         mock_event = mock.MagicMock(return_value='not allowed')
         s.on('connect')(mock_event)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
@@ -1003,7 +1003,7 @@ class TestServer(unittest.TestCase):
 
     def test_cookie(self):
         s = server.Server(cookie='sid')
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
@@ -1021,7 +1021,7 @@ class TestServer(unittest.TestCase):
             'Secure': True,
             'HttpOnly': True
         })
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
@@ -1030,7 +1030,7 @@ class TestServer(unittest.TestCase):
 
     def test_no_cookie(self):
         s = server.Server(cookie=None)
-        s._generate_id = mock.MagicMock(return_value='123')
+        s.generate_id = mock.MagicMock(return_value='123')
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
