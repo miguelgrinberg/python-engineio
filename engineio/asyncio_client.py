@@ -504,7 +504,7 @@ class AsyncClient(client.Client):
                     timeout=self.ping_interval + self.ping_timeout)
                 p = p.data
                 if p is None:  # pragma: no cover
-                    raise RuntimeError('WebSocket read returned None')
+                    break  # the connection is broken
             except asyncio.TimeoutError:
                 self.logger.warning(
                     'Server has stopped communicating, aborting')

@@ -685,7 +685,8 @@ class TestAsyncServer(unittest.TestCase):
         _run(s.handle_request('request'))
         assert a._async['make_response'].call_args[0][0] == '200 OK'
         packets = payload.Payload(
-            encoded_payload=a._async['make_response'].call_args[0][2].decode('utf-8')
+            encoded_payload=a._async['make_response'].call_args[0][2].decode(
+                'utf-8')
         ).packets
         assert len(packets) == 1
         assert packets[0].packet_type == packet.MESSAGE

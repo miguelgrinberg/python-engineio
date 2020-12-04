@@ -116,7 +116,7 @@ class TestSocket(unittest.TestCase):
         async def schedule_ping():
             s.schedule_ping()
             await asyncio.sleep(0.05)
-    
+
         _run(schedule_ping())
         assert s.last_ping is not None
         assert s.send.mock.call_args_list[0][0][0].encode() == '2'
@@ -131,7 +131,7 @@ class TestSocket(unittest.TestCase):
         async def schedule_ping():
             s.schedule_ping()
             await asyncio.sleep(0.05)
-    
+
         _run(schedule_ping())
         assert s.last_ping is None
         s.send.mock.assert_not_called()
