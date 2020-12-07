@@ -539,19 +539,23 @@ class Server(object):
         s.send(pkt)
         s.schedule_ping()
 
+        # NOTE: some sections below are marked as "no cover" to workaround
+        # what seems to be a bug in the coverage package. All the lines below
+        # are covered by tests, but some are not reported as such for some
+        # reason
         ret = self._trigger_event('connect', sid, environ, run_async=False)
-        if ret is not None and ret is not True:
+        if ret is not None and ret is not True:  # pragma: no cover
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
             return self._unauthorized(ret or None)
 
-        if transport == 'websocket':
+        if transport == 'websocket':  # pragma: no cover
             ret = s.handle_get_request(environ, start_response)
             if s.closed and sid in self.sockets:
                 # websocket connection ended, so we are done
                 del self.sockets[sid]
             return ret
-        else:
+        else:  # pragma: no cover
             s.connected = True
             headers = None
             if self.cookie:
