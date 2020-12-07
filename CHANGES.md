@@ -1,5 +1,19 @@
 # python-engineio change log
 
+**Release 4.0.0** - 2020-12-07
+
+- Implementation of the Engine.IO v4 protocol revision
+    - v4 protocol: ping/ping reversal in the server ([commit](https://github.com/miguelgrinberg/python-engineio/commit/52774aaf019c1560ba2d46d7fb32668516fb9aff))
+    - v4 protocol: ping/ping reversal in the client ([commit](https://github.com/miguelgrinberg/python-engineio/commit/76a0615ec02818b1aba38ced38e5f6cefc40790d))
+    - v4 protocol: change max http buffer size to 1MB ([commit](https://github.com/miguelgrinberg/python-engineio/commit/38e20a3f31ffc566d521a80f0d13499a4de8e67e))
+    - v4 protocol: do not set the io cookie by default ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f17663608178d4ee5f0ab9f1d4523813b96f3e1f))
+    - v4 protocol: use EIO=4 in connection URL ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b474d70b413307be5b713d3f7e3b79dbd1b631a4))
+    - v4 protocol: new payload separator ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e895d6f5d0fa88566df61ffd316ce31d7cecfb90))
+    - v4 protocol: new binary encoding format ([commit](https://github.com/miguelgrinberg/python-engineio/commit/38beea5f7903af2e79ab3654b0c299aba2f226da))
+- Use a sid generator algorithm similar to JavaScript's version of Socket.IO ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0583c1e8b122e4c7620e04429bf4f901bad551bd))
+- Ignore case when comparing transport argument against 'HTTP_UPGRADE' header ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3d7ea22e8a9930544c711c5e124f75121b300ef3)) (thanks **Matthew Barry**!)
+- Remove dependency on the six package ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c181e8563edf1586eb3f2baacaf4f2c26b1a2593))
+
 **Release 3.14.2** - 2020-11-30
 
 - Log first occurrence of bad request errors at level ERROR for higher visibility ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3fc702f459554ccbdfaaad2673b6063d2ef4485e))
