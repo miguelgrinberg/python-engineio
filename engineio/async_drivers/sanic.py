@@ -102,12 +102,20 @@ def make_response(status, headers, payload, environ):  # pragma: no cover
             headers_dict[h[0]] = h[1]
 
     if sanic.__version__ == '20.12.0':
-        return HTTPResponse(body=payload, content_type=content_type,
-                            status=int(status.split()[0]), headers=headers_dict)
+        return HTTPResponse(
+            body=payload,
+            content_type=content_type,
+            status=int(status.split()[0]),
+            headers=headers_dict
+        )
 
     else:
-        return HTTPResponse(body_bytes=payload, content_type=content_type,
-                            status=int(status.split()[0]), headers=headers_dict)
+        return HTTPResponse(
+            body_bytes=payload,
+            content_type=content_type,
+            status=int(status.split()[0]),
+            headers=headers_dict
+        )
 
 
 class WebSocket(object):  # pragma: no cover
