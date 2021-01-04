@@ -2,6 +2,7 @@ import sys
 from urllib.parse import urlsplit
 
 try:  # pragma: no cover
+    import sanic
     from sanic.response import HTTPResponse
     from sanic.websocket import WebSocketProtocol
 except ImportError:
@@ -99,8 +100,14 @@ def make_response(status, headers, payload, environ):  # pragma: no cover
             content_type = h[1]
         else:
             headers_dict[h[0]] = h[1]
-    return HTTPResponse(body_bytes=payload, content_type=content_type,
-                        status=int(status.split()[0]), headers=headers_dict)
+
+    if sanic.__version__ == '20.12.0':
+        return HTTPResponse(body=payload, content_type=content_type,
+                            status=int(status.split()[0]), headers=headers_dict)
+
+    else:
+        return HTTPResponse(body_bytes=payload, content_type=content_type,
+                            status=int(status.split()[0]), headers=headers_dict)
 
 
 class WebSocket(object):  # pragma: no cover
