@@ -4,7 +4,7 @@ from sanic.response import html
 import engineio
 
 eio = engineio.AsyncServer(async_mode='sanic')
-app = Sanic()
+app = Sanic(name='simple')
 eio.attach(app)
 
 

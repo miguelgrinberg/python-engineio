@@ -99,7 +99,7 @@ def make_response(status, headers, payload, environ):  # pragma: no cover
             content_type = h[1]
         else:
             headers_dict[h[0]] = h[1]
-    return HTTPResponse(body_bytes=payload, content_type=content_type,
+    return HTTPResponse(body=payload, content_type=content_type,
                         status=int(status.split()[0]), headers=headers_dict)
 
 
