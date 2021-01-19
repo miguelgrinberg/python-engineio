@@ -63,7 +63,7 @@ Client Features
 ---------------
 
 - Can connect to other Engine.IO complaint servers besides the one in this package.
-- Compatible with Python 3.5+.
+- Compatible with Python 3.6+.
 - Two versions of the client, one for standard Python and another for ``asyncio``.
 - Uses an event-based architecture implemented with decorators that hides the
   details of the protocol.
@@ -99,8 +99,7 @@ asynchronous server::
     if __name__ == '__main__':
         eventlet.wsgi.server(eventlet.listen(('', 5000)), app)
 
-Below is a similar application, coded for asyncio (Python 3.5+ only) and the
-Uvicorn web server::
+Below is a similar application, coded for asyncio and the Uvicorn web server::
 
     import engineio
     import uvicorn
@@ -131,7 +130,7 @@ Server Features
 
 - Can accept clients running other complaint Engine.IO clients besides the one in this
   package.
-- Compatible with Python 3.5+.
+- Compatible with Python 3.6+.
 - Two versions of the server, one for standard Python and another for ``asyncio``.
 - Supports large number of clients even on modest hardware due to being
   asynchronous.

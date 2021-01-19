@@ -358,8 +358,7 @@ aiohttp
 ~~~~~~~
 
 `aiohttp <http://aiohttp.readthedocs.io/>`_ provides a framework with support
-for HTTP and WebSocket, based on asyncio. Support for this framework is limited
-to Python 3.5 and newer.
+for HTTP and WebSocket, based on asyncio.
 
 Instances of class ``engineio.AsyncServer`` will automatically use aiohttp
 for asynchronous operations if the library is installed. To request its use
@@ -385,9 +384,8 @@ Tornado
 ~~~~~~~
 
 `Tornado <http://www.tornadoweb.org//>`_ is a web framework with support
-for HTTP and WebSocket. Support for this framework requires Python 3.5 and
-newer. Only Tornado version 5 and newer are supported, thanks to its tight
-integration with asyncio.
+for HTTP and WebSocket. Only Tornado version 5 and newer are supported, thanks
+to its tight integration with asyncio.
 
 Instances of class ``engineio.AsyncServer`` will automatically use tornado
 for asynchronous operations if the library is installed. To request its use
@@ -418,7 +416,7 @@ Sanic
 ~~~~~
 
 `Sanic <http://sanic.readthedocs.io/>`_ is a very efficient asynchronous web
-server for Python 3.5 and newer.
+server for Python.
 
 Instances of class ``engineio.AsyncServer`` will automatically use Sanic for
 asynchronous operations if the framework is installed. To request its use
