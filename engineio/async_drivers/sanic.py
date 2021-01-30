@@ -1,4 +1,5 @@
 import sys
+import inspect
 from urllib.parse import urlsplit
 
 try:  # pragma: no cover
@@ -99,6 +100,23 @@ def make_response(status, headers, payload, environ):  # pragma: no cover
             content_type = h[1]
         else:
             headers_dict[h[0]] = h[1]
+    return HTTPResponse(body=payload, content_type=content_type,
+                        status=int(status.split()[0]), headers=headers_dict)
+
+
+def make_response_old(status, headers, payload, environ):  # pragma: no cover
+    """This function generates an appropriate response object for this async
+    mode.
+
+    `body_bytes` keyword was removed in sanic version 20.12 in favor of 'body'
+    """
+    headers_dict = {}
+    content_type = None
+    for h in headers:
+        if h[0].lower() == 'content-type':
+            content_type = h[1]
+        else:
+            headers_dict[h[0]] = h[1]
     return HTTPResponse(body_bytes=payload, content_type=content_type,
                         status=int(status.split()[0]), headers=headers_dict)
 
@@ -134,10 +152,16 @@ class WebSocket(object):  # pragma: no cover
         return data
 
 
+_make_response = make_response
+
+if HTTPResponse and 'body_bytes' in inspect.signature(HTTPResponse):
+    _make_response = make_response_old
+
+
 _async = {
     'asyncio': True,
     'create_route': create_route,
     'translate_request': translate_request,
-    'make_response': make_response,
+    'make_response': _make_response,
     'websocket': WebSocket if WebSocketProtocol else None,
 }
