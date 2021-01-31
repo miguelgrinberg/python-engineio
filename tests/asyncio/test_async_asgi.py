@@ -431,7 +431,7 @@ class AsgiTests(unittest.TestCase):
         assert environ == {}
 
     def test_make_response(self):
-        environ = {'asgi.send': AsyncMock()}
+        environ = {'asgi.send': AsyncMock(), 'asgi.scope': {'type': 'http'}}
         _run(
             async_asgi.make_response(
                 '202 ACCEPTED', [('foo', 'bar')], b'payload', environ
@@ -451,7 +451,7 @@ class AsgiTests(unittest.TestCase):
     def test_make_response_websocket_accept(self):
         environ = {
             'asgi.send': AsyncMock(),
-            'HTTP_SEC_WEBSOCKET_VERSION': 'foo',
+            'asgi.scope': {'type': 'websocket'},
         }
         _run(
             async_asgi.make_response(
@@ -465,7 +465,7 @@ class AsgiTests(unittest.TestCase):
     def test_make_response_websocket_reject(self):
         environ = {
             'asgi.send': AsyncMock(),
-            'HTTP_SEC_WEBSOCKET_VERSION': 'foo',
+            'asgi.scope': {'type': 'websocket'},
         }
         _run(
             async_asgi.make_response(

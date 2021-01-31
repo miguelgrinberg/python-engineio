@@ -190,7 +190,7 @@ async def translate_request(scope, receive, send):
 
 async def make_response(status, headers, payload, environ):
     headers = [(h[0].encode('utf-8'), h[1].encode('utf-8')) for h in headers]
-    if 'HTTP_SEC_WEBSOCKET_VERSION' in environ:
+    if environ['asgi.scope']['type'] == 'websocket':
         if status.startswith('200 '):
             await environ['asgi.send']({'type': 'websocket.accept',
                                         'headers': headers})
