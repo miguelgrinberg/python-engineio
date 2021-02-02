@@ -403,8 +403,9 @@ class Server(object):
                         del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                r = self._bad_request('Invalid session ' + sid)
+                self._log_error_once(
+                    'Invalid session ' + (sid or 'None'), 'bad-sid')
+                r = self._bad_request('Invalid session ' + (sid or 'None'))
             else:
                 socket = self._get_socket(sid)
                 try:
