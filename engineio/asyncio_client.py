@@ -504,6 +504,7 @@ class AsyncClient(client.Client):
                     timeout=self.ping_interval + self.ping_timeout)
                 p = p.data
                 if p is None:  # pragma: no cover
+                    await self.queue.put(None)
                     break  # the connection is broken
             except asyncio.TimeoutError:
                 self.logger.warning(
