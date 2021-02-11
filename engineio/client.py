@@ -64,7 +64,7 @@ class Client(object):
     :param http_session: an initialized ``requests.Session`` object to be used
                          when sending requests to the server. Use it if you
                          need to add special client options such as proxy
-                         servers, SSL certificates, etc.
+                         servers, SSL certificates, custom CA bundle, etc.
     :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
@@ -405,7 +405,12 @@ class Client(object):
                         else None)
 
             # verify
-            if not self.http.verify:
+            if isinstance(self.http.verify, str):
+                if 'sslopt' in extra_options:
+                    extra_options['sslopt']['ca_certs'] = self.http.verify
+                else:
+                    extra_options['sslopt'] = {'ca_certs': self.http.verify}
+            elif not self.http.verify:
                 self.ssl_verify = False
 
         if not self.ssl_verify:
@@ -515,9 +520,11 @@ class Client(object):
             timeout=None):  # pragma: no cover
         if self.http is None:
             self.http = requests.Session()
+        if not self.ssl_verify:
+            self.http.verify = False
         try:
             return self.http.request(method, url, headers=headers, data=body,
-                                     timeout=timeout, verify=self.ssl_verify)
+                                     timeout=timeout)
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
