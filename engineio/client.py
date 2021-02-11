@@ -65,10 +65,17 @@ class Client(object):
                          when sending requests to the server. Use it if you
                          need to add special client options such as proxy
                          servers, SSL certificates, etc.
-    :param ssl_verify: ``True`` to verify SSL certificates, or ``False`` to
-                       skip SSL certificate verification, allowing
-                       connections to servers with self signed certificates.
-                       The default is ``True``.
+    :param ssl_verify: (optional) Either a boolean, in which case it controls
+                       whether we verify the server's SSL certificate, or a
+                       string, in which case it must be a path to a CA bundle
+                       to use. Defaults to ``True``. When set to ``False``,
+                       SSL certificate verification is skipped, allowing
+                       connections to servers with self signed certificates,
+                       and will ignore hostname mismatches and/or expired
+                       certificates, which will make your application
+                       vulnerable to man-in-the-middle (MitM) attacks.
+                       Setting ssl_verify to ``False`` may be useful
+                       during local development or testing.
     """
     event_names = ['connect', 'disconnect', 'message']
 
@@ -404,11 +411,13 @@ class Client(object):
                         if parsed_url.username or parsed_url.password
                         else None)
 
-            # verify
-            if not self.http.verify:
-                self.ssl_verify = False
-
-        if not self.ssl_verify:
+        # verify
+        if isinstance(self.ssl_verify, str):
+            if 'sslopt' in extra_options:
+                extra_options['sslopt']['ca_certs'] = self.ssl_verify
+            else:
+                extra_options['sslopt'] = {'ca_certs': self.ssl_verify}
+        elif not self.ssl_verify:
             extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
         try:
             ws = websocket.create_connection(

@@ -898,6 +898,47 @@ class TestClient(unittest.TestCase):
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_connection_verify_with_cert_and_key(
+        self, create_connection
+    ):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN,
+            {
+                'sid': '123',
+                'upgrades': [],
+                'pingInterval': 1000,
+                'pingTimeout': 2000,
+            },
+        ).encode()
+        http = mock.MagicMock()
+        http.cookies = []
+        http.auth = None
+        http.proxies = None
+        http.cert = ('foo.crt', 'key.pem')
+        c = client.Client(
+            http_session=http,
+            ssl_verify='/path/to/ca-bundle.crt'
+        )
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('ws://foo', transports=['websocket'])
+
+        assert len(create_connection.call_args_list) == 1
+        assert create_connection.call_args[1] == {
+            'sslopt': {
+                'certfile': 'foo.crt',
+                'keyfile': 'key.pem',
+                'ca_certs': '/path/to/ca-bundle.crt'
+            },
+            'header': {},
+            'cookie': '',
+            'enable_multithread': True,
+        }
+
+    @mock.patch('engineio.client.websocket.create_connection')
     def test_websocket_connection_with_proxies(self, create_connection):
         all_urls = [
             'ws://foo',
@@ -979,8 +1020,7 @@ class TestClient(unittest.TestCase):
         http.auth = None
         http.proxies = None
         http.cert = None
-        http.verify = False
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=http, ssl_verify=False)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -991,6 +1031,41 @@ class TestClient(unittest.TestCase):
         assert len(create_connection.call_args_list) == 1
         assert create_connection.call_args[1] == {
             'sslopt': {"cert_reqs": ssl.CERT_NONE},
+            'header': {},
+            'cookie': '',
+            'enable_multithread': True,
+        }
+
+    @mock.patch('engineio.client.websocket.create_connection')
+    def test_websocket_connection_with_verify(self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN,
+            {
+                'sid': '123',
+                'upgrades': [],
+                'pingInterval': 1000,
+                'pingTimeout': 2000,
+            },
+        ).encode()
+        http = mock.MagicMock()
+        http.cookies = []
+        http.auth = None
+        http.proxies = None
+        http.cert = None
+        c = client.Client(
+            http_session=http,
+            ssl_verify='/path/to/ca-bundle.crt'
+        )
+        c._read_loop_polling = mock.MagicMock()
+        c._read_loop_websocket = mock.MagicMock()
+        c._write_loop = mock.MagicMock()
+        on_connect = mock.MagicMock()
+        c.on('connect', on_connect)
+        c.connect('ws://foo', transports=['websocket'])
+
+        assert len(create_connection.call_args_list) == 1
+        assert create_connection.call_args[1] == {
+            'sslopt': {'ca_certs': '/path/to/ca-bundle.crt'},
             'header': {},
             'cookie': '',
             'enable_multithread': True,
