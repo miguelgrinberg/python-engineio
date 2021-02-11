@@ -915,10 +915,8 @@ class TestClient(unittest.TestCase):
         http.auth = None
         http.proxies = None
         http.cert = ('foo.crt', 'key.pem')
-        c = client.Client(
-            http_session=http,
-            ssl_verify='/path/to/ca-bundle.crt'
-        )
+        http.verify = 'ca-bundle.crt'
+        c = client.Client(http_session=http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -931,7 +929,7 @@ class TestClient(unittest.TestCase):
             'sslopt': {
                 'certfile': 'foo.crt',
                 'keyfile': 'key.pem',
-                'ca_certs': '/path/to/ca-bundle.crt'
+                'ca_certs': 'ca-bundle.crt'
             },
             'header': {},
             'cookie': '',
@@ -1020,7 +1018,8 @@ class TestClient(unittest.TestCase):
         http.auth = None
         http.proxies = None
         http.cert = None
-        c = client.Client(http_session=http, ssl_verify=False)
+        http.verify = False
+        c = client.Client(http_session=http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -1052,10 +1051,8 @@ class TestClient(unittest.TestCase):
         http.auth = None
         http.proxies = None
         http.cert = None
-        c = client.Client(
-            http_session=http,
-            ssl_verify='/path/to/ca-bundle.crt'
-        )
+        http.verify = 'ca-bundle.crt'
+        c = client.Client(http_session=http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -1065,7 +1062,7 @@ class TestClient(unittest.TestCase):
 
         assert len(create_connection.call_args_list) == 1
         assert create_connection.call_args[1] == {
-            'sslopt': {'ca_certs': '/path/to/ca-bundle.crt'},
+            'sslopt': {'ca_certs': 'ca-bundle.crt'},
             'header': {},
             'cookie': '',
             'enable_multithread': True,
