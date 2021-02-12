@@ -524,7 +524,7 @@ class Client(object):
             self.http.verify = False
         try:
             return self.http.request(method, url, headers=headers, data=body,
-                                     timeout=timeout, verify=self.http.verify)
+                                     timeout=timeout)
         except requests.exceptions.RequestException as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
