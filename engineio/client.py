@@ -335,8 +335,8 @@ class Client(object):
         """Establish or upgrade to a WebSocket connection with the server."""
         if websocket is None:  # pragma: no cover
             # not installed
-            self.logger.warning('websocket-client package not installed, only '
-                                'polling transport is available')
+            self.logger.error('websocket-client package not installed, only '
+                              'polling transport is available')
             return False
         websocket_url = self._get_engineio_url(url, engineio_path, 'websocket')
         if self.sid:
