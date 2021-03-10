@@ -1,5 +1,16 @@
 # python-engineio change log
 
+**Release 4.0.1** - 2021-03-10
+
+- Support for client to verify server with custom CA bundle ([commit](https://github.com/miguelgrinberg/python-engineio/commit/792bdd040a460d0f77309ed1c7d9fea236542140)) (thanks **Brandon Hastings**!)
+- Report missing websocket client as an error in log [#557](https://github.com/miguelgrinberg/python-socketio/issues/557) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2f806acc927ac334541f77455b3a51a879649aeb))
+- Remove asyncio client delay before attempting reconnection [#622](https://github.com/miguelgrinberg/python-socketio/issues/622) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1d174b7bc47d4958a9829130321f8c87141007d7))
+- Fix error handling for ASGI WebSocket errors [#210](https://github.com/miguelgrinberg/python-engineio/issues/210) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e8e4ba5d1c832e14568e575ecdd173395493ea48))
+- Fix logging of missing sid [#1472](https://github.com/miguelgrinberg/Flask-SocketIO/issues/1472) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/cdfc1d88151a9f9f81082810db74fa3882d8adca))
+- Change deprecated `body_bytes` in sanic to `body` [#207](https://github.com/miguelgrinberg/python-engineio/issues/207) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e16bbcac1c76dbab61dd378768128af5dfeb8357)) (thanks **Alison Almeida**!)
+- Remove references to Python 3.5 in the documentation [#211](https://github.com/miguelgrinberg/python-engineio/issues/211) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/753656374ee74aedc8a70e92ea717d4ddb5c95dc))
+- Added performance testing scripts ([commit](https://github.com/miguelgrinberg/python-engineio/commit/28fe975daf239a2612e59843f06c52a72cfea84b))
+
 **Release 4.0.0** - 2020-12-07
 
 - Implementation of the Engine.IO v4 protocol revision
