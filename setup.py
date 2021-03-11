@@ -40,7 +40,6 @@ setup(
         ]
     },
     tests_require=[
-        'mock',
         'eventlet',
     ],
     test_suite='tests',
