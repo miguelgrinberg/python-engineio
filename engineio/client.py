@@ -1,5 +1,5 @@
 from base64 import b64encode
-from json import JSONDecodeError
+from engineio.json import JSONDecodeError
 import logging
 try:
     import queue
