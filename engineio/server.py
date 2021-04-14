@@ -36,7 +36,7 @@ class Server(object):
                           is a grace period added by the server.
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
-                         is 5 seconds.
+                         is 20 seconds.
     :param max_http_buffer_size: The maximum size of a message when using the
                                  polling transport. The default is 1,000,000
                                  bytes.
@@ -86,7 +86,7 @@ class Server(object):
     _default_monitor_clients = True
     sequence_number = 0
 
-    def __init__(self, async_mode=None, ping_interval=25, ping_timeout=5,
+    def __init__(self, async_mode=None, ping_interval=25, ping_timeout=20,
                  max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
