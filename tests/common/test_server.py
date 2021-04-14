@@ -1,7 +1,6 @@
 import gzip
 import importlib
 import io
-import json
 import logging
 import sys
 import time
@@ -12,6 +11,7 @@ import zlib
 import pytest
 
 from engineio import exceptions
+from engineio import json
 from engineio import packet
 from engineio import payload
 from engineio import server

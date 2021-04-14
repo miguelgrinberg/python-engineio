@@ -1,4 +1,3 @@
-import json
 import logging
 import ssl
 import time
@@ -10,6 +9,7 @@ import websocket
 
 from engineio import client
 from engineio import exceptions
+from engineio import json
 from engineio import packet
 from engineio import payload
 

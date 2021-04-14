@@ -73,11 +73,19 @@ class TestPacket(unittest.TestCase):
         ]
 
     def test_decode_json_packet(self):
-        pkt = packet.Packet(encoded_packet=b'4{"a":123,"b":"456"}')
+        pkt = packet.Packet(encoded_packet='4{"a":123,"b":"456"}')
         assert pkt.encode() in [
-            b'4{"a":123,"b":"456"}',
-            b'4{"b":"456","a":123}',
+            '4{"a":123,"b":"456"}',
+            '4{"b":"456","a":123}',
         ]
+
+    def test_decode_json_packet_long_int(self):
+        pkt = packet.Packet(encoded_packet='4{"a":' + '1' * 100 + '}')
+        assert pkt.packet_type == packet.MESSAGE
+        assert pkt.data == {'a': int('1' * 100)}
+        pkt = packet.Packet(encoded_packet='4{"a":' + '1' * 101 + '}')
+        assert pkt.packet_type == packet.MESSAGE
+        assert pkt.data == '{"a":' + '1' * 101 + '}'
 
     def test_encode_number_packet(self):
         pkt = packet.Packet(packet.MESSAGE, data=123)

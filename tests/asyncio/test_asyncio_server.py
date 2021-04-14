@@ -1,7 +1,6 @@
 import asyncio
 import gzip
 import io
-import json
 import logging
 import sys
 import unittest
@@ -13,6 +12,7 @@ import pytest
 from engineio import asyncio_server
 from engineio.async_drivers import aiohttp as async_aiohttp
 from engineio import exceptions
+from engineio import json
 from engineio import packet
 from engineio import payload
 

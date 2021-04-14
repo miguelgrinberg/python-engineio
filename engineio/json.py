@@ -11,6 +11,6 @@ def _safe_int(s):
 
 
 def loads(*args, **kwargs):
-    if 'parse_int' not in kwargs:
+    if 'parse_int' not in kwargs:  # pragma: no cover
         kwargs['parse_int'] = _safe_int
     return original_loads(*args, **kwargs)
