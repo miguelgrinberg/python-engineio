@@ -3,7 +3,7 @@
 **Release 4.1.0** - 2021-04-15
 
 - Change pingTimeout to 20 seconds to match JavaScript's Socket.IO 4.x releases ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1e29203b41ee5f1bbde17bf77a909183fc66033a))
-- Configure the JSON decoder for safer parsing ([commit](https://github.com/miguelgrinberg/python-engineio/commit/dd1db2ec6b75a95bfab5e73a8f71fdb69bd54534))
+- Configure the JSON decoder for safer parsing ([commit](https://github.com/miguelgrinberg/python-engineio/commit/dd1db2ec6b75a95bfab5e73a8f71fdb69bd54534)) (thanks **Onno Kortmann**)
 - Remove obsolete 'mock' dependency [#218](https://github.com/miguelgrinberg/python-engineio/issues/218) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/845fc6201a783d14e02924c593028d3d06600d73)) (thanks **Michał Górny**!)
 
 **Release 4.0.1** - 2021-03-10
