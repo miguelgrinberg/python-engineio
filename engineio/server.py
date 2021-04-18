@@ -581,7 +581,14 @@ class Server(object):
     def _upgrades(self, sid, transport):
         """Return the list of possible upgrades for a client connection."""
         if not self.allow_upgrades or self._get_socket(sid).upgraded or \
-                self._async['websocket'] is None or transport == 'websocket':
+                transport == 'websocket':
+            return []
+        if self._async['websocket'] is None:  # pragma: no cover
+            self._log_error_once(
+                'The WebSocket transport is not available, you must install a '
+                'WebSocket server that is compatible with your async mode to '
+                'enable it. See the documentation for details.',
+                'no-websocket')
             return []
         return ['websocket']
 

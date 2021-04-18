@@ -591,8 +591,7 @@ Standard Threads
 While not comparable to eventlet and gevent in terms of performance,
 the Engine.IO server can also be configured to work with multi-threaded web
 servers that use standard Python threads. This is an ideal setup to use with
-development servers such as `Werkzeug <http://werkzeug.pocoo.org>`_. Only the
-long-polling transport is currently available when using standard threads.
+development servers such as `Werkzeug <http://werkzeug.pocoo.org>`_.
 
 Instances of class ``engineio.Server`` will automatically use the threading
 mode if neither eventlet nor gevent are not installed. To request the
@@ -613,15 +612,22 @@ development web server based on Werkzeug::
     # ... Engine.IO and Flask handler functions ...
 
     if __name__ == '__main__':
-        app.run(threaded=True)
+        app.run()
 
-When using the threading mode, it is important to ensure that the WSGI server
-can handle multiple concurrent requests using threads, since a client can have
-up to two outstanding requests at any given time. The Werkzeug server is
-single-threaded by default, so the ``threaded=True`` option is required.
+The example that follows shows how to start an Engine.IO application using
+Gunicorn's threaded worker class::
 
-Note that servers that use worker processes instead of threads, such as
-gunicorn, do not support an Engine.IO server configured in threading mode.
+    $ gunicorn -w 1 --threads 100 module:app
+
+With the above configuration the server will be able to handle up to 100
+concurrent clients.
+
+When using standard threads, WebSocket is supported through the
+`simple-websocket <https://github.com/miguelgrinberg/simple-websocket>`_
+package, which must be installed separately. This package provides a
+multi-threaded WebSocket server that is compatible with Werkzeug and Gunicorn's
+threaded worker. Other multi-threaded web servers are not supported and will
+not enable the WebSocket transport.
 
 Scalability Notes
 ~~~~~~~~~~~~~~~~~

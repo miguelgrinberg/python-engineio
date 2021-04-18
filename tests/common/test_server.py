@@ -97,19 +97,31 @@ class TestServer(unittest.TestCase):
         server.Server(foo='bar')  # this should not raise
 
     def test_async_mode_threading(self):
+        sys.modules['simple_websocket'] = mock.MagicMock()
         s = server.Server(async_mode='threading')
         assert s.async_mode == 'threading'
 
         import threading
+        from engineio.async_drivers import threading as async_threading
+        import queue
 
-        try:
-            import queue
-        except ImportError:
-            import Queue as queue
+        assert s._async['thread'] == threading.Thread
+        assert s._async['queue'] == queue.Queue
+        assert s._async['websocket'] == async_threading.WebSocketWSGI
+        del sys.modules['simple_websocket']
+        del sys.modules['engineio.async_drivers.threading']
+
+    def test_async_mode_threading_without_websocket(self):
+        s = server.Server(async_mode='threading')
+        assert s.async_mode == 'threading'
+
+        import threading
+        import queue
 
         assert s._async['thread'] == threading.Thread
         assert s._async['queue'] == queue.Queue
         assert s._async['websocket'] is None
+        del sys.modules['engineio.async_drivers.threading']
 
     def test_async_mode_eventlet(self):
         s = server.Server(async_mode='eventlet')

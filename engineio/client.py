@@ -1,10 +1,7 @@
 from base64 import b64encode
 from engineio.json import JSONDecodeError
 import logging
-try:
-    import queue
-except ImportError:  # pragma: no cover
-    import Queue as queue
+import queue
 import signal
 import ssl
 import threading
