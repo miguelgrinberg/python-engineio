@@ -663,13 +663,15 @@ class Server(object):
         if 'wsgi.url_scheme' in environ and 'HTTP_HOST' in environ:
             default_origins.append('{scheme}://{host}'.format(
                 scheme=environ['wsgi.url_scheme'], host=environ['HTTP_HOST']))
-            if 'HTTP_X_FORWARDED_HOST' in environ:
+            if 'HTTP_X_FORWARDED_PROTO' in environ or \
+                    'HTTP_X_FORWARDED_HOST' in environ:
                 scheme = environ.get(
                     'HTTP_X_FORWARDED_PROTO',
                     environ['wsgi.url_scheme']).split(',')[0].strip()
                 default_origins.append('{scheme}://{host}'.format(
-                    scheme=scheme, host=environ['HTTP_X_FORWARDED_HOST'].split(
-                        ',')[0].strip()))
+                    scheme=scheme, host=environ.get(
+                        'HTTP_X_FORWARDED_HOST', environ['HTTP_HOST']).split(
+                            ',')[0].strip()))
         if self.cors_allowed_origins is None:
             allowed_origins = default_origins
         elif self.cors_allowed_origins == '*':

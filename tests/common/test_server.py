@@ -664,6 +664,22 @@ class TestServer(unittest.TestCase):
             'QUERY_STRING': 'EIO=4',
             'wsgi.url_scheme': 'http',
             'HTTP_HOST': 'foo',
+            'HTTP_ORIGIN': 'https://foo',
+            'HTTP_X_FORWARDED_PROTO': 'https, ftp',
+        }
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '200 OK'
+        headers = start_response.call_args[0][1]
+        assert ('Access-Control-Allow-Origin', 'https://foo') in headers
+
+    def test_connect_cors_headers_default_origin_proxy_server2(self):
+        s = server.Server()
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'EIO=4',
+            'wsgi.url_scheme': 'http',
+            'HTTP_HOST': 'foo',
             'HTTP_ORIGIN': 'https://bar',
             'HTTP_X_FORWARDED_PROTO': 'https, ftp',
             'HTTP_X_FORWARDED_HOST': 'bar , baz',
