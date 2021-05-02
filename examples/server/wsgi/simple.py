@@ -24,7 +24,7 @@ def connect(sid, environ):
 @eio.on('message')
 def message(sid, data):
     print('message from', sid, data)
-    eio.send(sid, 'Thank you for your message!', binary=False)
+    eio.send(sid, 'Thank you for your message!')
 
 
 @eio.on('disconnect')
