@@ -61,15 +61,12 @@ class WSGIApp(object):
         else:
             static_file = get_static_file(path, self.static_files) \
                 if self.static_files else None
-            if static_file:
-                if os.path.exists(static_file['filename']):
-                    start_response(
-                        '200 OK',
-                        [('Content-Type', static_file['content_type'])])
-                    with open(static_file['filename'], 'rb') as f:
-                        return [f.read()]
-                else:
-                    return self.not_found(start_response)
+            if static_file and os.path.exists(static_file['filename']):
+                start_response(
+                    '200 OK',
+                    [('Content-Type', static_file['content_type'])])
+                with open(static_file['filename'], 'rb') as f:
+                    return [f.read()]
             elif self.wsgi_app is not None:
                 return self.wsgi_app(environ, start_response)
         return self.not_found(start_response)

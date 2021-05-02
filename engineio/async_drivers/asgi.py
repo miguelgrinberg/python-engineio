@@ -55,7 +55,7 @@ class ASGIApp:
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
-            if static_file:
+            if static_file and os.path.exists(static_file['filename']):
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:
                 await self.other_asgi_app(scope, receive, send)
@@ -68,17 +68,14 @@ class ASGIApp:
                                 send):  # pragma: no cover
         event = await receive()
         if event['type'] == 'http.request':
-            if os.path.exists(static_file['filename']):
-                with open(static_file['filename'], 'rb') as f:
-                    payload = f.read()
-                await send({'type': 'http.response.start',
-                            'status': 200,
-                            'headers': [(b'Content-Type', static_file[
-                                'content_type'].encode('utf-8'))]})
-                await send({'type': 'http.response.body',
-                            'body': payload})
-            else:
-                await self.not_found(receive, send)
+            with open(static_file['filename'], 'rb') as f:
+                payload = f.read()
+            await send({'type': 'http.response.start',
+                        'status': 200,
+                        'headers': [(b'Content-Type', static_file[
+                            'content_type'].encode('utf-8'))]})
+            await send({'type': 'http.response.body',
+                        'body': payload})
 
     async def lifespan(self, receive, send):
         while True:

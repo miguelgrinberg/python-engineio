@@ -40,6 +40,8 @@ class TestWSGIApp(unittest.TestCase):
                 },
                 '/static': root_dir,
                 '/static/test/': root_dir + '/',
+                '/static2/test/': {'filename': root_dir + '/',
+                                   'content_type': 'image/gif'},
             },
         )
 
@@ -54,6 +56,7 @@ class TestWSGIApp(unittest.TestCase):
 
         check_path('/', '200 OK', 'text/html', '<html></html>\n')
         check_path('/foo', '200 OK', 'text/plain', '<html></html>\n')
+        check_path('/foo/bar', '404 Not Found', 'text/plain', 'Not Found')
         check_path(
             '/static/index.html', '200 OK', 'text/html', '<html></html>\n'
         )
@@ -64,6 +67,23 @@ class TestWSGIApp(unittest.TestCase):
             '/static/test/index.html', '200 OK', 'text/html', '<html></html>\n'
         )
         check_path('/static/test/', '200 OK', 'text/html', '<html></html>\n')
+        check_path('/static/test/index.html', '200 OK', 'text/html',
+                   '<html></html>\n')
+        check_path('/static/test/files/', '200 OK', 'text/html',
+                   '<html>file</html>\n')
+        check_path('/static/test/files/file.txt', '200 OK', 'text/plain',
+                   'file\n')
+        check_path('/static/test/files/x.html', '404 Not Found', 'text/plain',
+                   'Not Found')
+        check_path('/static2/test/', '200 OK', 'image/gif', '<html></html>\n')
+        check_path('/static2/test/index.html', '200 OK', 'image/gif',
+                   '<html></html>\n')
+        check_path('/static2/test/files/', '200 OK', 'image/gif',
+                   '<html>file</html>\n')
+        check_path('/static2/test/files/file.txt', '200 OK', 'image/gif',
+                   'file\n')
+        check_path('/static2/test/files/x.html', '404 Not Found', 'text/plain',
+                   'Not Found')
         check_path('/bar/foo', '404 Not Found', 'text/plain', 'Not Found')
         check_path('', '404 Not Found', 'text/plain', 'Not Found')
 
