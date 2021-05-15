@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 4.2.0** - 2021-05-15
+
+- WebSocket support for threading mode ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b84537af22e547211163521f7bc85995faab3625))
+- Fixed CORS handling of scheme proxy server header [#1501](https://github.com/miguelgrinberg/Flask-SocketIO/issues/1501) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/fb47df6949c10c35d6630daacb3d511d2086f1b3))
+- Correct handling of static files when secondary WSGI/ASGI app is set [#653](https://github.com/miguelgrinberg/python-socketio/issues/653) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bd2e59d0b37e86fd561f716f2d805081200f896e))
+- Remove outdated binary argument from example code ([commit](https://github.com/miguelgrinberg/python-engineio/commit/090454ffe66ebe7e830ecbd859f0416c7bc74eee))
+- Added Open Collective funding option ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9e3497a9749aebc87268250673cebba35c6922cf))
+
 **Release 4.1.0** - 2021-04-15
 
 - Change pingTimeout to 20 seconds to match JavaScript's Socket.IO 4.x releases ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1e29203b41ee5f1bbde17bf77a909183fc66033a))
