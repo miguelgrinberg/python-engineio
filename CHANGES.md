@@ -102,6 +102,7 @@
 
 **Release 3.11.2** - 2020-01-03
 
+- Last version to support Python 2
 - Detect unreported websocket closures in asyncio client [#401](https://github.com/miguelgrinberg/python-socketio/issues/401) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a67b3d76d80e665ec071292dc4aadffb50be6d3f))
 - Initialize aiohttp when client connects directly through websocket [#152](https://github.com/miguelgrinberg/python-engineio/issues/152) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9a3d6453bd35bc9581b5dd9226dc9e6bba3a18aa))
 - Initialize the client's SIGINT signal handler only if a client is created [#147](https://github.com/miguelgrinberg/python-engineio/issues/147) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6534d324f3dce2e1e4927932660d5e5e8bcab202))
