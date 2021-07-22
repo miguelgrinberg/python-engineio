@@ -192,7 +192,13 @@ async def make_response(status, headers, payload, environ):
             await environ['asgi.send']({'type': 'websocket.accept',
                                         'headers': headers})
         else:
-            await environ['asgi.send']({'type': 'websocket.close'})
+            if payload:
+                reason = payload.decode('utf-8') \
+                    if isinstance(payload, bytes) else str(payload)
+                await environ['asgi.send']({'type': 'websocket.close',
+                                            'reason': reason})
+            else:
+                await environ['asgi.send']({'type': 'websocket.close'})
         return
 
     await environ['asgi.send']({'type': 'http.response.start',

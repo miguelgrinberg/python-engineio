@@ -493,5 +493,19 @@ class AsgiTests(unittest.TestCase):
             )
         )
         environ['asgi.send'].mock.assert_called_with(
+            {'type': 'websocket.close', 'reason': 'payload'}
+        )
+
+    def test_make_response_websocket_reject_no_payload(self):
+        environ = {
+            'asgi.send': AsyncMock(),
+            'asgi.scope': {'type': 'websocket'},
+        }
+        _run(
+            async_asgi.make_response(
+                '401 UNAUTHORIZED', [('foo', 'bar')], None, environ
+            )
+        )
+        environ['asgi.send'].mock.assert_called_with(
             {'type': 'websocket.close'}
         )
