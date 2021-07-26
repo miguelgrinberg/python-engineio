@@ -43,14 +43,18 @@ class ASGIApp:
                  on_startup=None, on_shutdown=None):
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
-        self.engineio_path = engineio_path.strip('/')
+        self.engineio_path = engineio_path
+        if not self.engineio_path.startswith('/'):
+            self.engineio_path = '/' + self.engineio_path
+        if not self.engineio_path.endswith('/'):
+            self.engineio_path += '/'
         self.static_files = static_files or {}
         self.on_startup = on_startup
         self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
         if scope['type'] in ['http', 'websocket'] and \
-                scope['path'].startswith('/{0}/'.format(self.engineio_path)):
+                scope['path'].startswith(self.engineio_path):
             await self.engineio_server.handle_request(scope, receive, send)
         else:
             static_file = get_static_file(scope['path'], self.static_files) \

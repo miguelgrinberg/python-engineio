@@ -30,12 +30,12 @@ class AsgiTests(unittest.TestCase):
             'eio',
             'other_app',
             static_files='static_files',
-            engineio_path='/foo',
+            engineio_path='/foo/',
         )
         assert app.engineio_server == 'eio'
         assert app.other_asgi_app == 'other_app'
         assert app.static_files == 'static_files'
-        assert app.engineio_path == 'foo'
+        assert app.engineio_path == '/foo/'
 
     def test_engineio_routing(self):
         mock_server = mock.MagicMock()

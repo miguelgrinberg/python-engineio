@@ -194,4 +194,4 @@ class TestWSGIApp(unittest.TestCase):
         assert m.engineio_app == 'eio'
         assert m.wsgi_app == 'wsgi'
         assert m.static_files == {}
-        assert m.engineio_path == 'eio_path'
+        assert m.engineio_path == '/eio_path/'
