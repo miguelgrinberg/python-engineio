@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 4.2.1** - 2021-08-02
+
+- Support setting `socketio_path` to the root URL [#242](https://github.com/miguelgrinberg/python-engineio/issues/242) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/47ada56b1ada2ed6eeb8c0fe172045bed321a037))
+- Use the gevent selector to avoid 1024 file handle limitation of select[#228](https://github.com/miguelgrinberg/python-engineio/issues/228) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6a4fd582e23d03d90b67b6825518a6c73431c6dd))
+- Pass reason when closing a WebSocket connection ([commit](https://github.com/miguelgrinberg/python-engineio/commit/583c7db1f9dfa62290481634b4f9ab4d39a8ec6b))
+- Improved project structure ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bf37732b38b6d798f86fdf5c3d26b8e306e34655))
+- Remove executable permissions from files that lack shebang lines [#240](https://github.com/miguelgrinberg/python-engineio/issues/240) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7a4e2780f9ea3466a8a14e3f1720561773faee7c)) (thanks **Ben Beasley**!)
+
 **Release 4.2.0** - 2021-05-15
 
 - WebSocket support for threading mode ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b84537af22e547211163521f7bc85995faab3625))
