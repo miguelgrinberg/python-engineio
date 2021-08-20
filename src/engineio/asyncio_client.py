@@ -214,10 +214,10 @@ class AsyncClient(client.Client):
         r = await self._send_request(
             'GET', self.base_url + self._get_url_timestamp(), headers=headers,
             timeout=self.request_timeout)
-        if r is None:
+        if r is None or isinstance(r, str):
             self._reset()
             raise exceptions.ConnectionError(
-                'Connection refused by the server')
+                r or 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
             self._reset()
             try:
@@ -423,6 +423,7 @@ class AsyncClient(client.Client):
         except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
+            return str(exc)
 
     async def _trigger_event(self, event, *args, **kwargs):
         """Invoke an event handler."""
@@ -469,9 +470,9 @@ class AsyncClient(client.Client):
             r = await self._send_request(
                 'GET', self.base_url + self._get_url_timestamp(),
                 timeout=max(self.ping_interval, self.ping_timeout) + 5)
-            if r is None:
+            if r is None or isinstance(r, str):
                 self.logger.warning(
-                    'Connection refused by the server, aborting')
+                    r or 'Connection refused by the server, aborting')
                 await self.queue.put(None)
                 break
             if r.status < 200 or r.status >= 300:
@@ -589,9 +590,9 @@ class AsyncClient(client.Client):
                     timeout=self.request_timeout)
                 for pkt in packets:
                     self.queue.task_done()
-                if r is None:
+                if r is None or isinstance(r, str):
                     self.logger.warning(
-                        'Connection refused by the server, aborting')
+                        r or 'Connection refused by the server, aborting')
                     break
                 if r.status < 200 or r.status >= 300:
                     self.logger.warning('Unexpected status code %s in server '
