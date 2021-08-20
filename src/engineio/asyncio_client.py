@@ -191,10 +191,17 @@ class AsyncClient(client.Client):
         """Create an event object."""
         return asyncio.Event()
 
-    def _reset(self):
-        if self.http:  # pragma: no cover
-            asyncio.ensure_future(self.http.close())
-        super()._reset()
+    def __del__(self):  # pragma: no cover
+        # try to close the aiohttp session if it is still open
+        if self.http and not self.http.closed:
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.ensure_future(self.http.close())
+                else:
+                    loop.run_until_complete(self.http.close())
+            except:
+                pass
 
     async def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
