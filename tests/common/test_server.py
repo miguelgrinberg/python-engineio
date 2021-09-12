@@ -144,13 +144,15 @@ class TestServer(unittest.TestCase):
         sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
+        sys.modules['gevent.threading'] = mock.MagicMock()
+        sys.modules['gevent.threading'].Thread = 'baz'
         sys.modules['uwsgi'] = mock.MagicMock()
         s = server.Server(async_mode='gevent_uwsgi')
         assert s.async_mode == 'gevent_uwsgi'
 
         from engineio.async_drivers import gevent_uwsgi as async_gevent_uwsgi
 
-        assert s._async['thread'] == async_gevent_uwsgi.Thread
+        assert s._async['thread'] == 'baz'
         assert s._async['queue'] == 'foo'
         assert s._async['queue_empty'] == RuntimeError
         assert s._async['event'] == 'bar'
@@ -158,6 +160,7 @@ class TestServer(unittest.TestCase):
         del sys.modules['gevent']
         del sys.modules['gevent.queue']
         del sys.modules['gevent.event']
+        del sys.modules['gevent.threading']
         del sys.modules['uwsgi']
         del sys.modules['engineio.async_drivers.gevent_uwsgi']
 
@@ -170,12 +173,15 @@ class TestServer(unittest.TestCase):
         sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
+        sys.modules['gevent.threading'] = mock.MagicMock()
+        sys.modules['gevent.threading'].Thread = 'baz'
         sys.modules['uwsgi'] = None
         with pytest.raises(ValueError):
             server.Server(async_mode='gevent_uwsgi')
         del sys.modules['gevent']
         del sys.modules['gevent.queue']
         del sys.modules['gevent.event']
+        del sys.modules['gevent.threading']
         del sys.modules['uwsgi']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
@@ -187,14 +193,14 @@ class TestServer(unittest.TestCase):
         sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
+        sys.modules['gevent.threading'] = mock.MagicMock()
+        sys.modules['gevent.threading'].Thread = 'baz'
         sys.modules['uwsgi'] = mock.MagicMock()
         del sys.modules['uwsgi'].websocket_handshake
         s = server.Server(async_mode='gevent_uwsgi')
         assert s.async_mode == 'gevent_uwsgi'
 
-        from engineio.async_drivers import gevent_uwsgi as async_gevent_uwsgi
-
-        assert s._async['thread'] == async_gevent_uwsgi.Thread
+        assert s._async['thread'] == 'baz'
         assert s._async['queue'] == 'foo'
         assert s._async['queue_empty'] == RuntimeError
         assert s._async['event'] == 'bar'
@@ -202,6 +208,7 @@ class TestServer(unittest.TestCase):
         del sys.modules['gevent']
         del sys.modules['gevent.queue']
         del sys.modules['gevent.event']
+        del sys.modules['gevent.threading']
         del sys.modules['uwsgi']
         del sys.modules['engineio.async_drivers.gevent_uwsgi']
 
@@ -214,13 +221,15 @@ class TestServer(unittest.TestCase):
         sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
+        sys.modules['gevent.threading'] = mock.MagicMock()
+        sys.modules['gevent.threading'].Thread = 'baz'
         sys.modules['geventwebsocket'] = 'geventwebsocket'
         s = server.Server(async_mode='gevent')
         assert s.async_mode == 'gevent'
 
         from engineio.async_drivers import gevent as async_gevent
 
-        assert s._async['thread'] == async_gevent.Thread
+        assert s._async['thread'] == 'baz'
         assert s._async['queue'] == 'foo'
         assert s._async['queue_empty'] == RuntimeError
         assert s._async['event'] == 'bar'
@@ -228,6 +237,7 @@ class TestServer(unittest.TestCase):
         del sys.modules['gevent']
         del sys.modules['gevent.queue']
         del sys.modules['gevent.event']
+        del sys.modules['gevent.threading']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_drivers.gevent']
 
@@ -240,13 +250,15 @@ class TestServer(unittest.TestCase):
         sys.modules['gevent.queue'].Empty = RuntimeError
         sys.modules['gevent.event'] = mock.MagicMock()
         sys.modules['gevent.event'].Event = 'bar'
+        sys.modules['gevent.threading'] = mock.MagicMock()
+        sys.modules['gevent.threading'].Thread = 'baz'
         sys.modules['geventwebsocket'] = None
         s = server.Server(async_mode='gevent')
         assert s.async_mode == 'gevent'
 
         from engineio.async_drivers import gevent as async_gevent
 
-        assert s._async['thread'] == async_gevent.Thread
+        assert s._async['thread'] == 'baz'
         assert s._async['queue'] == 'foo'
         assert s._async['queue_empty'] == RuntimeError
         assert s._async['event'] == 'bar'
@@ -254,6 +266,7 @@ class TestServer(unittest.TestCase):
         del sys.modules['gevent']
         del sys.modules['gevent.queue']
         del sys.modules['gevent.event']
+        del sys.modules['gevent.threading']
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_drivers.gevent']
 

@@ -3,23 +3,12 @@ from __future__ import absolute_import
 import gevent
 from gevent import queue
 from gevent.event import Event
+from gevent.threading import Thread
 try:
     import geventwebsocket  # noqa
     _websocket_available = True
 except ImportError:
     _websocket_available = False
-
-
-class Thread(gevent.Greenlet):  # pragma: no cover
-    """
-    This wrapper class provides gevent Greenlet interface that is compatible
-    with the standard library's Thread class.
-    """
-    def __init__(self, target, args=[], kwargs={}):
-        super(Thread, self).__init__(target, *args, **kwargs)
-
-    def _run(self):
-        return self.run()
 
 
 class WebSocketWSGI(object):  # pragma: no cover
