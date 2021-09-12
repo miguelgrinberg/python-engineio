@@ -6,6 +6,7 @@ from gevent import selectors
 import uwsgi
 _websocket_available = hasattr(uwsgi, 'websocket_handshake')
 
+
 class uWSGIWebSocket(object):  # pragma: no cover
     """
     This wrapper class provides a uWSGI WebSocket interface that is

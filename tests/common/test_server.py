@@ -256,8 +256,6 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='gevent')
         assert s.async_mode == 'gevent'
 
-        from engineio.async_drivers import gevent as async_gevent
-
         assert s._async['thread'] == 'baz'
         assert s._async['queue'] == 'foo'
         assert s._async['queue_empty'] == RuntimeError
