@@ -680,7 +680,7 @@ class Client(object):
                 p = payload.Payload(packets=packets)
                 r = self._send_request(
                     'POST', self.base_url, body=p.encode(),
-                    headers={'Content-Type': 'application/octet-stream'},
+                    headers={'Content-Type': 'text/plain'},
                     timeout=self.request_timeout)
                 for pkt in packets:
                     self.queue.task_done()
