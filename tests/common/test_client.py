@@ -1466,7 +1466,7 @@ class TestClient(unittest.TestCase):
             'POST',
             'http://foo',
             body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'},
+            headers={'Content-Type': 'text/plain'},
             timeout=5,
         )
 
@@ -1501,7 +1501,7 @@ class TestClient(unittest.TestCase):
             'POST',
             'http://foo',
             body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'},
+            headers={'Content-Type': 'text/plain'},
             timeout=5,
         )
 
@@ -1534,7 +1534,7 @@ class TestClient(unittest.TestCase):
             'POST',
             'http://foo',
             body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'},
+            headers={'Content-Type': 'text/plain'},
             timeout=5,
         )
         assert c.state == 'connected'
@@ -1563,7 +1563,7 @@ class TestClient(unittest.TestCase):
             'POST',
             'http://foo',
             body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'},
+            headers={'Content-Type': 'text/plain'},
             timeout=5,
         )
         assert c.state == 'connected'
@@ -1592,7 +1592,7 @@ class TestClient(unittest.TestCase):
             'POST',
             'http://foo',
             body=p.encode(),
-            headers={'Content-Type': 'application/octet-stream'},
+            headers={'Content-Type': 'text/plain'},
             timeout=5,
         )
         assert c.state == 'disconnected'
