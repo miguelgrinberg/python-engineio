@@ -66,12 +66,32 @@ class AsyncSocket(socket.Socket):
             return False
         return True
 
-    async def send(self, pkt):
-        """Send a packet to the client."""
+    async def send(self, pkt, apply_bp):
+        """
+        Send a packet to the client.
+
+        params:
+            - apply_bp - applies backpressure handling by limiting
+                         the amount of messages that can go into the
+                         queue. This should not be applied to control
+                         messages.
+        """
         if not await self.check_ping_timeout():
             return
-        else:
-            await self.queue.put(pkt)
+        
+        # back pressure enabled. Check if need to limit
+        if apply_bp and self.queue.qsize() >= self.server.back_pressure_size:
+            self.server.logger.warning(
+                    '%s: back pressure applied. Not Sending packet %s data %s',
+                    self.sid, packet.packet_names[packet.packet_type],
+                    packet.data if not isinstance(packet.data, bytes)
+                    else '<binary>')
+            return
+
+        self._send(pkt)
+
+    async def _send(self, pkt):
+        await self.queue.put(pkt)
         self.server.logger.info('%s: Sending packet %s data %s',
                                 self.sid, packet.packet_names[pkt.packet_type],
                                 pkt.data if not isinstance(pkt.data, bytes)

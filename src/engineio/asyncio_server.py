@@ -63,6 +63,12 @@ class AsyncServer(server.Server):
     :param async_handlers: If set to ``True``, run message event handlers in
                            non-blocking threads. To run handlers synchronously,
                            set to ``False``. The default is ``True``.
+    :param back_pressure_size: The size to limit the Socket queue if packets
+                               going to the client are allowed to be dropped
+                               in the senario in which a client is not recieving
+                               packets. This prevents buffering on the server side
+                               but risks packet loss. Set only if data reliability
+                               is not essential.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -93,7 +99,7 @@ class AsyncServer(server.Server):
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        await socket.send(packet.Packet(packet.MESSAGE, data=data))
+        await socket.send(packet.Packet(packet.MESSAGE, data=data), apply_bp=self.back_pressure_size is not None)
 
     async def get_session(self, sid):
         """Return the user session for a client.

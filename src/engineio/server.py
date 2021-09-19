@@ -78,6 +78,12 @@ class Server(object):
                             inactive clients are closed. Set to ``False`` to
                             disable the monitoring task (not recommended). The
                             default is ``True``.
+    :param back_pressure_size: The size to limit the Socket queue if packets
+                               going to the client are allowed to be dropped
+                               in the senario in which a client is not recieving
+                               packets. This prevents buffering on the server side
+                               but risks packet loss. Set only if data reliability
+                               is not essential.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -91,7 +97,7 @@ class Server(object):
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,
-                 async_handlers=True, monitor_clients=None, **kwargs):
+                 async_handlers=True, monitor_clients=None, back_pressure_size=None, **kwargs):
         self.ping_timeout = ping_timeout
         if isinstance(ping_interval, tuple):
             self.ping_interval = ping_interval[0]
@@ -107,6 +113,7 @@ class Server(object):
         self.cors_allowed_origins = cors_allowed_origins
         self.cors_credentials = cors_credentials
         self.async_handlers = async_handlers
+        self.back_pressure_size = back_pressure_size
         self.sockets = {}
         self.handlers = {}
         self.log_message_keys = set()
@@ -141,6 +148,8 @@ class Server(object):
                 break
             except ImportError:
                 pass
+        if self.back_pressure_size is not None and self.back_pressure_size <= 0:
+            raise ValueError('Invalid back_pressure_size specified')
         if self.async_mode is None:
             raise ValueError('Invalid async_mode specified')
         if self.is_asyncio_based() and \
@@ -216,7 +225,7 @@ class Server(object):
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        socket.send(packet.Packet(packet.MESSAGE, data=data))
+        socket.send(packet.Packet(packet.MESSAGE, data=data), apply_bp=self.back_pressure_size is not None)
 
     def get_session(self, sid):
         """Return the user session for a client.

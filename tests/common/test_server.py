@@ -829,6 +829,16 @@ class TestServer(unittest.TestCase):
         assert mock_socket.send.call_count == 1
         assert mock_socket.send.call_args[0][0].packet_type == packet.MESSAGE
         assert mock_socket.send.call_args[0][0].data == 'hello'
+        assert mock_socket.send.call_args[1] == False
+
+    def test_send_back_pressure(self):
+        s = server.Server(back_pressure_size=5)
+        mock_socket = self._get_mock_socket()
+        s.sockets['foo'] = mock_socket
+        assert mock_socket.send.call_count == 1
+        assert mock_socket.send.call_args[0][0].packet_type == packet.MESSAGE
+        assert mock_socket.send.call_args[0][0].data == 'hello'
+        assert mock_socket.send.call_args[1] == True
 
     def test_send_unknown_socket(self):
         s = server.Server()
