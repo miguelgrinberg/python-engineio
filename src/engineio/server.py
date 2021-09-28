@@ -333,8 +333,7 @@ class Server(object):
                         allowed_origins:
                     self._log_error_once(
                         origin + ' is not an accepted origin.', 'bad-origin')
-                    r = self._bad_request(
-                        origin + ' is not an accepted origin.')
+                    r = self._bad_request('Not an accepted origin.')
                     start_response(r['status'], r['headers'])
                     return [r['response']]
 
@@ -381,11 +380,11 @@ class Server(object):
                 else:
                     self._log_error_once('Invalid transport ' + transport,
                                          'bad-transport')
-                    r = self._bad_request('Invalid transport ' + transport)
+                    r = self._bad_request('Invalid transport')
             else:
                 if sid not in self.sockets:
                     self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                    r = self._bad_request('Invalid session ' + sid)
+                    r = self._bad_request('Invalid session')
                 else:
                     socket = self._get_socket(sid)
                     try:
@@ -405,7 +404,7 @@ class Server(object):
             if sid is None or sid not in self.sockets:
                 self._log_error_once(
                     'Invalid session ' + (sid or 'None'), 'bad-sid')
-                r = self._bad_request('Invalid session ' + (sid or 'None'))
+                r = self._bad_request('Invalid session')
             else:
                 socket = self._get_socket(sid)
                 try:
