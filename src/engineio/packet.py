@@ -33,7 +33,7 @@ class Packet(object):
                 encoded_packet = 'b' + base64.b64encode(self.data).decode(
                     'utf-8')
             else:
-                encoded_packet = self.data
+                encoded_packet = int(self.packet_type).to_bytes(1, byteorder='big') + self.data
         else:
             encoded_packet = str(self.packet_type)
             if isinstance(self.data, str):
@@ -57,8 +57,8 @@ class Packet(object):
             if self.binary and not isinstance(encoded_packet, bytes):
                 encoded_packet = bytes(encoded_packet)
             if self.binary:
-                self.packet_type = MESSAGE
-                self.data = encoded_packet
+                self.packet_type = int.from_bytes(encoded_packet[0:1], byteorder='big')
+                self.data = encoded_packet[1:]
             else:
                 self.packet_type = int(encoded_packet[0])
                 try:
