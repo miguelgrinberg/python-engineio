@@ -452,9 +452,9 @@ class Server(object):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
+        This function returns an object that represents the background task,
+        on which the ``join()`` methond can be invoked to wait for the task to
+        complete.
         """
         th = self._async['thread'](target=target, args=args, kwargs=kwargs)
         th.start()

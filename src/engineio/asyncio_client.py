@@ -166,11 +166,7 @@ class AsyncClient(client.Client):
         :param args: arguments to pass to the function.
         :param kwargs: keyword arguments to pass to the function.
 
-        This function returns an object compatible with the `Thread` class in
-        the Python standard library. The `start()` method on this object is
-        already called by this function.
-
-        Note: this method is a coroutine.
+        The return value is a ``asyncio.Task`` object.
         """
         return asyncio.ensure_future(target(*args, **kwargs))
 
