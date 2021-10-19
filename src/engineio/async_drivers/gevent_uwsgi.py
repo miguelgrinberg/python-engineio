@@ -46,7 +46,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
             def select_greenlet_runner(fd, event):
                 """Sets event when data becomes available to read on fd."""
                 sel = selectors.DefaultSelector()
-                sel.register(fd, selectors.EVENT_READ)
+                sel.register(fd, selectors.EVENT_WRITE)
                 try:
                     while True:
                         sel.select()
