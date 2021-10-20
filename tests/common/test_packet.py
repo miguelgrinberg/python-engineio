@@ -29,6 +29,18 @@ class TestPacket(unittest.TestCase):
         pkt = packet.Packet(encoded_packet=b'4text')
         assert pkt.encode() == b'4text'
 
+    def test_encode_empty_text_packet(self):
+        data = ''
+        pkt = packet.Packet(packet.MESSAGE, data=data)
+        assert pkt.packet_type == packet.MESSAGE
+        assert pkt.data == data
+        assert not pkt.binary
+        assert pkt.encode() == '4'
+
+    def test_decode_empty_text_packet(self):
+        pkt = packet.Packet(encoded_packet=b'4')
+        assert pkt.encode() == b'4'
+
     def test_encode_binary_packet(self):
         pkt = packet.Packet(packet.MESSAGE, data=b'\x01\x02\x03')
         assert pkt.packet_type == packet.MESSAGE
@@ -50,17 +62,28 @@ class TestPacket(unittest.TestCase):
         assert pkt.binary
         assert pkt.encode(b64=True) == 'bAQIDBA=='
 
+    def test_encode_empty_binary_packet(self):
+        pkt = packet.Packet(packet.MESSAGE, data=b'')
+        assert pkt.packet_type == packet.MESSAGE
+        assert pkt.data == b''
+        assert pkt.binary
+        assert pkt.encode() == b''
+
     def test_decode_binary_packet(self):
         pkt = packet.Packet(encoded_packet=b'\x04\x01\x02\x03')
-        assert pkt.encode(), b'\x04\x01\x02\x03'
+        assert pkt.encode() == b'\x04\x01\x02\x03'
 
     def test_decode_binary_bytearray_packet(self):
         pkt = packet.Packet(encoded_packet=bytearray(b'\x04\x01\x02\x03'))
-        assert pkt.encode(), b'\x04\x01\x02\x03'
+        assert pkt.encode() == b'\x04\x01\x02\x03'
 
     def test_decode_binary_b64_packet(self):
-        pkt = packet.Packet(encoded_packet=b'b4AAEC')
-        assert pkt.encode(), b'\x04\x01\x02\x03'
+        pkt = packet.Packet(encoded_packet='bBAECAw==')
+        assert pkt.encode() == b'\x04\x01\x02\x03'
+
+    def test_decode_empty_binary_packet(self):
+        pkt = packet.Packet(encoded_packet=b'')
+        assert pkt.encode() == b''
 
     def test_encode_json_packet(self):
         pkt = packet.Packet(packet.MESSAGE, data={'a': 123, 'b': '456'})
