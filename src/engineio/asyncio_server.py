@@ -63,6 +63,9 @@ class AsyncServer(server.Server):
     :param async_handlers: If set to ``True``, run message event handlers in
                            non-blocking threads. To run handlers synchronously,
                            set to ``False``. The default is ``True``.
+    :param transports: The list of allowed transports. Valid transports
+                       are ``'polling'`` and ``'websocket'``. Defaults to
+                       ``['polling', 'websocket']``.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
@@ -212,6 +215,14 @@ class AsyncServer(server.Server):
         sid = query['sid'][0] if 'sid' in query else None
         jsonp = False
         jsonp_index = None
+
+        # make sure the client uses an allowed transport
+        transport = query.get('transport', ['polling'])[0]
+        if transport not in self.transports:
+            self._log_error_once(
+                'Invalid transport ' + transport, 'bad-transport')
+            return await self._make_response(
+                self._bad_request('Invalid transport'), environ)
 
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None

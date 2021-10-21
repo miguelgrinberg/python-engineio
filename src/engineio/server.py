@@ -78,11 +78,15 @@ class Server(object):
                             inactive clients are closed. Set to ``False`` to
                             disable the monitoring task (not recommended). The
                             default is ``True``.
+    :param transports: The list of allowed transports. Valid transports
+                       are ``'polling'`` and ``'websocket'``. Defaults to
+                       ``['polling', 'websocket']``.
     :param kwargs: Reserved for future extensions, any additional parameters
                    given as keyword arguments will be silently ignored.
     """
     compression_methods = ['gzip', 'deflate']
     event_names = ['connect', 'disconnect', 'message']
+    valid_transports = ['polling', 'websocket']
     _default_monitor_clients = True
     sequence_number = 0
 
@@ -91,7 +95,8 @@ class Server(object):
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
                  cors_credentials=True, logger=False, json=None,
-                 async_handlers=True, monitor_clients=None, **kwargs):
+                 async_handlers=True, monitor_clients=None, transports=None,
+                 **kwargs):
         self.ping_timeout = ping_timeout
         if isinstance(ping_interval, tuple):
             self.ping_interval = ping_interval[0]
@@ -152,6 +157,14 @@ class Server(object):
                 self._async['asyncio']:  # pragma: no cover
             raise ValueError('The selected async_mode requires asyncio and '
                              'must use the AsyncServer class')
+        if transports is not None:
+            if isinstance(transports, str):
+                transports = [transports]
+            transports = [transport for transport in transports
+                          if transport in self.valid_transports]
+            if not transports:
+                raise ValueError('No valid transports provided')
+        self.transports = transports or self.valid_transports
         self.logger.info('Server initialized for %s.', self.async_mode)
 
     def is_asyncio_based(self):
@@ -341,6 +354,15 @@ class Server(object):
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
         jsonp = False
         jsonp_index = None
+
+        # make sure the client uses an allowed transport
+        transport = query.get('transport', ['polling'])[0]
+        if transport not in self.transports:
+            self._log_error_once(
+                'Invalid transport ' + transport, 'bad-transport')
+            r = self._bad_request('Invalid transport')
+            start_response(r['status'], r['headers'])
+            return [r['response']]
 
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
