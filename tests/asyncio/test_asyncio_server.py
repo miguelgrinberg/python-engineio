@@ -1121,3 +1121,16 @@ class TestAsyncServer(unittest.TestCase):
         s._service_task = AsyncMock()
         _run(s.handle_request('request'))
         s._service_task.mock.assert_called_once_with()
+
+    @mock.patch('importlib.import_module')
+    def test_transports_disallowed(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=polling'}
+        )
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(transports='websocket')
+        response = _run(s.handle_request('request'))
+        assert response == 'response'
+        a._async['translate_request'].assert_called_once_with('request')
+        assert a._async['make_response'].call_count == 1
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'

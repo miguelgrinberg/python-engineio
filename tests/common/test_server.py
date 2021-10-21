@@ -1149,3 +1149,17 @@ class TestServer(unittest.TestCase):
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
         s._service_task.assert_called_once_with()
+
+    def test_transports_invalid(self):
+        with pytest.raises(ValueError):
+            server.Server(transports='invalid')
+
+    def test_transports_disallowed(self):
+        s = server.Server(transports='websocket')
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'transport=polling',
+        }
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
