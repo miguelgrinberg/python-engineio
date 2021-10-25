@@ -66,17 +66,18 @@ class Client(object):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param handle_sigint: Set to ``True`` to automatically handle disconnection
+                          when the process is interrupted, or to ``False`` to
+                          leave interrupt handling to the calling application.
+                          Interrupt handling can only be enabled when the
+                          client instance is created in the main thread.
     """
     event_names = ['connect', 'disconnect', 'message']
 
-    def __init__(self,
-                 logger=False,
-                 json=None,
-                 request_timeout=5,
-                 http_session=None,
-                 ssl_verify=True):
+    def __init__(self, logger=False, json=None, request_timeout=5,
+                 http_session=None, ssl_verify=True, handle_sigint=True):
         global original_signal_handler
-        if original_signal_handler is None and \
+        if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
             original_signal_handler = signal.signal(signal.SIGINT,
                                                     signal_handler)
@@ -89,6 +90,7 @@ class Client(object):
         self.ping_interval = None
         self.ping_timeout = None
         self.http = http_session
+        self.handle_sigint = handle_sigint
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None

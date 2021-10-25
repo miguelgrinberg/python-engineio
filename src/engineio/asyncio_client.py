@@ -57,6 +57,11 @@ class AsyncClient(client.Client):
                        skip SSL certificate verification, allowing
                        connections to servers with self signed certificates.
                        The default is ``True``.
+    :param handle_sigint: Set to ``True`` to automatically handle disconnection
+                          when the process is interrupted, or to ``False`` to
+                          leave interrupt handling to the calling application.
+                          Interrupt handling can only be enabled when the
+                          client instance is created in the main thread.
     """
     def is_asyncio_based(self):
         return True
@@ -85,9 +90,8 @@ class AsyncClient(client.Client):
             await eio.connect('http://localhost:5000')
         """
         global async_signal_handler_set
-        if not async_signal_handler_set and \
+        if self.handle_sigint and not async_signal_handler_set and \
                 threading.current_thread() == threading.main_thread():
-
             try:
                 asyncio.get_event_loop().add_signal_handler(
                     signal.SIGINT, async_signal_handler)

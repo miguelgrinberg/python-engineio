@@ -59,7 +59,7 @@ class TestClient(unittest.TestCase):
         c = client.Client(logger=my_logger)
         assert c.logger == my_logger
 
-    def test_custon_timeout(self):
+    def test_custom_timeout(self):
         c = client.Client()
         assert c.request_timeout == 5
         c = client.Client(request_timeout=27)
