@@ -1,5 +1,17 @@
 # python-engineio change log
 
+**Release 4.3.0** - 2021-10-26
+
+- **Backward incompatible change**: Reject websocket messages larger than `max_http_buffer_size` [#260](https://github.com/miguelgrinberg/python-engineio/issues/260) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5f519a22b9543f585adc352e13f2a9b3cbfca727))
+- Enable or disable specific transports [#259](https://github.com/miguelgrinberg/python-engineio/issues/259) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8a0e4c3a406358065ef4eb878e60d2dc3b758bf4)) (thanks **Maciej Szeptuch**!)
+- Option to disable the `SIGINT` handler in the client ([commit](https://github.com/miguelgrinberg/python-engineio/commit/14ed9f1d8f19e87a13b427427a6597e72d51db57))
+- Support binary packets with zero length [#257](https://github.com/miguelgrinberg/python-engineio/issues/257) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bcd1a42f86aad12460b6eb836a5c317db55cba77))
+- Improve documentation on `start_background_task()` function ([commit](https://github.com/miguelgrinberg/python-engineio/commit/531d28ae2583e30c17ec7a0c911cde0343663244))
+- Remove unsanitized client input from error messages [#250](https://github.com/miguelgrinberg/python-engineio/issues/250) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/72b7136cffd67d4299cb3dab17d1632a30ef5207)) (thanks **André Carvalho**!)
+- Use plaintext Content-Type when using polling [#248](https://github.com/miguelgrinberg/python-engineio/issues/248) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c2603e9ddc7ff96a8fe7beced751aea1480ec5e6)) (thanks **Tobias**!)
+- Return better error messages for client connection errors [#243](https://github.com/miguelgrinberg/python-engineio/issues/243) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3daa02e198aca9657cb04ea91ba4e3234113bde9))
+- Reuse the aiohttp client session on reconnects [#226](https://github.com/miguelgrinberg/python-engineio/issues/226) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/3c8fdfe05864e43ad8f35214fa2ad27bcb24965f))
+
 **Release 4.2.1** - 2021-08-02
 
 - Support setting `socketio_path` to the root URL [#242](https://github.com/miguelgrinberg/python-engineio/issues/242) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/47ada56b1ada2ed6eeb8c0fe172045bed321a037))
