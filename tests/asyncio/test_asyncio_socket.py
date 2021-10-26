@@ -42,6 +42,7 @@ class TestSocket(unittest.TestCase):
         mock_server.ping_interval = 0.2
         mock_server.ping_interval_grace_period = 0.001
         mock_server.async_handlers = False
+        mock_server.max_http_buffer_size = 128
         mock_server._async = {
             'asyncio': True,
             'create_route': mock.MagicMock(),
@@ -455,6 +456,23 @@ class TestSocket(unittest.TestCase):
         ws.send.mock.side_effect = [None, RuntimeError]
         _run(s._websocket_handler(ws))
         assert s.closed
+
+    def test_websocket_upgrade_with_large_packet(self):
+        mock_server = self._get_mock_server()
+        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s.connected = True
+        s.queue.join = AsyncMock(return_value=None)
+        probe = 'probe'
+        ws = mock.MagicMock()
+        ws.send = AsyncMock()
+        ws.wait = AsyncMock()
+        ws.wait.mock.side_effect = [
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE, data='2' * 128).encode(),
+        ]
+        with pytest.raises(ValueError):
+            _run(s._websocket_handler(ws))
+        assert not s.upgraded
 
     def test_websocket_ignore_invalid_packet(self):
         mock_server = self._get_mock_server()

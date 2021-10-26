@@ -21,6 +21,7 @@ class TestSocket(unittest.TestCase):
         mock_server.ping_interval = 0.2
         mock_server.ping_interval_grace_period = 0.001
         mock_server.async_handlers = True
+        mock_server.max_http_buffer_size = 128
 
         try:
             import queue
@@ -443,6 +444,22 @@ class TestSocket(unittest.TestCase):
         s._websocket_handler(ws)
         self._join_bg_tasks()
         assert s.closed
+
+    def test_websocket_upgrade_with_large_packet(self):
+        mock_server = self._get_mock_server()
+        s = socket.Socket(mock_server, 'sid')
+        s.connected = True
+        s.queue.join = mock.MagicMock(return_value=None)
+        probe = 'probe'
+        ws = mock.MagicMock()
+        ws.wait.side_effect = [
+            packet.Packet(packet.PING, data=probe).encode(),
+            packet.Packet(packet.UPGRADE, data='2' * 128).encode(),
+        ]
+        with pytest.raises(ValueError):
+            s._websocket_handler(ws)
+        self._join_bg_tasks()
+        assert not s.upgraded
 
     def test_websocket_ignore_invalid_packet(self):
         mock_server = self._get_mock_server()
