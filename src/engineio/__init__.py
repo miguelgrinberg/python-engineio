@@ -17,7 +17,7 @@ else:  # pragma: no cover
     get_tornado_handler = None
     ASGIApp = None
 
-__all__ = ['__version__', 'Server', 'WSGIApp', 'Middleware', 'Client']
+__all__ = ['Server', 'WSGIApp', 'Middleware', 'Client']
 if AsyncServer is not None:  # pragma: no cover
     __all__ += ['AsyncServer', 'ASGIApp', 'get_tornado_handler',
                 'AsyncClient'],
