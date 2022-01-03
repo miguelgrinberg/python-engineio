@@ -2,8 +2,15 @@ import sys
 from urllib.parse import urlsplit
 
 try:  # pragma: no cover
+    from sanic import __version__ as sanic_version
     from sanic.response import HTTPResponse
-    from sanic.websocket import WebSocketProtocol
+
+    sanic_version = tuple(int(x) for x in sanic_version.split('.'))
+
+    if sanic_version >= (21, 9, 0):
+        from sanic.server.protocols.websocket_protocol import WebSocketProtocol
+    else:
+        from sanic.websocket import WebSocketProtocol
 except ImportError:
     HTTPResponse = None
     WebSocketProtocol = None
