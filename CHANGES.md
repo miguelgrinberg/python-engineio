@@ -4,7 +4,7 @@
 
 - Fix support for Sanic v21.9.0 and up ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b0157d5a7e35ad83bc33f363b154402838fac83b)) (thanks **13g10n**!)
 - Include example code in flake8 pass ([commit](https://github.com/miguelgrinberg/python-engineio/commit/776bb86bb560bcd1912350bc24382fe6090c9c84))
-- Remove unused __version__ constant [#262](https://github.com/miguelgrinberg/python-engineio/issues/262) ([commit 1](https://github.com/miguelgrinberg/python-engineio/commit/e882f5949bdd1618d97b0cade18a7e8af8670b41) [commit 2](https://github.com/miguelgrinberg/python-engineio/commit/ed4b1e2b8b18ac5adb2ee9a2ef126a4e5ffee128))
+- Remove unused `__version__` constant [#262](https://github.com/miguelgrinberg/python-engineio/issues/262) ([commit 1](https://github.com/miguelgrinberg/python-engineio/commit/e882f5949bdd1618d97b0cade18a7e8af8670b41) [commit 2](https://github.com/miguelgrinberg/python-engineio/commit/ed4b1e2b8b18ac5adb2ee9a2ef126a4e5ffee128))
 
 **Release 4.3.0** - 2021-10-26
 
