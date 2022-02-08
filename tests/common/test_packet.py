@@ -26,8 +26,9 @@ class TestPacket(unittest.TestCase):
         assert pkt.encode() == '4text'
 
     def test_decode_text_packet(self):
-        pkt = packet.Packet(encoded_packet=b'4text')
-        assert pkt.encode() == b'4text'
+        pkt = packet.Packet(encoded_packet='4text')
+        assert not pkt.binary
+        assert pkt.encode() == '4text'
 
     def test_encode_empty_text_packet(self):
         data = ''
@@ -38,8 +39,9 @@ class TestPacket(unittest.TestCase):
         assert pkt.encode() == '4'
 
     def test_decode_empty_text_packet(self):
-        pkt = packet.Packet(encoded_packet=b'4')
-        assert pkt.encode() == b'4'
+        pkt = packet.Packet(encoded_packet='4')
+        assert not pkt.binary
+        assert pkt.encode() == '4'
 
     def test_decode_empty_packet(self):
         pkt = packet.Packet(encoded_packet='')
