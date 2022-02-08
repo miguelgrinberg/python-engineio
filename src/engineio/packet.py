@@ -23,7 +23,10 @@ class Packet(object):
             self.binary = False
         if self.binary and self.packet_type != MESSAGE:
             raise ValueError('Binary packets can only be of type MESSAGE')
-        if encoded_packet is not None:
+
+        is_binary_encoded_packet = isinstance(encoded_packet, binary_types)
+        if (is_binary_encoded_packet and encoded_packet is not None) or \
+                encoded_packet:
             self.decode(encoded_packet)
 
     def encode(self, b64=False):

@@ -41,6 +41,12 @@ class TestPacket(unittest.TestCase):
         pkt = packet.Packet(encoded_packet=b'4')
         assert pkt.encode() == b'4'
 
+    def test_decode_empty_packet(self):
+        pkt = packet.Packet(encoded_packet='')
+        assert pkt.data is None
+        assert not pkt.binary
+        assert pkt.encode() == '6'
+
     def test_encode_binary_packet(self):
         pkt = packet.Packet(packet.MESSAGE, data=b'\x01\x02\x03')
         assert pkt.packet_type == packet.MESSAGE
