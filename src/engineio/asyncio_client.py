@@ -158,6 +158,8 @@ class AsyncClient(client.Client):
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
+            if self.http and not self.http.closed:
+                await self.http.close()
         self._reset()
 
     def start_background_task(self, target, *args, **kwargs):
