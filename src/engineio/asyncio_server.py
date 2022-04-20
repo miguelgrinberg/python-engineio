@@ -200,22 +200,19 @@ class AsyncServer(server.Server):
             origin = environ.get('HTTP_ORIGIN')
             if origin:
                 if callable(self.cors_allowed_origins):
-                    allowed_origins =  await self.cors_allowed_origins(origin)
-
-                    
+                    origin_check =  await self.cors_allowed_origins(origin)
                 else:
                     allowed_origins = self._cors_allowed_origins(environ)
                     origin_check = allowed_origins is not None and origin not in \
                             allowed_origins
 
-                    if allowed_origins is not None and origin not in \
-                            allowed_origins:
-                        self._log_error_once(
-                            origin + ' is not an accepted origin.', 'bad-origin')
-                        return await self._make_response(
-                            self._bad_request(
-                                origin + ' is not an accepted origin.'),
-                            environ)
+                if origin_check:
+                    self._log_error_once(
+                        origin + ' is not an accepted origin.', 'bad-origin')
+                    return await self._make_response(
+                        self._bad_request(
+                            origin + ' is not an accepted origin.'),
+                        environ)
 
         method = environ['REQUEST_METHOD']
         query = urllib.parse.parse_qs(environ.get('QUERY_STRING', ''))
