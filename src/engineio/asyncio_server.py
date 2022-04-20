@@ -1,10 +1,7 @@
 import asyncio
 import urllib
 
-from . import exceptions
-from . import packet
-from . import server
-from . import asyncio_socket
+from . import asyncio_socket, exceptions, packet, server
 
 
 class AsyncServer(server.Server):
@@ -200,11 +197,11 @@ class AsyncServer(server.Server):
             origin = environ.get('HTTP_ORIGIN')
             if origin:
                 if callable(self.cors_allowed_origins):
-                    origin_check =  await self.cors_allowed_origins(origin)
+                    origin_check = await self.cors_allowed_origins(origin)
                 else:
                     allowed_origins = self._cors_allowed_origins(environ)
-                    origin_check = allowed_origins is not None and origin not in \
-                            allowed_origins
+                    origin_check = allowed_origins is not None and \
+                        origin not in allowed_origins
 
                 if origin_check:
                     self._log_error_once(
