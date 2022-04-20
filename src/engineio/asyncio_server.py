@@ -199,6 +199,8 @@ class AsyncServer(server.Server):
             # browsers only apply CORS controls to HTTP.
             origin = environ.get('HTTP_ORIGIN')
             if origin:
+                if hasattr(self.cors_allowed_origins, '__call__'):
+                    
                 allowed_origins = self._cors_allowed_origins(environ)
                 if allowed_origins is not None and origin not in \
                         allowed_origins:
