@@ -405,6 +405,29 @@ class TestAsyncServer(unittest.TestCase):
         assert ('Access-Control-Allow-Origin', 'b') in headers
 
     @mock.patch('importlib.import_module')
+    def test_connect_cors_allowed_origin_with_callable(self, import_module):
+        def cors(origin):
+            return origin == 'a'
+
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': '',
+            'HTTP_ORIGIN': 'a'
+        }
+        a = self.get_async_mock(environ)
+        import_module.side_effect = [a]
+
+        s = asyncio_server.AsyncServer(cors_allowed_origins=cors)
+        _run(s.handle_request('request'))
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        headers = a._async['make_response'].call_args[0][1]
+        assert ('Access-Control-Allow-Origin', 'a') in headers
+
+        environ['HTTP_ORIGIN'] = 'b'
+        _run(s.handle_request('request'))
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+
+    @mock.patch('importlib.import_module')
     def test_connect_cors_not_allowed_origin(self, import_module):
         a = self.get_async_mock(
             {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'c'}

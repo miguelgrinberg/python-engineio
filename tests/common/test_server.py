@@ -586,6 +586,26 @@ class TestServer(unittest.TestCase):
         headers = start_response.call_args[0][1]
         assert ('Access-Control-Allow-Origin', 'b') in headers
 
+    def test_connect_cors_allowed_origin_with_callable(self):
+        def cors(origin):
+            return origin == 'a'
+
+        s = server.Server(cors_allowed_origins=cors)
+        environ = {
+            'REQUEST_METHOD': 'GET',
+            'QUERY_STRING': 'EIO=4',
+            'HTTP_ORIGIN': 'a',
+        }
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '200 OK'
+        headers = start_response.call_args[0][1]
+        assert ('Access-Control-Allow-Origin', 'a') in headers
+
+        environ['HTTP_ORIGIN'] = 'b'
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
+
     def test_connect_cors_not_allowed_origin(self):
         s = server.Server(cors_allowed_origins=['a', 'b'])
         environ = {
