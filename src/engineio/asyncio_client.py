@@ -158,7 +158,7 @@ class AsyncClient(client.Client):
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
-            if self.http and not self.http.closed:
+            if self.http and not self.http.closed:  # pragma: no cover
                 await self.http.close()
         self._reset()
 
