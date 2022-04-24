@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 4.3.2** - 2022-04-24
+
+- Option to use a callable for `cors_allowed_origins` [#264](https://github.com/miguelgrinberg/python-engineio/issues/264) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/60e8e553e1fc64a5b0dbb846a86c5c0698101a9e))
+- Close aiohttp session when disconnecting [#272](https://github.com/miguelgrinberg/python-engineio/issues/272) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a9fb317c29d93b98a729df800f124b6b923fc82c))
+- Remove 3.6 and pypy-3.6 builds, add 3.10 and pypy-3.8 ([commit](https://github.com/miguelgrinberg/python-engineio/commit/06480be268852ffc96793ef52213ad598b85fa69))
+
 **Release 4.3.1** - 2022-01-11
 
 - Fix support for Sanic v21.9.0 and up ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b0157d5a7e35ad83bc33f363b154402838fac83b)) (thanks **13g10n**!)
