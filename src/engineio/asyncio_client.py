@@ -95,9 +95,9 @@ class AsyncClient(client.Client):
             try:
                 asyncio.get_event_loop().add_signal_handler(
                     signal.SIGINT, async_signal_handler)
-                async_signal_handler_set = True
             except NotImplementedError:  # pragma: no cover
                 self.logger.warning('Signal handler is unsupported')
+        async_signal_handler_set = True
 
         if self.state != 'disconnected':
             raise ValueError('Client is not in a disconnected state')
