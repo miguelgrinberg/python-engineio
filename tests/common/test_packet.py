@@ -130,3 +130,7 @@ class TestPacket(unittest.TestCase):
     def test_binary_non_message_packet(self):
         with pytest.raises(ValueError):
             packet.Packet(packet.NOOP, b'\x01\x02\x03')
+
+    def test_decode_invalid_empty_text_packet(self):
+        with pytest.raises(ValueError):
+            packet.Packet(encoded_packet='')
