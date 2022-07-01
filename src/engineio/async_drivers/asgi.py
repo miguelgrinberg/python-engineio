@@ -59,12 +59,12 @@ class ASGIApp:
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
-            if static_file and os.path.exists(static_file['filename']):
+            if scope['type'] == 'lifespan':
+                await self.lifespan(receive, send)
+            elif static_file and os.path.exists(static_file['filename']):
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:
                 await self.other_asgi_app(scope, receive, send)
-            elif scope['type'] == 'lifespan':
-                await self.lifespan(receive, send)
             else:
                 await self.not_found(receive, send)
 
