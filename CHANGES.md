@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 4.3.3** - 2022-07-04
+
+- Handle ASGI lifespan when running with a secondary ASGI app [#284](https://github.com/miguelgrinberg/python-engineio/issues/284) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c4a021ee9c4d760bbe4066887ca816fc7c718f98)) (thanks **mozartilize**!)
+- Update deprecated usage of `asyncio.wait()` [#281](https://github.com/miguelgrinberg/python-engineio/issues/281) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d3a23c0936cda2ff3de8c5ae0c834ffef515e8cb)) (thanks **Ben Beasley**!)
+- Better handling of queued WebSocket messages in uWSGI [#256](https://github.com/miguelgrinberg/python-engineio/issues/256) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ec7b3da2e48060e177bf8ad6a9f5fae445207c82))
+- Gracefully fail to decode empty packets [#269](https://github.com/miguelgrinberg/python-engineio/issues/269) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9c657071f3d42a88fd1615b5edd245a89445ea1b))
+- Only attempt to set an async signal handler once [#276](https://github.com/miguelgrinberg/python-engineio/issues/276) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/6869751aafb6db83d1a53fbd47d3fbfd2a8ae490))
+
 **Release 4.3.2** - 2022-04-24
 
 - Option to use a callable for `cors_allowed_origins` [#264](https://github.com/miguelgrinberg/python-engineio/issues/264) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/60e8e553e1fc64a5b0dbb846a86c5c0698101a9e))
