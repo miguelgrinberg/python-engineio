@@ -539,6 +539,7 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
+            timeout=5
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -553,6 +554,7 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&sid=123&t=123.456',
             headers={},
+            timeout=5,
         )
 
     def test_websocket_connection_no_open_packet(self):
@@ -605,6 +607,7 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
+            timeout=5,
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -677,6 +680,7 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
+            timeout=5,
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -711,6 +715,7 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
+            timeout=5,
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(
             {'key': 'value', 'key2': 'value2', 'key3': '"value3="'}
@@ -752,6 +757,7 @@ class TestAsyncClient(unittest.TestCase):
         c.http.ws_connect.mock.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
+            timeout=5,
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(
             {'key3': 'value3'}

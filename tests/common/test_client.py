@@ -558,6 +558,7 @@ class TestClient(unittest.TestCase):
             header={'Foo': 'Bar'},
             cookie=None,
             enable_multithread=True,
+            timeout=5
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -578,6 +579,7 @@ class TestClient(unittest.TestCase):
             header={'Foo': 'Bar'},
             cookie=None,
             enable_multithread=True,
+            timeout=5
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -596,6 +598,7 @@ class TestClient(unittest.TestCase):
             header={},
             cookie=None,
             enable_multithread=True,
+            timeout=5
         )
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -644,6 +647,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': None,
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -685,6 +689,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': None,
             'enable_multithread': True,
+            'timeout': 5,
             'sslopt': {'cert_reqs': ssl.CERT_NONE},
         }
 
@@ -722,6 +727,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': 'key=value; key2=value2',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -758,6 +764,7 @@ class TestClient(unittest.TestCase):
             'header': {'Foo': 'bar'},
             'cookie': 'key=value',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -799,6 +806,7 @@ class TestClient(unittest.TestCase):
         assert create_connection.call_args[1] == {
             'header': {},
             'enable_multithread': True,
+            'timeout': 5,
             'cookie': 'key=value; key2=value2; key3=value3',
         }
 
@@ -831,6 +839,7 @@ class TestClient(unittest.TestCase):
             'header': {'Authorization': 'Basic Zm9vOmJhcg=='},
             'cookie': '',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -863,6 +872,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': '',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -895,6 +905,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': '',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -934,6 +945,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': '',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -994,6 +1006,7 @@ class TestClient(unittest.TestCase):
                 'header': {},
                 'cookie': '',
                 'enable_multithread': True,
+                'timeout': 5,
             }
             if results:
                 expected_results.update({
@@ -1033,6 +1046,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': '',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
@@ -1066,6 +1080,7 @@ class TestClient(unittest.TestCase):
             'header': {},
             'cookie': '',
             'enable_multithread': True,
+            'timeout': 5,
         }
 
     @mock.patch('engineio.client.websocket.create_connection')
