@@ -304,7 +304,8 @@ class AsyncClient(client.Client):
                 ssl_context.verify_mode = ssl.CERT_NONE
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context, timeout=self.request_timeout)
+                    headers=headers, ssl=ssl_context,
+                    timeout=self.request_timeout)
             else:
                 ws = await self.http.ws_connect(
                     websocket_url + self._get_url_timestamp(),
