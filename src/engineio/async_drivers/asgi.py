@@ -60,7 +60,7 @@ class ASGIApp:
             static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
             if scope['type'] == 'lifespan':
-                await self.lifespan(receive, send)
+                await self.lifespan(scope, receive, send)
             elif static_file and os.path.exists(static_file['filename']):
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:
@@ -81,7 +81,13 @@ class ASGIApp:
             await send({'type': 'http.response.body',
                         'body': payload})
 
-    async def lifespan(self, receive, send):
+    async def lifespan(self, scope, receive, send):
+        if self.other_asgi_app is not None and self.on_startup is None and \
+                self.on_shutdown is None:
+            # let the other ASGI app handle lifespan events
+            await self.other_asgi_app(scope, receive, send)
+            return
+
         while True:
             event = await receive()
             if event['type'] == 'lifespan.startup':

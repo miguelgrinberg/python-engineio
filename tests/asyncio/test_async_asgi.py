@@ -54,6 +54,13 @@ class AsgiTests(unittest.TestCase):
         _run(app(scope, 'receive', 'send'))
         other_app.mock.assert_called_once_with(scope, 'receive', 'send')
 
+    def test_other_app_lifespan_routing(self):
+        other_app = AsyncMock()
+        app = async_asgi.ASGIApp('eio', other_app)
+        scope = {'type': 'lifespan'}
+        _run(app(scope, 'receive', 'send'))
+        other_app.mock.assert_called_once_with(scope, 'receive', 'send')
+
     def test_static_file_routing(self):
         root_dir = os.path.dirname(__file__)
         app = async_asgi.ASGIApp(
