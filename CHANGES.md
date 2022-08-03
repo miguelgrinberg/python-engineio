@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.3.4** - 2022-08-03
+
+- Let companion ASGI app handle lifespan events [#287](https://github.com/miguelgrinberg/python-engineio/issues/287) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1c9001c537fd669a3b0e28d75f707216ec48befa))
+- Use configured request timeout when making a WebSocket connection [#286](https://github.com/miguelgrinberg/python-engineio/issues/286) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f6df30b841a86f96765c307efa99a7505dd9b4c1)) (thanks **jpfarias**!)
+
 **Release 4.3.3** - 2022-07-04
 
 - Handle ASGI lifespan when running with a secondary ASGI app [#284](https://github.com/miguelgrinberg/python-engineio/issues/284) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c4a021ee9c4d760bbe4066887ca816fc7c718f98)) (thanks **mozartilize**!)
