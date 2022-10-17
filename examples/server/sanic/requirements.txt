@@ -3,6 +3,6 @@ httptools==0.3.0
 multidict==5.2.0
 sanic==21.12.2
 sanic-routing==0.7.2
-ujson==5.2.0
+ujson==5.4.0
 uvloop==0.16.0
 websockets==10.1
