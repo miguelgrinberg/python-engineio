@@ -543,6 +543,30 @@ class TestAsyncClient(unittest.TestCase):
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    def test_websocket_connection_extra(self, _time):
+        c = asyncio_client.AsyncClient(websocket_extra_options={
+            'headers': {'Baz': 'Qux'},
+            'timeout': 10
+        })
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = AsyncMock(
+            side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
+        )
+        with pytest.raises(exceptions.ConnectionError):
+            _run(
+                c.connect(
+                    'http://foo',
+                    transports=['websocket'],
+                    headers={'Foo': 'Bar'},
+                )
+            )
+        c.http.ws_connect.mock.assert_called_once_with(
+            'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
+            headers={'Foo': 'Bar', 'Baz': 'Qux'},
+            timeout=10,
+        )
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_websocket_upgrade_failed(self, _time):
         c = asyncio_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)

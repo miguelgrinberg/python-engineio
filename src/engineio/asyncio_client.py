@@ -62,7 +62,11 @@ class AsyncClient(client.Client):
                           leave interrupt handling to the calling application.
                           Interrupt handling can only be enabled when the
                           client instance is created in the main thread.
+    :param websocket_extra_options: Dictionary containing additional keyword
+                                    arguments passed to
+                                    ``aiohttp.ws_connect()``.
     """
+
     def is_asyncio_based(self):
         return True
 
@@ -297,19 +301,22 @@ class AsyncClient(client.Client):
                 break
         self.http.cookie_jar.update_cookies(cookies)
 
+        extra_options = {'timeout': self.request_timeout}
+        if not self.ssl_verify:
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            extra_options['ssl'] = ssl_context
+
+        # combine internally generated options with the ones supplied by the
+        # caller. The caller's options take precedence.
+        headers.update(self.websocket_extra_options.pop('headers', {}))
+        extra_options['headers'] = headers
+        extra_options.update(self.websocket_extra_options)
+
         try:
-            if not self.ssl_verify:
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-                ws = await self.http.ws_connect(
-                    websocket_url + self._get_url_timestamp(),
-                    headers=headers, ssl=ssl_context,
-                    timeout=self.request_timeout)
-            else:
-                ws = await self.http.ws_connect(
-                    websocket_url + self._get_url_timestamp(),
-                    headers=headers, timeout=self.request_timeout)
+            ws = await self.http.ws_connect(
+                websocket_url + self._get_url_timestamp(), **extra_options)
         except (aiohttp.client_exceptions.WSServerHandshakeError,
                 aiohttp.client_exceptions.ServerConnectionError,
                 aiohttp.client_exceptions.ClientConnectionError):

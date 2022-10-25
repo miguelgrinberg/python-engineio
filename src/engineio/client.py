@@ -71,11 +71,15 @@ class Client(object):
                           leave interrupt handling to the calling application.
                           Interrupt handling can only be enabled when the
                           client instance is created in the main thread.
+    :param websocket_extra_options: Dictionary containing additional keyword
+                                    arguments passed to
+                                    ``websocket.create_connection()``.
     """
     event_names = ['connect', 'disconnect', 'message']
 
     def __init__(self, logger=False, json=None, request_timeout=5,
-                 http_session=None, ssl_verify=True, handle_sigint=True):
+                 http_session=None, ssl_verify=True, handle_sigint=True,
+                 websocket_extra_options=None):
         global original_signal_handler
         if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
@@ -97,6 +101,7 @@ class Client(object):
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
+        self.websocket_extra_options = websocket_extra_options or {}
 
         if json is not None:
             packet.Packet.json = json
@@ -414,11 +419,18 @@ class Client(object):
 
         if not self.ssl_verify:
             extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
+
+        # combine internally generated options with the ones supplied by the
+        # caller. The caller's options take precedence.
+        headers.update(self.websocket_extra_options.pop('header', {}))
+        extra_options['header'] = headers
+        extra_options['cookie'] = cookies
+        extra_options['enable_multithread'] = True
+        extra_options['timeout'] = self.request_timeout
+        extra_options.update(self.websocket_extra_options)
         try:
             ws = websocket.create_connection(
-                websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, enable_multithread=True,
-                timeout=self.request_timeout, **extra_options)
+                websocket_url + self._get_url_timestamp(), **extra_options)
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
