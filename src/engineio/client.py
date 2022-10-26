@@ -71,11 +71,14 @@ class Client(object):
                           leave interrupt handling to the calling application.
                           Interrupt handling can only be enabled when the
                           client instance is created in the main thread.
+    :param websocket_options: Dictionary containing optional keyword arguments
+                              passed to websocket.create_connection().
     """
     event_names = ['connect', 'disconnect', 'message']
 
     def __init__(self, logger=False, json=None, request_timeout=5,
-                 http_session=None, ssl_verify=True, handle_sigint=True):
+                 http_session=None, ssl_verify=True, handle_sigint=True,
+                 websocket_options={}):
         global original_signal_handler
         if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
@@ -97,6 +100,7 @@ class Client(object):
         self.queue = None
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
+        self.websocket_options = websocket_options
 
         if json is not None:
             packet.Packet.json = json
@@ -416,9 +420,15 @@ class Client(object):
             extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
         try:
             ws = websocket.create_connection(
-                websocket_url + self._get_url_timestamp(), header=headers,
-                cookie=cookies, enable_multithread=True,
-                timeout=self.request_timeout, **extra_options)
+                websocket_url + self._get_url_timestamp(),
+                **{
+                    **self.websocket_options,
+                    "header": headers,
+                    "cookie": cookies,
+                    "enable_multithread": True,
+                    "timeout": self.request_timeout,
+                    **extra_options
+                })
         except (ConnectionError, IOError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(

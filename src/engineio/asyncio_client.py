@@ -66,13 +66,6 @@ class AsyncClient(client.Client):
                               arguments passed to aiohttp.ws_connect().
     """
 
-    def __init__(self, logger=False, json=None, request_timeout=5,
-                 http_session=None, ssl_verify=True, handle_sigint=True,
-                 websocket_options={}):
-        super().__init__(logger, json, request_timeout, http_session, ssl_verify,
-                       handle_sigint)
-        self.websocket_options = websocket_options
-
     def is_asyncio_based(self):
         return True
 
