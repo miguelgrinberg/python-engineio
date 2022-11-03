@@ -520,10 +520,13 @@ class AsyncClient(client.Client):
                 p = await asyncio.wait_for(
                     self.ws.receive(),
                     timeout=self.ping_interval + self.ping_timeout)
-                p = p.data
-                if p is None:  # pragma: no cover
+                if not isinstance(p.data, (str, bytes)):  # pragma: no cover
+                    self.logger.warning(
+                        'Server sent unexpected packet %s data %s, aborting',
+                        str(p.type), str(p.data))
                     await self.queue.put(None)
                     break  # the connection is broken
+                p = p.data
             except asyncio.TimeoutError:
                 self.logger.warning(
                     'Server has stopped communicating, aborting')
