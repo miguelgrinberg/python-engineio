@@ -63,11 +63,11 @@ class uWSGIWebSocket(object):  # pragma: no cover
 
     def close(self):
         """Disconnects uWSGI from the client."""
-        uwsgi.disconnect()
         if self._req_ctx is None:
             # better kill it here in case wait() is not called again
             self._select_greenlet.kill()
             self._event.set()
+        uwsgi.disconnect()
 
     def _send(self, msg):
         """Transmits message either in binary or UTF-8 text mode,
@@ -115,6 +115,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 try:
                     msg = uwsgi.websocket_recv(request_context=self._req_ctx)
                 except IOError:  # connection closed
+                    self.close()
                     return None
                 return self._decode_received(msg)
             else:
@@ -134,14 +135,18 @@ class uWSGIWebSocket(object):  # pragma: no cover
                         except gevent.queue.Empty:
                             break
                     for msg in msgs:
-                        self._send(msg)
+                        try:
+                            self._send(msg)
+                        except IOError:
+                            self.close()
+                            return None
                 # maybe there is something to receive, if not, at least
                 # ensure uWSGI does its ping/ponging
                 while True:
                     try:
                         msg = uwsgi.websocket_recv_nb()
                     except IOError:  # connection closed
-                        self._select_greenlet.kill()
+                        self.close()
                         return None
                     if msg:  # message available
                         self.received_messages.append(
