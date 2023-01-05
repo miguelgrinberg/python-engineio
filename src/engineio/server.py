@@ -365,13 +365,20 @@ class Server(object):
 
         # make sure the client speaks a compatible Engine.IO version
         sid = query['sid'][0] if 'sid' in query else None
-        if sid is None and query.get('EIO') != ['4']:
+        PROTOCOL_VERSION = '4'
+        client_protocol_version = query.get('EIO', [None])[0]
+        if sid is None and client_protocol_version != PROTOCOL_VERSION:
             self._log_error_once(
                 'The client is using an unsupported version of the Socket.IO '
-                'or Engine.IO protocols', 'bad-version')
+                'or Engine.IO protocols: '
+                f'server has EngineIO protocol version {PROTOCOL_VERSION} '
+                f'and client has version {client_protocol_version}',
+                'bad-version')
             r = self._bad_request(
                 'The client is using an unsupported version of the Socket.IO '
-                'or Engine.IO protocols')
+                'or Engine.IO protocols: '
+                f'server has EngineIO protocol version {PROTOCOL_VERSION} '
+                f'and client has version {client_protocol_version}')
             start_response(r['status'], r['headers'])
             return [r['response']]
 
