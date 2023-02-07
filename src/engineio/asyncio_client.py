@@ -526,7 +526,7 @@ class AsyncClient(client.Client):
                 p = await asyncio.wait_for(
                     self.ws.receive(),
                     timeout=self.ping_interval + self.ping_timeout)
-                if not isinstance(p.data, (str, bytes)):  # pragma: no cover
+                if not isinstance(p.data, (str, bytes, int)):  # pragma: no cover
                     self.logger.warning(
                         'Server sent unexpected packet %s data %s, aborting',
                         str(p.type), str(p.data))
