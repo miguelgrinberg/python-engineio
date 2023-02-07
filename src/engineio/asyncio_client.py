@@ -581,9 +581,9 @@ class AsyncClient(client.Client):
         """
         while self.state == 'connected':
             # to simplify the timeout handling, use the maximum of the
-            # ping interval and ping timeout as timeout, with an extra 25
+            # ping interval and ping timeout as timeout, with an extra 60
             # seconds grace period
-            timeout = max(self.ping_interval, self.ping_timeout) + 25
+            timeout = max(self.ping_interval, self.ping_timeout) + 60
             packets = None
             try:
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
