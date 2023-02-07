@@ -525,10 +525,14 @@ class AsyncClient(client.Client):
             try:
                 p = await asyncio.wait_for(
                     self.ws.receive(),
-                    timeout=self.ping_interval + self.ping_timeout)
-                if isinstance(p.data, int):
-                    p.data = str(p.data)
-                if not isinstance(p.data, (str, bytes)):  # pragma: no cover
+                    timeout=self.ping_interval + self.ping_timeout + 5)
+                if p.type == WSMsgType.CLOSED:
+                    # Received a closed websocket message, try to close here gracefully
+                    pkt = packet.Packet(packet_type=packet.CLOSE)
+                    await self._receive_packet(pkt)
+                    await self.queue.put(None)
+                    break
+                elif not isinstance(p.data, (str, bytes)):  # pragma: no cover
                     self.logger.warning(
                         'Server sent unexpected packet %s data %s, aborting',
                         str(p.type), str(p.data))
