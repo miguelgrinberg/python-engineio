@@ -526,7 +526,7 @@ class AsyncClient(client.Client):
                 p = await asyncio.wait_for(
                     self.ws.receive(),
                     timeout=self.ping_interval + self.ping_timeout + 5)
-                if p.type == WSMsgType.CLOSED:
+                if p.type in [aiohttp.WSMsgType.CLOSE, aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING]:
                     # Received a closed websocket message, try to close here gracefully
                     pkt = packet.Packet(packet_type=packet.CLOSE)
                     await self._receive_packet(pkt)
