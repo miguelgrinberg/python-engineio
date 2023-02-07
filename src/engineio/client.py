@@ -94,6 +94,7 @@ class Client(object):
         self.ping_interval = None
         self.ping_timeout = None
         self.http = http_session
+        self.external_http = http_session is not None
         self.handle_sigint = handle_sigint
         self.ws = None
         self.read_loop_task = None

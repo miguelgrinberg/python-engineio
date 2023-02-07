@@ -162,9 +162,7 @@ class AsyncClient(client.Client):
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
-            if self.http and not self.http.closed:  # pragma: no cover
-                await self.http.close()
-        self._reset()
+        await self._reset()
 
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task.
@@ -197,6 +195,12 @@ class AsyncClient(client.Client):
         """Create an event object."""
         return asyncio.Event()
 
+    async def _reset(self):
+        super()._reset()
+        if not self.external_http:  # pragma: no cover
+            if self.http and not self.http.closed:
+                await self.http.close()
+
     def __del__(self):  # pragma: no cover
         # try to close the aiohttp session if it is still open
         if self.http and not self.http.closed:
@@ -221,11 +225,13 @@ class AsyncClient(client.Client):
             'GET', self.base_url + self._get_url_timestamp(), headers=headers,
             timeout=self.request_timeout)
         if r is None or isinstance(r, str):
-            self._reset()
+            await self.disconnect()
+            await self._reset()
             raise exceptions.ConnectionError(
                 r or 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
-            self._reset()
+            await self.disconnect()
+            await self._reset()
             try:
                 arg = await r.json()
             except aiohttp.ClientError:
@@ -509,7 +515,7 @@ class AsyncClient(client.Client):
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
-            self._reset()
+            await self._reset()
         self.logger.info('Exiting read loop task')
 
     async def _read_loop_websocket(self):
@@ -560,7 +566,7 @@ class AsyncClient(client.Client):
                 client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
-            self._reset()
+            await self._reset()
         self.logger.info('Exiting read loop task')
 
     async def _write_loop(self):
@@ -610,7 +616,7 @@ class AsyncClient(client.Client):
                 if r.status < 200 or r.status >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status)
-                    self._reset()
+                    await self._reset()
                     break
             else:
                 # websocket
