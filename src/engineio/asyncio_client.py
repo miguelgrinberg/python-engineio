@@ -21,13 +21,18 @@ def async_signal_handler():
 
     Disconnect all active async clients.
     """
-    async def _handler():
-        asyncio.get_event_loop().stop()
+    async def _handler():  # pragma: no cover
         for c in client.connected_clients[:]:
             if c.is_asyncio_based():
                 await c.disconnect()
-        else:  # pragma: no cover
-            pass
+
+        # cancel all running tasks
+        tasks = [task for task in asyncio.all_tasks() if task is not
+                 asyncio.current_task()]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        asyncio.get_event_loop().stop()
 
     asyncio.ensure_future(_handler())
 
@@ -225,12 +230,10 @@ class AsyncClient(client.Client):
             'GET', self.base_url + self._get_url_timestamp(), headers=headers,
             timeout=self.request_timeout)
         if r is None or isinstance(r, str):
-            await self.disconnect()
             await self._reset()
             raise exceptions.ConnectionError(
                 r or 'Connection refused by the server')
         if r.status < 200 or r.status >= 300:
-            await self.disconnect()
             await self._reset()
             try:
                 arg = await r.json()
@@ -581,9 +584,10 @@ class AsyncClient(client.Client):
             packets = None
             try:
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
-            except (self.queue.Empty, asyncio.TimeoutError,
-                    asyncio.CancelledError):
+            except (self.queue.Empty, asyncio.TimeoutError):
                 self.logger.error('packet queue is empty, aborting')
+                break
+            except asyncio.CancelledError:  # pragma: no cover
                 break
             if packets == [None]:
                 self.queue.task_done()
