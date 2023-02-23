@@ -30,9 +30,8 @@ class AsyncServer(server.Server):
     :param ping_timeout: The time in seconds that the client waits for the
                          server to respond before disconnecting. The default
                          is 20 seconds.
-    :param max_http_buffer_size: The maximum size of a message when using the
-                                 polling transport. The default is 1,000,000
-                                 bytes.
+    :param max_http_buffer_size: The maximum size of a message.  The default
+                                 is 1,000,000 bytes.
     :param allow_upgrades: Whether to allow transport upgrades or not.
     :param http_compression: Whether to compress packages when using the
                              polling transport.
