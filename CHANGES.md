@@ -1,5 +1,16 @@
 # python-engineio change log
 
+**Release 4.4.0** - 2023-03-16
+
+- Allow configuring underlying websocket connection with custom options [#293](https://github.com/miguelgrinberg/python-engineio/issues/293) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/45e97b8cf885e998168857c46e29a7e257754f3e)) (thanks **Bruce Yu**!)
+- Cancel all running tasks in async SIGINT handler [#306](https://github.com/miguelgrinberg/python-engineio/issues/306) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0d263b0e40460c334a0b259804f2ff156bc3718c))
+- Handle unexpected WebSocket close frames sent by server [#292](https://github.com/miguelgrinberg/python-engineio/issues/292) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4f67c95f8631e624e44afe5bdfccfff924b232c9))
+- Close aiohttp session after a failed connection [#307](https://github.com/miguelgrinberg/python-engineio/issues/307) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/86ed2ae9f84578b9c6b7a6839c3b82304a65725f))
+- Catch IOErrors from uWSGI and explicitly close the driver [#301](https://github.com/miguelgrinberg/python-engineio/issues/301) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/678ae8b0efa6c12ae36d5c5b362e50aabc8dc8e9)) (thanks **June Oh**!)
+- Recommend ASGI integration for Sanic in Documentation ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bf9d8eabe02c2aadce22e70b71375ccc2bd21e79))
+- Fix documentation for `max_http_buffer_size` [#310](https://github.com/miguelgrinberg/python-engineio/issues/310) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8182f783830b9fda9abc8e2410e7f397c0f62482)) (thanks **Lawrence Ong**!)
+- Add Python 3.11 to builds ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4a8a9a640fd4567d8c6001e1058e9980af3067ff))
+
 **Release 4.3.4** - 2022-08-03
 
 - Let companion ASGI app handle lifespan events [#287](https://github.com/miguelgrinberg/python-engineio/issues/287) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1c9001c537fd669a3b0e28d75f707216ec48befa))
