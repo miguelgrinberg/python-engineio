@@ -35,7 +35,7 @@ class WebSocketWSGI(object):  # pragma: no cover
         try:
             return self.ws.receive()
         except ConnectionClosed:
-            raise IOError()
+            return None
 
 
 _async = {
