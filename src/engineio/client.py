@@ -201,9 +201,9 @@ class Client(object):
             self.read_loop_task.join()
 
     def send(self, data):
-        """Send a message to a client.
+        """Send a message to the server.
 
-        :param data: The data to send to the client. Data can be of type
+        :param data: The data to send to the server. Data can be of type
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
         """
