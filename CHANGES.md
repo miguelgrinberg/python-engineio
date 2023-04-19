@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.4.1** - 2023-04-19
+
+- Prevent crash when closing simple-websocket connection [#311](https://github.com/miguelgrinberg/python-engineio/issues/311) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/71e7d3688947779d2f086014e117ebb66606145e))
+- Fix server/client mixup in client docstrings [#312](https://github.com/miguelgrinberg/python-engineio/issues/312) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/911cf520034ee17bcc9311e244e616848cfff095)) (thanks **Sasja**!)
+
 **Release 4.4.0** - 2023-03-16
 
 - Allow configuring underlying websocket connection with custom options [#293](https://github.com/miguelgrinberg/python-engineio/issues/293) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/45e97b8cf885e998168857c46e29a7e257754f3e)) (thanks **Bruce Yu**!)
