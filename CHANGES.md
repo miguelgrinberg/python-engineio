@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.5.1** - 2023-07-06
+
+- Restore support for old versions of eventlet [#321](https://github.com/miguelgrinberg/python-engineio/issues/321) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/503c8651658e26276f3206655a819f79eb25739e))
+
 **Release 4.5.0** - 2023-07-05
 
 - Configure eventlet's websocket max frame length [#319](https://github.com/miguelgrinberg/python-engineio/issues/319) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1b04a562322a386ef806f1ada73e83d40fa1f0ce))
