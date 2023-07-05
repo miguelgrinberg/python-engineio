@@ -8,9 +8,12 @@ from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 
 class WebSocketWSGI(_WebSocketWSGI):
     def __init__(self, handler, server):
-        print(server.max_http_buffer_size)
-        super().__init__(
-            handler, max_frame_length=int(server.max_http_buffer_size))
+        try:
+            super().__init__(
+                handler, max_frame_length=int(server.max_http_buffer_size))
+        except TypeError:  # pragma: no cover
+            # older versions of eventlet do not support a max frame size
+            super().__init__(handler)
         self._sock = None
 
     def __call__(self, environ, start_response):
