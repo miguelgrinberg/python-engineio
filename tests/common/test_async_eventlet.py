@@ -11,7 +11,7 @@ class TestAsyncEventlet(unittest.TestCase):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
 
     def test_bad_environ(self):
-        wsgi = async_eventlet.WebSocketWSGI(None)
+        wsgi = async_eventlet.WebSocketWSGI(None, mock.MagicMock())
         environ = {'foo': 'bar'}
         start_response = 'bar'
         with pytest.raises(RuntimeError):
@@ -25,5 +25,5 @@ class TestAsyncEventlet(unittest.TestCase):
         _WebSocketWSGI.__call__ = lambda e, s: 'data'
         environ = {'eventlet.input': mock.MagicMock()}
         start_response = 'bar'
-        wsgi = async_eventlet.WebSocketWSGI(None)
+        wsgi = async_eventlet.WebSocketWSGI(None, mock.MagicMock())
         assert wsgi(environ, start_response) == 'data'

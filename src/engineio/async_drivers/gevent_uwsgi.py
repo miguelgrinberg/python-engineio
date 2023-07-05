@@ -23,8 +23,8 @@ class uWSGIWebSocket(object):  # pragma: no cover
     This wrapper class provides a uWSGI WebSocket interface that is
     compatible with eventlet's implementation.
     """
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, handler, server):
+        self.app = handler
         self._sock = None
         self.received_messages = []
 

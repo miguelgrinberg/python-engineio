@@ -252,7 +252,7 @@ class TestSocket(unittest.TestCase):
         environ = "foo"
         _run(s._upgrade_websocket(environ))
         mock_server._async['websocket'].assert_called_once_with(
-            s._websocket_handler
+            s._websocket_handler, mock_server
         )
         mock_ws.mock.assert_called_once_with(environ)
 

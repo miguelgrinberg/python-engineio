@@ -223,7 +223,7 @@ class WebSocket(object):  # pragma: no cover
     This wrapper class provides an asgi WebSocket interface that is
     somewhat compatible with eventlet's implementation.
     """
-    def __init__(self, handler):
+    def __init__(self, handler, server):
         self.handler = handler
         self.asgi_receive = None
         self.asgi_send = None

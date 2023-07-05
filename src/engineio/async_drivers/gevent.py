@@ -27,8 +27,8 @@ class WebSocketWSGI(object):  # pragma: no cover
     This wrapper class provides a gevent WebSocket interface that is
     compatible with eventlet's implementation.
     """
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, handler, server):
+        self.app = handler
 
     def __call__(self, environ, start_response):
         if 'wsgi.websocket' not in environ:

@@ -7,8 +7,10 @@ from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 
 
 class WebSocketWSGI(_WebSocketWSGI):
-    def __init__(self, *args, **kwargs):
-        super(WebSocketWSGI, self).__init__(*args, **kwargs)
+    def __init__(self, handler, server):
+        print(server.max_http_buffer_size)
+        super(WebSocketWSGI, self).__init__(
+            handler, max_frame_length=int(server.max_http_buffer_size))
         self._sock = None
 
     def __call__(self, environ, start_response):

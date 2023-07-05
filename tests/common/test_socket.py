@@ -235,7 +235,7 @@ class TestSocket(unittest.TestCase):
         start_response = "bar"
         s._upgrade_websocket(environ, start_response)
         mock_server._async['websocket'].assert_called_once_with(
-            s._websocket_handler
+            s._websocket_handler, mock_server
         )
         mock_ws.assert_called_once_with(environ, start_response)
 

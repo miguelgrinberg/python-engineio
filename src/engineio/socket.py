@@ -154,7 +154,8 @@ class Socket(object):
         if self.server._async['websocket'] is None:
             # the selected async mode does not support websocket
             return self.server._bad_request()
-        ws = self.server._async['websocket'](self._websocket_handler)
+        ws = self.server._async['websocket'](
+            self._websocket_handler, self.server)
         return ws(environ, start_response)
 
     def _websocket_handler(self, ws):
