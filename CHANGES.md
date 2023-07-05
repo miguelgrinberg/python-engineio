@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.5.0** - 2023-07-05
+
+- Configure eventlet's websocket max frame length [#319](https://github.com/miguelgrinberg/python-engineio/issues/319) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1b04a562322a386ef806f1ada73e83d40fa1f0ce))
+- Remove old Python 2 syntax in `super()` calls ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b37ee7697418c9a982af570758044d0e728e2ce2))
+
 **Release 4.4.1** - 2023-04-19
 
 - Prevent crash when closing simple-websocket connection [#311](https://github.com/miguelgrinberg/python-engineio/issues/311) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/71e7d3688947779d2f086014e117ebb66606145e))
