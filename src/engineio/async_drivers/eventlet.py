@@ -9,7 +9,7 @@ from eventlet.websocket import WebSocketWSGI as _WebSocketWSGI
 class WebSocketWSGI(_WebSocketWSGI):
     def __init__(self, handler, server):
         print(server.max_http_buffer_size)
-        super(WebSocketWSGI, self).__init__(
+        super().__init__(
             handler, max_frame_length=int(server.max_http_buffer_size))
         self._sock = None
 
@@ -19,7 +19,7 @@ class WebSocketWSGI(_WebSocketWSGI):
                                'See the Deployment section of the '
                                'documentation for more information.')
         self._sock = environ['eventlet.input'].get_socket()
-        return super(WebSocketWSGI, self).__call__(environ, start_response)
+        return super().__call__(environ, start_response)
 
 
 _async = {

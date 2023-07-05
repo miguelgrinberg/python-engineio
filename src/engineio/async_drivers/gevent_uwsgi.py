@@ -12,7 +12,7 @@ class Thread(gevent.Greenlet):  # pragma: no cover
     with the standard library's Thread class.
     """
     def __init__(self, target, args=[], kwargs={}):
-        super(Thread, self).__init__(target, *args, **kwargs)
+        super().__init__(target, *args, **kwargs)
 
     def _run(self):
         return self.run()
