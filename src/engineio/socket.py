@@ -220,6 +220,8 @@ class Socket(object):
                         ws.send(pkt.encode())
                 except:
                     break
+            ws.close()
+
         writer_task = self.server.start_background_task(writer)
 
         self.server.logger.info(

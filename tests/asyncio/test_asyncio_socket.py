@@ -339,6 +339,7 @@ class TestSocket(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
+        ws.close = AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.connected
         assert s.upgraded
@@ -350,6 +351,7 @@ class TestSocket(unittest.TestCase):
             ]
         )
         ws.send.mock.assert_called_with('4bar')
+        ws.close.mock.assert_called()
 
     def test_websocket_upgrade_read_write(self):
         mock_server = self._get_mock_server()
@@ -374,6 +376,7 @@ class TestSocket(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
+        ws.close = AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.upgraded
         assert mock_server._trigger_event.mock.call_count == 2
@@ -384,6 +387,7 @@ class TestSocket(unittest.TestCase):
             ]
         )
         ws.send.mock.assert_called_with('4bar')
+        ws.close.mock.assert_called()
 
     def test_websocket_upgrade_with_payload(self):
         mock_server = self._get_mock_server()
@@ -398,6 +402,7 @@ class TestSocket(unittest.TestCase):
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
+        ws.close = AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.upgraded
 
@@ -415,6 +420,7 @@ class TestSocket(unittest.TestCase):
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
+        ws.close = AsyncMock()
         s.upgrading = True
         _run(s.send(packet.Packet(packet.MESSAGE, data=foo)))
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=sid'}
@@ -454,6 +460,7 @@ class TestSocket(unittest.TestCase):
             RuntimeError,
         ]
         ws.send.mock.side_effect = [None, RuntimeError]
+        ws.close = AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.closed
 
@@ -495,6 +502,7 @@ class TestSocket(unittest.TestCase):
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
+        ws.close = AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.connected
         assert mock_server._trigger_event.mock.call_count == 2
@@ -505,6 +513,7 @@ class TestSocket(unittest.TestCase):
             ]
         )
         ws.send.mock.assert_called_with('4bar')
+        ws.close.mock.assert_called()
 
     def test_send_after_close(self):
         mock_server = self._get_mock_server()

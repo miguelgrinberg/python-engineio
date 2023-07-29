@@ -204,6 +204,8 @@ class AsyncSocket(socket.Socket):
                         await ws.send(pkt.encode())
                 except:
                     break
+            await ws.close()
+
         writer_task = asyncio.ensure_future(writer())
 
         self.server.logger.info(
