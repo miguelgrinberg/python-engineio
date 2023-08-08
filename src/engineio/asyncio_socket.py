@@ -68,7 +68,8 @@ class AsyncSocket(socket.Socket):
 
     async def send(self, pkt):
         """Send a packet to the client."""
-        if not await self.check_ping_timeout():
+        if not (self.closing and pkt.packet_type == packet.CLOSE) and \
+                not await self.check_ping_timeout():
             return
         else:
             await self.queue.put(pkt)
