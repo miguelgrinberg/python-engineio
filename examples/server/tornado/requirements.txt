@@ -1,3 +1,3 @@
-tornado==6.3.2
+tornado==6.3.3
 python-engineio
 six==1.10.0
