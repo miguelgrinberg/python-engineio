@@ -1170,6 +1170,15 @@ class TestServer(unittest.TestCase):
         s.handle_request(environ, start_response)
         s._service_task.assert_called_once_with()
 
+    def test_shutdown(self):
+        s = server.Server(monitor_clients=True)
+        environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert s.service_task_handle is not None
+        s.shutdown()
+        assert s.service_task_handle is None
+
     def test_transports_invalid(self):
         with pytest.raises(ValueError):
             server.Server(transports='invalid')

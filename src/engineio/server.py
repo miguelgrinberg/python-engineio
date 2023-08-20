@@ -116,6 +116,8 @@ class Server(object):
         self.log_message_keys = set()
         self.start_service_task = monitor_clients \
             if monitor_clients is not None else self._default_monitor_clients
+        self.service_task_handle = None
+        self.service_task_event = None
         if json is not None:
             packet.Packet.json = json
         if not isinstance(logger, bool):
@@ -460,6 +462,18 @@ class Server(object):
         start_response(r['status'], r['headers'] + cors_headers)
         return [r['response']]
 
+    def shutdown(self):
+        """Stop Socket.IO background tasks.
+
+        This method stops background activity initiated by the Socket.IO
+        server. It must be called before shutting down the web server.
+        """
+        self.logger.info('Socket.IO is shutting down')
+        if self.service_task_event:  # pragma: no cover
+            self.service_task_event.set()
+            self.service_task_handle.join()
+            self.service_task_handle = None
+
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
 
@@ -543,7 +557,8 @@ class Server(object):
         if self.start_service_task:
             # start the service task to monitor connected clients
             self.start_service_task = False
-            self.start_background_task(self._service_task)
+            self.service_task_handle = self.start_background_task(
+                self._service_task)
 
         sid = self.generate_id()
         s = socket.Socket(self, sid)
@@ -747,10 +762,12 @@ class Server(object):
 
     def _service_task(self):  # pragma: no cover
         """Monitor connected clients and clean up those that time out."""
-        while True:
+        self.service_task_event = self.create_event()
+        while not self.service_task_event.is_set():
             if len(self.sockets) == 0:
                 # nothing to do
-                self.sleep(self.ping_timeout)
+                if self.service_task_event.wait(timeout=self.ping_timeout):
+                    break
                 continue
 
             # go through the entire client list in a ping interval cycle
@@ -761,7 +778,8 @@ class Server(object):
                 for s in self.sockets.copy().values():
                     if not s.closing and not s.closed:
                         s.check_ping_timeout()
-                    self.sleep(sleep_interval)
+                    if self.service_task_event.wait(timeout=sleep_interval):
+                        raise KeyboardInterrupt()
             except (SystemExit, KeyboardInterrupt):
                 self.logger.info('service task canceled')
                 break

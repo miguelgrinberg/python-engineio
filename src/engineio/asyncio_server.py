@@ -315,6 +315,18 @@ class AsyncServer(server.Server):
                     break
         return await self._make_response(r, environ)
 
+    async def shutdown(self):
+        """Stop Socket.IO background tasks.
+
+        This method stops background activity initiated by the Socket.IO
+        server. It must be called before shutting down the web server.
+        """
+        self.logger.info('Socket.IO is shutting down')
+        if self.service_task_event:  # pragma: no cover
+            self.service_task_event.set()
+            await self.service_task_handle
+            self.service_task_handle = None
+
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task using the appropriate async model.
 
@@ -392,7 +404,8 @@ class AsyncServer(server.Server):
         if self.start_service_task:
             # start the service task to monitor connected clients
             self.start_service_task = False
-            self.start_background_task(self._service_task)
+            self.service_task_handle = self.start_background_task(
+                self._service_task)
 
         sid = self.generate_id()
         s = asyncio_socket.AsyncSocket(self, sid)
@@ -480,10 +493,15 @@ class AsyncServer(server.Server):
 
     async def _service_task(self):  # pragma: no cover
         """Monitor connected clients and clean up those that time out."""
-        while True:
+        self.service_task_event = self.create_event()
+        while not self.service_task_event.is_set():
             if len(self.sockets) == 0:
                 # nothing to do
-                await self.sleep(self.ping_timeout)
+                try:
+                    await asyncio.wait_for(self.service_task_event.wait(),
+                                           timeout=self.ping_timeout)
+                except asyncio.TimeoutError:
+                    break
                 continue
 
             # go through the entire client list in a ping interval cycle
@@ -494,7 +512,11 @@ class AsyncServer(server.Server):
                 for socket in self.sockets.copy().values():
                     if not socket.closing and not socket.closed:
                         await socket.check_ping_timeout()
-                    await self.sleep(sleep_interval)
+                    try:
+                        await asyncio.wait_for(self.service_task_event.wait(),
+                                               timeout=sleep_interval)
+                    except asyncio.TimeoutError:
+                        raise KeyboardInterrupt()
             except (
                 SystemExit,
                 KeyboardInterrupt,

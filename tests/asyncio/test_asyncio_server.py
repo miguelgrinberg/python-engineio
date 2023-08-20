@@ -1145,6 +1145,16 @@ class TestAsyncServer(unittest.TestCase):
         s._service_task.mock.assert_called_once_with()
 
     @mock.patch('importlib.import_module')
+    def test_shutdown(self, import_module):
+        a = self.get_async_mock()
+        import_module.side_effect = [a]
+        s = asyncio_server.AsyncServer(monitor_clients=True)
+        _run(s.handle_request('request'))
+        assert s.service_task_handle is not None
+        _run(s.shutdown())
+        assert s.service_task_handle is None
+
+    @mock.patch('importlib.import_module')
     def test_transports_disallowed(self, import_module):
         a = self.get_async_mock(
             {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'transport=polling'}
