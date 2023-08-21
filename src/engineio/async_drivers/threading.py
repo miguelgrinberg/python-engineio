@@ -20,10 +20,14 @@ class WebSocketWSGI(object):  # pragma: no cover
 
     def __call__(self, environ, start_response):
         self.ws = Server(environ)
-        return self.app(self)
+        ret = self.app(self)
+        if self.ws.mode == 'gunicorn':
+            raise StopIteration()
+        return ret
 
     def close(self):
-        return self.ws.close()
+        if self.ws.connected:
+            self.ws.close()
 
     def send(self, message):
         try:
