@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 4.6.0** - 2023-08-21
+
+- Improvements in the connection rejected flow ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8051fc49f484585b786031a08617208efdc97f5a))
+- Better handling of Gunicorn threaded worker ([commit](https://github.com/miguelgrinberg/python-engineio/commit/29e4492cdf836a2197479c5946089b2363305379))
+- `shutdown()` method for the Engine.IO server ([commit](https://github.com/miguelgrinberg/python-engineio/commit/87f6003653b45fe2b230d8c33c8962e15e71e157))
+
 **Release 4.5.1** - 2023-07-06
 
 - Restore support for old versions of eventlet [#321](https://github.com/miguelgrinberg/python-engineio/issues/321) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/503c8651658e26276f3206655a819f79eb25739e))
