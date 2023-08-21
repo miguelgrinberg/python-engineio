@@ -235,7 +235,7 @@ class WebSocket(object):  # pragma: no cover
         await self.handler(self)
 
     async def close(self):
-        await self.asgi_send({'type': 'websocket.close'})
+        pass
 
     async def send(self, message):
         msg_bytes = None
