@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.6.1** - 2023-08-23
+
+- Fix double close of websockets in ASGI adapter [#327](https://github.com/miguelgrinberg/python-engineio/issues/327) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e629eee17d7df7dc9736763b4220daed54a6dbdf))
+
 **Release 4.6.0** - 2023-08-21
 
 - Improvements in the connection rejected flow ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8051fc49f484585b786031a08617208efdc97f5a))
