@@ -89,13 +89,23 @@ class AsyncServer(server.Server):
 
         Note: this method is a coroutine.
         """
+        await self.send_packet(sid, packet.Packet(packet.MESSAGE, data=data))
+
+    async def send_packet(self, sid, pkt):
+        """Send a raw packet to a client.
+
+        :param sid: The session id of the recipient client.
+        :param pkt: The packet to send to the client.
+
+        Note: this method is a coroutine.
+        """
         try:
             socket = self._get_socket(sid)
         except KeyError:
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        await socket.send(packet.Packet(packet.MESSAGE, data=data))
+        await socket.send(pkt)
 
     async def get_session(self, sid):
         """Return the user session for a client.

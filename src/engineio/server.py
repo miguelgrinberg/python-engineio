@@ -224,13 +224,21 @@ class Server(object):
                      ``str``, ``bytes``, ``list`` or ``dict``. If a ``list``
                      or ``dict``, the data will be serialized as JSON.
         """
+        self.send_packet(sid, packet.Packet(packet.MESSAGE, data=data))
+
+    def send_packet(self, sid, pkt):
+        """Send a raw packet to a client.
+
+        :param sid: The session id of the recipient client.
+        :param pkt: The packet to send to the client.
+        """
         try:
             socket = self._get_socket(sid)
         except KeyError:
             # the socket is not available
             self.logger.warning('Cannot send to sid %s', sid)
             return
-        socket.send(packet.Packet(packet.MESSAGE, data=data))
+        socket.send(pkt)
 
     def get_session(self, sid):
         """Return the user session for a client.

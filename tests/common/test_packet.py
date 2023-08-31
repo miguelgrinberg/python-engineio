@@ -134,3 +134,11 @@ class TestPacket(unittest.TestCase):
     def test_decode_invalid_empty_text_packet(self):
         with pytest.raises(ValueError):
             packet.Packet(encoded_packet='')
+
+    def test_encode_cache(self):
+        pkt = packet.Packet(packet.MESSAGE, data=123)
+        assert pkt.encode() == '4123'
+        pkt.data = 456
+        assert pkt.encode() == '4123'
+        pkt.encode_cache = None
+        assert pkt.encode() == '4456'
