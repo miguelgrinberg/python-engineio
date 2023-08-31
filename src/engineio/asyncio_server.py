@@ -509,9 +509,16 @@ class AsyncServer(server.Server):
 
             try:
                 # iterate over the current clients
-                for socket in self.sockets.copy().values():
-                    if not socket.closing and not socket.closed:
-                        await socket.check_ping_timeout()
+                for s in self.sockets.copy().values():
+                    if s.closed:
+                        try:
+                            del self.sockets[s.sid]
+                        except KeyError:
+                            # the socket could have also been removed by
+                            # the _get_socket() method from another thread
+                            pass
+                    elif not s.closing:
+                        await s.check_ping_timeout()
                     try:
                         await asyncio.wait_for(self.service_task_event.wait(),
                                                timeout=sleep_interval)

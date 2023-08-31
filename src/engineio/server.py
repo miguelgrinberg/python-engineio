@@ -776,7 +776,14 @@ class Server(object):
             try:
                 # iterate over the current clients
                 for s in self.sockets.copy().values():
-                    if not s.closing and not s.closed:
+                    if s.closed:
+                        try:
+                            del self.sockets[s.sid]
+                        except KeyError:
+                            # the socket could have also been removed by
+                            # the _get_socket() method from another thread
+                            pass
+                    elif not s.closing:
                         s.check_ping_timeout()
                     if self.service_task_event.wait(timeout=sleep_interval):
                         raise KeyboardInterrupt()
