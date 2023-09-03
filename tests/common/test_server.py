@@ -126,11 +126,10 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='eventlet')
         assert s.async_mode == 'eventlet'
 
-        from eventlet.green import threading
         from eventlet import queue
         from engineio.async_drivers import eventlet as async_eventlet
 
-        assert s._async['thread'] == threading.Thread
+        assert s._async['thread'] == async_eventlet.EventletThread
         assert s._async['queue'] == queue.Queue
         assert s._async['websocket'] == async_eventlet.WebSocketWSGI
 
@@ -318,7 +317,7 @@ class TestServer(unittest.TestCase):
             s.on('invalid')
 
     def test_trigger_event(self):
-        s = server.Server()
+        s = server.Server(async_mode='threading')
         f = {}
 
         @s.on('connect')
@@ -1126,7 +1125,7 @@ class TestServer(unittest.TestCase):
         def bg_task():
             flag['task'] = True
 
-        s = server.Server()
+        s = server.Server(async_mode='threading')
         task = s.start_background_task(bg_task)
         task.join()
         assert 'task' in flag
@@ -1162,15 +1161,19 @@ class TestServer(unittest.TestCase):
         s.logger.info.assert_called_with('foo')
 
     def test_service_task_started(self):
-        s = server.Server(monitor_clients=True)
+        s = server.Server(async_mode='threading', monitor_clients=True)
         s._service_task = mock.MagicMock()
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
+        for _ in range(3):
+            if s._service_task.call_count > 0:
+                break
+            time.sleep(0.05)
         s._service_task.assert_called_once_with()
 
     def test_shutdown(self):
-        s = server.Server(monitor_clients=True)
+        s = server.Server(async_mode='threading', monitor_clients=True)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         s.handle_request(environ, start_response)
