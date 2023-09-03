@@ -10,6 +10,11 @@ except ImportError:  # pragma: no cover
     _websocket_available = False
 
 
+class DaemonThread(threading.Thread):  # pragma: no cover
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, daemon=True)
+
+
 class WebSocketWSGI(object):  # pragma: no cover
     """
     This wrapper class provides a threading WebSocket interface that is
@@ -43,7 +48,7 @@ class WebSocketWSGI(object):  # pragma: no cover
 
 
 _async = {
-    'thread': threading.Thread,
+    'thread': DaemonThread,
     'queue': queue.Queue,
     'queue_empty': queue.Empty,
     'event': threading.Event,

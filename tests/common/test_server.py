@@ -101,11 +101,10 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='threading')
         assert s.async_mode == 'threading'
 
-        import threading
         from engineio.async_drivers import threading as async_threading
         import queue
 
-        assert s._async['thread'] == threading.Thread
+        assert s._async['thread'] == async_threading.DaemonThread
         assert s._async['queue'] == queue.Queue
         assert s._async['websocket'] == async_threading.WebSocketWSGI
         del sys.modules['simple_websocket']
@@ -115,10 +114,10 @@ class TestServer(unittest.TestCase):
         s = server.Server(async_mode='threading')
         assert s.async_mode == 'threading'
 
-        import threading
+        from engineio.async_drivers import threading as async_threading
         import queue
 
-        assert s._async['thread'] == threading.Thread
+        assert s._async['thread'] == async_threading.DaemonThread
         assert s._async['queue'] == queue.Queue
         assert s._async['websocket'] is None
         del sys.modules['engineio.async_drivers.threading']
