@@ -1,5 +1,13 @@
 # python-engineio change log
 
+**Release 4.7.0** - 2023-09-03
+
+- Added `send_packet()` method ([commit](https://github.com/miguelgrinberg/python-engineio/commit/48451a3a18c40c58cc5d4127250e4776e5b7f8db))
+- Fixed race condition when lots of connections are ended at the same time [#328](https://github.com/miguelgrinberg/python-engineio/issues/328) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/bb87ec652f55b41063400205971b0a667b78b162))
+- Workaround for strange memory leak in Eventlet's `Thread` class [#328](https://github.com/miguelgrinberg/python-engineio/issues/328) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d29aa9c44450c4ea729a0846091e3b105b8b7497))
+- Use daemon threads for background tasks in threading mode ([commit](https://github.com/miguelgrinberg/python-engineio/commit/541f172a4a61ebc16ee32fa38b0f410c4c711fbf))
+- Upgrade to pypy-3.9 in unit tests ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4581e53ada773fef8976110cc6d4ae40783b38d8))
+
 **Release 4.6.1** - 2023-08-23
 
 - Fix double close of websockets in ASGI adapter [#327](https://github.com/miguelgrinberg/python-engineio/issues/327) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e629eee17d7df7dc9736763b4220daed54a6dbdf))
