@@ -469,13 +469,10 @@ class AsyncServer(server.Server):
         run_async = kwargs.pop('run_async', False)
         ret = None
         if event in self.handlers:
-            if asyncio.iscoroutinefunction(self.handlers[event]) is True:
-                if run_async:
-                    return self.start_background_task(self.handlers[event],
-                                                      *args)
-                else:
+            if asyncio.iscoroutinefunction(self.handlers[event]):
+                async def run_async_handler():
                     try:
-                        ret = await self.handlers[event](*args)
+                        return await self.handlers[event](*args)
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
                     except:
@@ -484,21 +481,26 @@ class AsyncServer(server.Server):
                             # if connect handler raised error we reject the
                             # connection
                             return False
-            else:
-                if run_async:
-                    async def async_handler():
-                        return self.handlers[event](*args)
 
-                    return self.start_background_task(async_handler)
+                if run_async:
+                    ret = self.start_background_task(run_async_handler)
                 else:
+                    ret = await run_async_handler()
+            else:
+                async def run_sync_handler():
                     try:
-                        ret = self.handlers[event](*args)
+                        return self.handlers[event](*args)
                     except:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
                             # if connect handler raised error we reject the
                             # connection
                             return False
+
+                if run_async:
+                    ret = self.start_background_task(run_sync_handler)
+                else:
+                    ret = await run_sync_handler()
         return ret
 
     async def _service_task(self):  # pragma: no cover

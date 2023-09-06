@@ -1103,8 +1103,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('message', handler=foo_handler)
         fut = _run(s._trigger_event('message', 'bar', run_async=True))
-        with pytest.raises(ZeroDivisionError):
-            asyncio.get_event_loop().run_until_complete(fut)
+        asyncio.get_event_loop().run_until_complete(fut)
         assert result == ['bar']
 
     def test_trigger_event_coroutine_async_error(self):
@@ -1117,8 +1116,7 @@ class TestAsyncServer(unittest.TestCase):
         s = asyncio_server.AsyncServer()
         s.on('message', handler=foo_handler)
         fut = _run(s._trigger_event('message', 'bar', run_async=True))
-        with pytest.raises(ZeroDivisionError):
-            asyncio.get_event_loop().run_until_complete(fut)
+        asyncio.get_event_loop().run_until_complete(fut)
         assert result == ['bar']
 
     def test_create_queue(self):

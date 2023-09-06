@@ -637,9 +637,7 @@ class Server(object):
         """Invoke an event handler."""
         run_async = kwargs.pop('run_async', False)
         if event in self.handlers:
-            if run_async:
-                return self.start_background_task(self.handlers[event], *args)
-            else:
+            def run_handler():
                 try:
                     return self.handlers[event](*args)
                 except:
@@ -648,6 +646,11 @@ class Server(object):
                         # if connect handler raised error we reject the
                         # connection
                         return False
+
+            if run_async:
+                return self.start_background_task(run_handler)
+            else:
+                return run_handler()
 
     def _get_socket(self, sid):
         """Return the socket object for a given session."""
