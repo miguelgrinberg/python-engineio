@@ -253,7 +253,8 @@ class Client(object):
         on which the ``join()`` method can be invoked to wait for the task to
         complete.
         """
-        th = threading.Thread(target=target, args=args, kwargs=kwargs)
+        th = threading.Thread(target=target, args=args, kwargs=kwargs,
+                              daemon=True)
         th.start()
         return th
 
