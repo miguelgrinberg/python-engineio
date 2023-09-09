@@ -106,20 +106,8 @@ class TestServer(unittest.TestCase):
 
         assert s._async['thread'] == async_threading.DaemonThread
         assert s._async['queue'] == queue.Queue
-        assert s._async['websocket'] == async_threading.WebSocketWSGI
+        assert s._async['websocket'] == async_threading.SimpleWebSocketWSGI
         del sys.modules['simple_websocket']
-        del sys.modules['engineio.async_drivers.threading']
-
-    def test_async_mode_threading_without_websocket(self):
-        s = server.Server(async_mode='threading')
-        assert s.async_mode == 'threading'
-
-        from engineio.async_drivers import threading as async_threading
-        import queue
-
-        assert s._async['thread'] == async_threading.DaemonThread
-        assert s._async['queue'] == queue.Queue
-        assert s._async['websocket'] is None
         del sys.modules['engineio.async_drivers.threading']
 
     def test_async_mode_eventlet(self):
@@ -223,32 +211,6 @@ class TestServer(unittest.TestCase):
         assert s._async['queue_empty'] == RuntimeError
         assert s._async['event'] == 'bar'
         assert s._async['websocket'] == async_gevent.WebSocketWSGI
-        del sys.modules['gevent']
-        del sys.modules['gevent.queue']
-        del sys.modules['gevent.event']
-        del sys.modules['geventwebsocket']
-        del sys.modules['engineio.async_drivers.gevent']
-
-    @mock.patch('importlib.import_module', side_effect=_mock_import)
-    def test_async_mode_gevent_without_websocket(self, import_module):
-        sys.modules['gevent'] = mock.MagicMock()
-        sys.modules['gevent'].queue = mock.MagicMock()
-        sys.modules['gevent.queue'] = sys.modules['gevent'].queue
-        sys.modules['gevent.queue'].JoinableQueue = 'foo'
-        sys.modules['gevent.queue'].Empty = RuntimeError
-        sys.modules['gevent.event'] = mock.MagicMock()
-        sys.modules['gevent.event'].Event = 'bar'
-        sys.modules['geventwebsocket'] = None
-        s = server.Server(async_mode='gevent')
-        assert s.async_mode == 'gevent'
-
-        from engineio.async_drivers import gevent as async_gevent
-
-        assert s._async['thread'] == async_gevent.Thread
-        assert s._async['queue'] == 'foo'
-        assert s._async['queue_empty'] == RuntimeError
-        assert s._async['event'] == 'bar'
-        assert s._async['websocket'] is None
         del sys.modules['gevent']
         del sys.modules['gevent.queue']
         del sys.modules['gevent.event']

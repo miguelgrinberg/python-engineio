@@ -521,18 +521,13 @@ Gevent
 
 `Gevent <http://gevent.org>`_ is another asynchronous framework based on
 coroutines, very similar to eventlet. An Engine.IO server deployed with
-gevent has access to the long-polling transport. If project
-`gevent-websocket <https://bitbucket.org/Jeffrey/gevent-websocket/>`_ is
-installed, the WebSocket transport is also available. Note that when using the
-uWSGI server, the native WebSocket implementation of uWSGI can be used instead
-of gevent-websocket (see next section for details on this).
+gevent has access to the long-polling and websocket transports.
 
 Instances of class ``engineio.Server`` will automatically use gevent for
 asynchronous operations if the library is installed and eventlet is not
 installed. To request gevent to be selected explicitly, the ``async_mode``
 option can be given in the constructor::
 
-    # gevent alone or with gevent-websocket
     eio = engineio.Server(async_mode='gevent')
 
 A server configured for gevent is deployed as a regular WSGI application
@@ -542,15 +537,6 @@ using the provided ``engineio.WSGIApp``::
     app = engineio.WSGIApp(eio)
     pywsgi.WSGIServer(('', 8000), app).serve_forever()
 
-If the WebSocket transport is installed, then the server must be started as
-follows::
-
-    from gevent import pywsgi
-    from geventwebsocket.handler import WebSocketHandler
-    app = engineio.WSGIApp(eio)
-    pywsgi.WSGIServer(('', 8000), app,
-                      handler_class=WebSocketHandler).serve_forever()
-
 Gevent with Gunicorn
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -559,10 +545,6 @@ An alternative to running the gevent WSGI server as above is to use
 command to launch the application under gunicorn is shown below::
 
     $ gunicorn -k gevent -w 1 module:app
-
-Or to include WebSocket::
-
-    $ gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 module: app
 
 Same as with eventlet, due to limitations in its load balancing algorithm,
 gunicorn can only be used with one worker process, so the ``-w 1`` option is
