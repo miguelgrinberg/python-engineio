@@ -60,6 +60,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
                 self._event)
 
         self.app(self)
+        uwsgi.disconnect()
 
     def close(self):
         """Disconnects uWSGI from the client."""
@@ -67,7 +68,6 @@ class uWSGIWebSocket(object):  # pragma: no cover
             # better kill it here in case wait() is not called again
             self._select_greenlet.kill()
             self._event.set()
-        uwsgi.disconnect()
 
     def _send(self, msg):
         """Transmits message either in binary or UTF-8 text mode,
