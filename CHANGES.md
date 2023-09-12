@@ -1,5 +1,12 @@
 # python-engineio change log
 
+**Release 4.7.1** - 2023-09-12
+
+- Replace gevent-websocket with simple-websocket when using gevent ([commit](https://github.com/miguelgrinberg/python-engineio/commit/614f564275c635dc8b03d33dab44bf80d280cbcc))
+- Catch and log all errors that occur in event handlers ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2bef6d6fbbe684e5718f9202cd7af0ad19153495))
+- Use daemon threads for background tasks also in the threaded client ([commit](https://github.com/miguelgrinberg/python-engineio/commit/53578088046ca9f29b6119c182c7bed67d7a4ffb))
+- Silence exception on websocket exit when using uWSGI [#330](https://github.com/miguelgrinberg/python-engineio/issues/330) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9bc9e867e28e2495031bd1a552f4da0b1f0f575c))
+
 **Release 4.7.0** - 2023-09-03
 
 - Added `send_packet()` method ([commit](https://github.com/miguelgrinberg/python-engineio/commit/48451a3a18c40c58cc5d4127250e4776e5b7f8db))
