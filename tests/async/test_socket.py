@@ -1,12 +1,11 @@
 import asyncio
-import sys
 import time
 import unittest
 from unittest import mock
 
 import pytest
 
-from engineio import asyncio_socket
+from engineio import async_socket
 from engineio import exceptions
 from engineio import packet
 from engineio import payload
@@ -28,7 +27,6 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-@unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
 class TestSocket(unittest.TestCase):
     def _get_read_mock_coro(self, payload):
         mock_input = mock.MagicMock()
@@ -68,7 +66,7 @@ class TestSocket(unittest.TestCase):
 
     def test_create(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         assert s.server == mock_server
         assert s.sid == 'sid'
         assert not s.upgraded
@@ -80,13 +78,13 @@ class TestSocket(unittest.TestCase):
 
     def test_empty_poll(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         with pytest.raises(exceptions.QueueEmpty):
             _run(s.poll())
 
     def test_poll(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
         _run(s.send(pkt1))
@@ -95,13 +93,13 @@ class TestSocket(unittest.TestCase):
 
     def test_poll_none(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         _run(s.queue.put(None))
         assert _run(s.poll()) == []
 
     def test_poll_none_after_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         pkt = packet.Packet(packet.MESSAGE, data='hello')
         _run(s.send(pkt))
         _run(s.queue.put(None))
@@ -111,7 +109,7 @@ class TestSocket(unittest.TestCase):
     def test_schedule_ping(self):
         mock_server = self._get_mock_server()
         mock_server.ping_interval = 0.01
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.send = AsyncMock()
 
         async def schedule_ping():
@@ -125,7 +123,7 @@ class TestSocket(unittest.TestCase):
     def test_schedule_ping_closed_socket(self):
         mock_server = self._get_mock_server()
         mock_server.ping_interval = 0.01
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.send = AsyncMock()
         s.closed = True
 
@@ -139,14 +137,14 @@ class TestSocket(unittest.TestCase):
 
     def test_pong(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.schedule_ping = mock.MagicMock()
         _run(s.receive(packet.Packet(packet.PONG, data='abc')))
         s.schedule_ping.assert_called_once_with()
 
     def test_message_sync_handler(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         _run(s.receive(packet.Packet(packet.MESSAGE, data='foo')))
         mock_server._trigger_event.mock.assert_called_once_with(
             'message', 'sid', 'foo', run_async=False
@@ -154,7 +152,7 @@ class TestSocket(unittest.TestCase):
 
     def test_message_async_handler(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         mock_server.async_handlers = True
         _run(s.receive(packet.Packet(packet.MESSAGE, data='foo')))
         mock_server._trigger_event.mock.assert_called_once_with(
@@ -163,7 +161,7 @@ class TestSocket(unittest.TestCase):
 
     def test_invalid_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         with pytest.raises(exceptions.UnknownPacketError):
             _run(s.receive(packet.Packet(packet.OPEN)))
 
@@ -171,7 +169,7 @@ class TestSocket(unittest.TestCase):
         mock_server = self._get_mock_server()
         mock_server.ping_interval = 6
         mock_server.ping_interval_grace_period = 2
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.last_ping = time.time() - 9
         s.close = AsyncMock()
         _run(s.send('packet'))
@@ -179,7 +177,7 @@ class TestSocket(unittest.TestCase):
 
     def test_polling_read(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'foo')
+        s = async_socket.AsyncSocket(mock_server, 'foo')
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
         _run(s.send(pkt1))
@@ -190,7 +188,7 @@ class TestSocket(unittest.TestCase):
 
     def test_polling_read_error(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'foo')
+        s = async_socket.AsyncSocket(mock_server, 'foo')
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=foo'}
         with pytest.raises(exceptions.QueueEmpty):
             _run(s.handle_get_request(environ))
@@ -201,7 +199,7 @@ class TestSocket(unittest.TestCase):
         pkt1 = packet.Packet(packet.MESSAGE, data='hello')
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
         p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
-        s = asyncio_socket.AsyncSocket(mock_server, 'foo')
+        s = async_socket.AsyncSocket(mock_server, 'foo')
         s.receive = AsyncMock()
         environ = {
             'REQUEST_METHOD': 'POST',
@@ -218,7 +216,7 @@ class TestSocket(unittest.TestCase):
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
         p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         mock_server.max_http_buffer_size = len(p) - 1
-        s = asyncio_socket.AsyncSocket(mock_server, 'foo')
+        s = async_socket.AsyncSocket(mock_server, 'foo')
         s.receive = AsyncMock()
         environ = {
             'REQUEST_METHOD': 'POST',
@@ -231,7 +229,7 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade_handshake(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'foo')
+        s = async_socket.AsyncSocket(mock_server, 'foo')
         s._upgrade_websocket = AsyncMock()
         environ = {
             'REQUEST_METHOD': 'GET',
@@ -247,7 +245,7 @@ class TestSocket(unittest.TestCase):
         mock_server._async['websocket'] = mock.MagicMock()
         mock_ws = AsyncMock()
         mock_server._async['websocket'].return_value = mock_ws
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         environ = "foo"
         _run(s._upgrade_websocket(environ))
@@ -259,7 +257,7 @@ class TestSocket(unittest.TestCase):
     def test_upgrade_twice(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = mock.MagicMock()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.upgraded = True
         environ = "foo"
@@ -268,7 +266,7 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         _run(s.receive(packet.Packet(packet.UPGRADE)))
         r = _run(s.poll())
@@ -277,7 +275,7 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade_no_probe(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         ws = mock.MagicMock()
         ws.wait = AsyncMock()
@@ -287,7 +285,7 @@ class TestSocket(unittest.TestCase):
 
     def test_upgrade_no_upgrade_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
         ws = mock.MagicMock()
@@ -308,7 +306,7 @@ class TestSocket(unittest.TestCase):
     def test_upgrade_not_supported(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = None
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         environ = "foo"
         _run(s._upgrade_websocket(environ))
@@ -316,7 +314,7 @@ class TestSocket(unittest.TestCase):
 
     def test_close_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.close = AsyncMock()
         _run(s.receive(packet.Packet(packet.CLOSE)))
@@ -324,7 +322,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_read_write(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
         s.queue.join = AsyncMock(return_value=None)
         foo = 'foo'
@@ -355,7 +353,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_upgrade_read_write(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
         foo = 'foo'
@@ -391,7 +389,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_upgrade_with_payload(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
         probe = 'probe'
@@ -408,7 +406,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_upgrade_with_backlog(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
         probe = 'probe'
@@ -440,7 +438,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_read_write_wait_fail(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
         s.queue.join = AsyncMock(return_value=None)
         foo = 'foo'
@@ -466,7 +464,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_upgrade_with_large_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         s.queue.join = AsyncMock(return_value=None)
         probe = 'probe'
@@ -483,7 +481,7 @@ class TestSocket(unittest.TestCase):
 
     def test_websocket_ignore_invalid_packet(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
         s.queue.join = AsyncMock(return_value=None)
         foo = 'foo'
@@ -517,14 +515,14 @@ class TestSocket(unittest.TestCase):
 
     def test_send_after_close(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         _run(s.close(wait=False))
         with pytest.raises(exceptions.SocketIsClosedError):
             _run(s.send(packet.Packet(packet.NOOP)))
 
     def test_close_after_close(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         _run(s.close(wait=False))
         assert s.closed
         assert mock_server._trigger_event.mock.call_count == 1
@@ -536,7 +534,7 @@ class TestSocket(unittest.TestCase):
 
     def test_close_and_wait(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.queue = mock.MagicMock()
         s.queue.put = AsyncMock()
         s.queue.join = AsyncMock()
@@ -545,7 +543,7 @@ class TestSocket(unittest.TestCase):
 
     def test_close_without_wait(self):
         mock_server = self._get_mock_server()
-        s = asyncio_socket.AsyncSocket(mock_server, 'sid')
+        s = async_socket.AsyncSocket(mock_server, 'sid')
         s.queue = mock.MagicMock()
         s.queue.put = AsyncMock()
         s.queue.join = AsyncMock()

@@ -4,6 +4,6 @@ example/aiohttp/static/engine.io.js linguist-vendored
 tests/common/index.html binary
 tests/common/files/index.html binary
 tests/common/files/file.txt binary
-tests/asyncio/index.html binary
-tests/asyncio/files/index.html binary
-tests/asyncio/files/file.txt binary
+tests/async/index.html binary
+tests/async/files/index.html binary
+tests/async/files/file.txt binary

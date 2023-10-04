@@ -16,6 +16,7 @@ try:
     import websocket
 except ImportError:  # pragma: no cover
     websocket = None
+from . import base_client
 from . import exceptions
 from . import packet
 from . import payload
@@ -42,7 +43,7 @@ def signal_handler(sig, frame):
 original_signal_handler = None
 
 
-class Client(object):
+class Client(base_client.BaseClient):
     """An Engine.IO client.
 
     This class implements a fully compliant Engine.IO web client with support
@@ -85,75 +86,11 @@ class Client(object):
                 threading.current_thread() == threading.main_thread():
             original_signal_handler = signal.signal(signal.SIGINT,
                                                     signal_handler)
-        self.handlers = {}
-        self.base_url = None
-        self.transports = None
-        self.current_transport = None
-        self.sid = None
-        self.upgrades = None
-        self.ping_interval = None
-        self.ping_timeout = None
-        self.http = http_session
-        self.external_http = http_session is not None
-        self.handle_sigint = handle_sigint
-        self.ws = None
-        self.read_loop_task = None
-        self.write_loop_task = None
-        self.queue = None
-        self.state = 'disconnected'
-        self.ssl_verify = ssl_verify
-        self.websocket_extra_options = websocket_extra_options or {}
-
-        if json is not None:
-            packet.Packet.json = json
-        if not isinstance(logger, bool):
-            self.logger = logger
-        else:
-            self.logger = default_logger
-            if self.logger.level == logging.NOTSET:
-                if logger:
-                    self.logger.setLevel(logging.INFO)
-                else:
-                    self.logger.setLevel(logging.ERROR)
-                self.logger.addHandler(logging.StreamHandler())
-
-        self.request_timeout = request_timeout
-
-    def is_asyncio_based(self):
-        return False
-
-    def on(self, event, handler=None):
-        """Register an event handler.
-
-        :param event: The event name. Can be ``'connect'``, ``'message'`` or
-                      ``'disconnect'``.
-        :param handler: The function that should be invoked to handle the
-                        event. When this parameter is not given, the method
-                        acts as a decorator for the handler function.
-
-        Example usage::
-
-            # as a decorator:
-            @eio.on('connect')
-            def connect_handler():
-                print('Connection request')
-
-            # as a method:
-            def message_handler(msg):
-                print('Received message: ', msg)
-                eio.send('response')
-            eio.on('message', message_handler)
-        """
-        if event not in self.event_names:
-            raise ValueError('Invalid event')
-
-        def set_handler(handler):
-            self.handlers[event] = handler
-            return handler
-
-        if handler is None:
-            return set_handler
-        set_handler(handler)
+        super().__init__(logger=logger, json=json,
+                         request_timeout=request_timeout,
+                         http_session=http_session, ssl_verify=ssl_verify,
+                         handle_sigint=handle_sigint,
+                         websocket_extra_options=websocket_extra_options)
 
     def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):
@@ -231,14 +168,6 @@ class Client(object):
                 pass
         self._reset()
 
-    def transport(self):
-        """Return the name of the transport currently in use.
-
-        The possible values returned by this function are ``'polling'`` and
-        ``'websocket'``.
-        """
-        return self.current_transport
-
     def start_background_task(self, target, *args, **kwargs):
         """Start a background task.
 
@@ -271,10 +200,6 @@ class Client(object):
     def create_event(self, *args, **kwargs):
         """Create an event object."""
         return threading.Event(*args, **kwargs)
-
-    def _reset(self):
-        self.state = 'disconnected'
-        self.sid = None
 
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
@@ -555,31 +480,6 @@ class Client(object):
                     return self.handlers[event](*args)
                 except:
                     self.logger.exception(event + ' handler error')
-
-    def _get_engineio_url(self, url, engineio_path, transport):
-        """Generate the Engine.IO connection URL."""
-        engineio_path = engineio_path.strip('/')
-        parsed_url = urllib.parse.urlparse(url)
-
-        if transport == 'polling':
-            scheme = 'http'
-        elif transport == 'websocket':
-            scheme = 'ws'
-        else:  # pragma: no cover
-            raise ValueError('invalid transport')
-        if parsed_url.scheme in ['https', 'wss']:
-            scheme += 's'
-
-        return ('{scheme}://{netloc}/{path}/?{query}'
-                '{sep}transport={transport}&EIO=4').format(
-                    scheme=scheme, netloc=parsed_url.netloc,
-                    path=engineio_path, query=parsed_url.query,
-                    sep='&' if parsed_url.query else '',
-                    transport=transport)
-
-    def _get_url_timestamp(self):
-        """Generate the Engine.IO query string timestamp."""
-        return '&t=' + str(time.time())
 
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""

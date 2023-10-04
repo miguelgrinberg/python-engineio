@@ -1,5 +1,4 @@
 import asyncio
-import sys
 import unittest
 from unittest import mock
 
@@ -16,7 +15,6 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-@unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
 class TornadoTests(unittest.TestCase):
     def test_get_tornado_handler(self):
         mock_server = mock.MagicMock()

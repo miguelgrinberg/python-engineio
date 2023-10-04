@@ -1,6 +1,5 @@
 import asyncio
 import os
-import sys
 import unittest
 from unittest import mock
 
@@ -23,7 +22,6 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-@unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
 class AsgiTests(unittest.TestCase):
     def test_create_app(self):
         app = async_asgi.ASGIApp(

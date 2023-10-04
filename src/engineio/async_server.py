@@ -1,13 +1,13 @@
 import asyncio
 import urllib
 
+from . import base_server
 from . import exceptions
 from . import packet
-from . import server
-from . import asyncio_socket
+from . import async_socket
 
 
-class AsyncServer(server.Server):
+class AsyncServer(base_server.BaseServer):
     """An Engine.IO server for asyncio.
 
     This class implements a fully compliant Engine.IO web server with support
@@ -418,7 +418,7 @@ class AsyncServer(server.Server):
                 self._service_task)
 
         sid = self.generate_id()
-        s = asyncio_socket.AsyncSocket(self, sid)
+        s = async_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
 
         pkt = packet.Packet(

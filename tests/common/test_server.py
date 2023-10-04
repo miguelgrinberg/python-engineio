@@ -217,7 +217,6 @@ class TestServer(unittest.TestCase):
         del sys.modules['geventwebsocket']
         del sys.modules['engineio.async_drivers.gevent']
 
-    @unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_aiohttp(self, import_module):
         sys.modules['aiohttp'] = mock.MagicMock()

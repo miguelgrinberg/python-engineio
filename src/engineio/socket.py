@@ -1,27 +1,14 @@
 import sys
 import time
 
+from . import base_socket
 from . import exceptions
 from . import packet
 from . import payload
 
 
-class Socket(object):
+class Socket(base_socket.BaseSocket):
     """An Engine.IO socket."""
-    upgrade_protocols = ['websocket']
-
-    def __init__(self, server, sid):
-        self.server = server
-        self.sid = sid
-        self.queue = self.server.create_queue()
-        self.last_ping = None
-        self.connected = False
-        self.upgrading = False
-        self.upgraded = False
-        self.closing = False
-        self.closed = False
-        self.session = {}
-
     def poll(self):
         """Wait for packets to send to the client."""
         queue_empty = self.server.get_queue_empty_exception()

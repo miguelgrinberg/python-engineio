@@ -2,13 +2,13 @@ import asyncio
 import sys
 import time
 
+from . import base_socket
 from . import exceptions
 from . import packet
 from . import payload
-from . import socket
 
 
-class AsyncSocket(socket.Socket):
+class AsyncSocket(base_socket.BaseSocket):
     async def poll(self):
         """Wait for packets to send to the client."""
         try:

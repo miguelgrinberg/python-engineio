@@ -8,7 +8,7 @@ try:
 except ImportError:  # pragma: no cover
     aiohttp = None
 
-from . import client
+from . import base_client
 from . import exceptions
 from . import packet
 from . import payload
@@ -22,7 +22,7 @@ def async_signal_handler():
     Disconnect all active async clients.
     """
     async def _handler():  # pragma: no cover
-        for c in client.connected_clients[:]:
+        for c in base_client.connected_clients[:]:
             if c.is_asyncio_based():
                 await c.disconnect()
 
@@ -37,7 +37,7 @@ def async_signal_handler():
     asyncio.ensure_future(_handler())
 
 
-class AsyncClient(client.Client):
+class AsyncClient(base_client.BaseClient):
     """An Engine.IO client for asyncio.
 
     This class implements a fully compliant Engine.IO web client with support
@@ -164,7 +164,7 @@ class AsyncClient(client.Client):
                 await self.read_loop_task
             self.state = 'disconnected'
             try:
-                client.connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
         await self._reset()
@@ -262,7 +262,7 @@ class AsyncClient(client.Client):
         self.base_url += '&sid=' + self.sid
 
         self.state = 'connected'
-        client.connected_clients.append(self)
+        base_client.connected_clients.append(self)
         await self._trigger_event('connect', run_async=False)
 
         for pkt in p.packets[1:]:
@@ -384,7 +384,7 @@ class AsyncClient(client.Client):
             self.current_transport = 'websocket'
 
             self.state = 'connected'
-            client.connected_clients.append(self)
+            base_client.connected_clients.append(self)
             await self._trigger_event('connect', run_async=False)
 
         self.ws = ws
@@ -515,7 +515,7 @@ class AsyncClient(client.Client):
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
-                client.connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
             await self._reset()
@@ -566,7 +566,7 @@ class AsyncClient(client.Client):
         if self.state == 'connected':
             await self._trigger_event('disconnect', run_async=False)
             try:
-                client.connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
             await self._reset()

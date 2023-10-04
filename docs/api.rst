@@ -6,45 +6,27 @@ API Reference
 
 .. module:: engineio
 
-``Client`` class
-----------------
-
 .. autoclass:: Client
    :members:
-
-``AsyncClient`` class
----------------------
+   :inherited-members:
 
 .. autoclass:: AsyncClient
    :members:
    :inherited-members:
 
-``Server`` class
-----------------
-
 .. autoclass:: Server
    :members:
-
-``AsyncServer`` class
----------------------
+   :inherited-members:
 
 .. autoclass:: AsyncServer
    :members:
    :inherited-members:
 
-``WSGIApp`` class
------------------
-
 .. autoclass:: WSGIApp
    :members:
 
-``ASGIApp`` class
------------------
-
 .. autoclass:: ASGIApp
-
-``Middleware`` class (deprecated)
----------------------------------
+   :members:
 
 .. autoclass:: Middleware
    :members:
