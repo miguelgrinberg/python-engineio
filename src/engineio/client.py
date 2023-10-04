@@ -22,7 +22,6 @@ from . import packet
 from . import payload
 
 default_logger = logging.getLogger('engineio.client')
-connected_clients = []
 
 
 def signal_handler(sig, frame):
@@ -30,7 +29,7 @@ def signal_handler(sig, frame):
 
     Disconnect all active clients and then invoke the original signal handler.
     """
-    for client in connected_clients[:]:
+    for client in base_client.connected_clients[:]:
         if not client.is_asyncio_based():
             client.disconnect()
     if callable(original_signal_handler):
@@ -163,7 +162,7 @@ class Client(base_client.BaseClient):
                 self.read_loop_task.join()
             self.state = 'disconnected'
             try:
-                connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
         self._reset()
@@ -245,7 +244,7 @@ class Client(base_client.BaseClient):
         self.base_url += '&sid=' + self.sid
 
         self.state = 'connected'
-        connected_clients.append(self)
+        base_client.connected_clients.append(self)
         self._trigger_event('connect', run_async=False)
 
         for pkt in p.packets[1:]:
@@ -414,7 +413,7 @@ class Client(base_client.BaseClient):
             self.current_transport = 'websocket'
 
             self.state = 'connected'
-            connected_clients.append(self)
+            base_client.connected_clients.append(self)
             self._trigger_event('connect', run_async=False)
         self.ws = ws
         self.ws.settimeout(self.ping_interval + self.ping_timeout)
@@ -514,7 +513,7 @@ class Client(base_client.BaseClient):
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
-                connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
             self._reset()
@@ -556,7 +555,7 @@ class Client(base_client.BaseClient):
         if self.state == 'connected':
             self._trigger_event('disconnect', run_async=False)
             try:
-                connected_clients.remove(self)
+                base_client.connected_clients.remove(self)
             except ValueError:  # pragma: no cover
                 pass
             self._reset()

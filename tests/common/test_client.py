@@ -7,6 +7,7 @@ from unittest import mock
 import pytest
 import websocket
 
+from engineio import base_client
 from engineio import client
 from engineio import exceptions
 from engineio import json
@@ -197,7 +198,7 @@ class TestClient(unittest.TestCase):
 
     def test_disconnect_polling(self):
         c = client.Client()
-        client.connected_clients.append(c)
+        base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
@@ -207,12 +208,12 @@ class TestClient(unittest.TestCase):
         c.disconnect()
         c.read_loop_task.join.assert_called_once_with()
         c.ws.mock.assert_not_called()
-        assert c not in client.connected_clients
+        assert c not in base_client.connected_clients
         c._trigger_event.assert_called_once_with('disconnect', run_async=False)
 
     def test_disconnect_websocket(self):
         c = client.Client()
-        client.connected_clients.append(c)
+        base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
@@ -222,12 +223,12 @@ class TestClient(unittest.TestCase):
         c.disconnect()
         c.read_loop_task.join.assert_called_once_with()
         c.ws.close.assert_called_once_with()
-        assert c not in client.connected_clients
+        assert c not in base_client.connected_clients
         c._trigger_event.assert_called_once_with('disconnect', run_async=False)
 
     def test_disconnect_polling_abort(self):
         c = client.Client()
-        client.connected_clients.append(c)
+        base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
@@ -237,11 +238,11 @@ class TestClient(unittest.TestCase):
         c.queue.join.assert_not_called()
         c.read_loop_task.join.assert_not_called()
         c.ws.mock.assert_not_called()
-        assert c not in client.connected_clients
+        assert c not in base_client.connected_clients
 
     def test_disconnect_websocket_abort(self):
         c = client.Client()
-        client.connected_clients.append(c)
+        base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
@@ -251,7 +252,7 @@ class TestClient(unittest.TestCase):
         c.queue.join.assert_not_called()
         c.read_loop_task.join.assert_not_called()
         c.ws.mock.assert_not_called()
-        assert c not in client.connected_clients
+        assert c not in base_client.connected_clients
 
     def test_current_transport(self):
         c = client.Client()
@@ -388,7 +389,7 @@ class TestClient(unittest.TestCase):
         c._read_loop_websocket.assert_not_called()
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
-        assert c in client.connected_clients
+        assert c in base_client.connected_clients
         assert (
             c.base_url
             == 'http://foo/engine.io/?transport=polling&EIO=4&sid=123'
@@ -428,7 +429,7 @@ class TestClient(unittest.TestCase):
         c._read_loop_websocket.assert_not_called()
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
-        assert c in client.connected_clients
+        assert c in base_client.connected_clients
         assert (
             c.base_url
             == 'https://foo/engine.io/?transport=polling&EIO=4&sid=123'
@@ -497,7 +498,7 @@ class TestClient(unittest.TestCase):
             'http://foo', {}, 'engine.io'
         )
         on_connect.assert_called_once_with()
-        assert c in client.connected_clients
+        assert c in base_client.connected_clients
         assert (
             c.base_url
             == 'http://foo/engine.io/?transport=polling&EIO=4&sid=123'
@@ -540,7 +541,7 @@ class TestClient(unittest.TestCase):
         c._read_loop_websocket.assert_not_called()
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
-        assert c in client.connected_clients
+        assert c in base_client.connected_clients
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch(
@@ -654,7 +655,7 @@ class TestClient(unittest.TestCase):
         c._read_loop_websocket.assert_called_once_with()
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
-        assert c in client.connected_clients
+        assert c in base_client.connected_clients
         assert c.base_url == 'ws://foo/engine.io/?transport=websocket&EIO=4'
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -696,7 +697,7 @@ class TestClient(unittest.TestCase):
         c._read_loop_websocket.assert_called_once_with()
         c._write_loop.assert_called_once_with()
         on_connect.assert_called_once_with()
-        assert c in client.connected_clients
+        assert c in base_client.connected_clients
         assert c.base_url == 'wss://foo/engine.io/?transport=websocket&EIO=4'
         assert c.sid == '123'
         assert c.ping_interval == 1
@@ -1152,7 +1153,7 @@ class TestClient(unittest.TestCase):
         c._read_loop_websocket.assert_called_once_with()
         c._write_loop.assert_called_once_with()
         on_connect.assert_not_called()  # was called by polling
-        assert c not in client.connected_clients  # was added by polling
+        assert c not in base_client.connected_clients  # was added by polling
         assert c.base_url == 'http://foo'  # not changed
         assert c.sid == '123'  # not changed
         assert c.transport() == 'websocket'
@@ -1717,9 +1718,9 @@ class TestClient(unittest.TestCase):
     @mock.patch('engineio.client.original_signal_handler')
     def test_signal_handler(self, original_handler):
         clients = [mock.MagicMock(), mock.MagicMock()]
-        client.connected_clients = clients[:]
-        client.connected_clients[0].is_asyncio_based.return_value = False
-        client.connected_clients[1].is_asyncio_based.return_value = True
+        base_client.connected_clients = clients[:]
+        base_client.connected_clients[0].is_asyncio_based.return_value = False
+        base_client.connected_clients[1].is_asyncio_based.return_value = True
         client.signal_handler('sig', 'frame')
         clients[0].disconnect.assert_called_once_with()
         clients[1].disconnect.assert_not_called()
