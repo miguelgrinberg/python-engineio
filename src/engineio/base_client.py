@@ -1,4 +1,6 @@
 import logging
+import signal
+import threading
 import time
 import urllib
 from . import packet
@@ -7,12 +9,35 @@ default_logger = logging.getLogger('engineio.client')
 connected_clients = []
 
 
+def signal_handler(sig, frame):
+    """SIGINT handler.
+
+    Disconnect all active clients and then invoke the original signal handler.
+    """
+    for client in connected_clients[:]:
+        if not client.is_asyncio_based():
+            client.disconnect()
+    if callable(original_signal_handler):
+        return original_signal_handler(sig, frame)
+    else:  # pragma: no cover
+        # Handle case where no original SIGINT handler was present.
+        return signal.default_int_handler(sig, frame)
+
+
+original_signal_handler = None
+
+
 class BaseClient:
     event_names = ['connect', 'disconnect', 'message']
 
     def __init__(self, logger=False, json=None, request_timeout=5,
                  http_session=None, ssl_verify=True, handle_sigint=True,
                  websocket_extra_options=None):
+        global original_signal_handler
+        if handle_sigint and original_signal_handler is None and \
+                threading.current_thread() == threading.main_thread():
+            original_signal_handler = signal.signal(signal.SIGINT,
+                                                    signal_handler)
         self.handlers = {}
         self.base_url = None
         self.transports = None

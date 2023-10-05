@@ -1473,7 +1473,7 @@ class TestAsyncClient(unittest.TestCase):
         _run(c._write_loop())
         assert c.state == 'connected'
 
-    @mock.patch('engineio.client.original_signal_handler')
+    @mock.patch('engineio.base_client.original_signal_handler')
     def test_signal_handler(self, original_handler):
         clients = [mock.MagicMock(), mock.MagicMock()]
         base_client.connected_clients = clients[:]

@@ -71,7 +71,6 @@ class AsyncClient(base_client.BaseClient):
                                     arguments passed to
                                     ``aiohttp.ws_connect()``.
     """
-
     def is_asyncio_based(self):
         return True
 

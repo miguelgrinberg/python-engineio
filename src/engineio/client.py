@@ -2,7 +2,6 @@ from base64 import b64encode
 from engineio.json import JSONDecodeError
 import logging
 import queue
-import signal
 import ssl
 import threading
 import time
@@ -22,24 +21,6 @@ from . import packet
 from . import payload
 
 default_logger = logging.getLogger('engineio.client')
-
-
-def signal_handler(sig, frame):
-    """SIGINT handler.
-
-    Disconnect all active clients and then invoke the original signal handler.
-    """
-    for client in base_client.connected_clients[:]:
-        if not client.is_asyncio_based():
-            client.disconnect()
-    if callable(original_signal_handler):
-        return original_signal_handler(sig, frame)
-    else:  # pragma: no cover
-        # Handle case where no original SIGINT handler was present.
-        return signal.default_int_handler(sig, frame)
-
-
-original_signal_handler = None
 
 
 class Client(base_client.BaseClient):
@@ -75,22 +56,6 @@ class Client(base_client.BaseClient):
                                     arguments passed to
                                     ``websocket.create_connection()``.
     """
-    event_names = ['connect', 'disconnect', 'message']
-
-    def __init__(self, logger=False, json=None, request_timeout=5,
-                 http_session=None, ssl_verify=True, handle_sigint=True,
-                 websocket_extra_options=None):
-        global original_signal_handler
-        if handle_sigint and original_signal_handler is None and \
-                threading.current_thread() == threading.main_thread():
-            original_signal_handler = signal.signal(signal.SIGINT,
-                                                    signal_handler)
-        super().__init__(logger=logger, json=json,
-                         request_timeout=request_timeout,
-                         http_session=http_session, ssl_verify=ssl_verify,
-                         handle_sigint=handle_sigint,
-                         websocket_extra_options=websocket_extra_options)
-
     def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):
         """Connect to an Engine.IO server.
