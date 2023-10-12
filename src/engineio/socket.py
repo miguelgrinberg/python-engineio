@@ -143,7 +143,8 @@ class Socket(base_socket.BaseSocket):
             return self.server._bad_request()
         ws = self.server._async['websocket'](
             self._websocket_handler, self.server)
-        return ws(environ, start_response)
+        ws(environ, start_response)
+        return self.server._ok()
 
     def _websocket_handler(self, ws):
         """Engine.IO handler for websocket transport."""
