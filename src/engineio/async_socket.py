@@ -122,14 +122,14 @@ class AsyncSocket(base_socket.BaseSocket):
                 await self.queue.join()
 
     def schedule_ping(self):
-        async def send_ping():
-            self.last_ping = None
-            await asyncio.sleep(self.server.ping_interval)
-            if not self.closing and not self.closed:
-                self.last_ping = time.time()
-                await self.send(packet.Packet(packet.PING))
+        self.server.start_background_task(self._send_ping)
 
-        self.server.start_background_task(send_ping)
+    async def _send_ping(self):
+        self.last_ping = None
+        await asyncio.sleep(self.server.ping_interval)
+        if not self.closing and not self.closed:
+            self.last_ping = time.time()
+            await self.send(packet.Packet(packet.PING))
 
     async def _upgrade_websocket(self, environ):
         """Upgrade the connection from polling to websocket."""

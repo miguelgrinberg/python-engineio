@@ -125,14 +125,14 @@ class Socket(base_socket.BaseSocket):
                 self.queue.join()
 
     def schedule_ping(self):
-        def send_ping():
-            self.last_ping = None
-            self.server.sleep(self.server.ping_interval)
-            if not self.closing and not self.closed:
-                self.last_ping = time.time()
-                self.send(packet.Packet(packet.PING))
+        self.server.start_background_task(self._send_ping)
 
-        self.server.start_background_task(send_ping)
+    def _send_ping(self):
+        self.last_ping = None
+        self.server.sleep(self.server.ping_interval)
+        if not self.closing and not self.closed:
+            self.last_ping = time.time()
+            self.send(packet.Packet(packet.PING))
 
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
