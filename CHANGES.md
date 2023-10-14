@@ -1,5 +1,12 @@
 # python-engineio change log
 
+**Release 4.8.0** - 2023-10-14
+
+- Return consistent responses after Websocket connection ends ([commit](https://github.com/miguelgrinberg/python-engineio/commit/785c77c39d8c8fee37f969981f5a28ed2cc1b769))
+- Migrate Python package metadata to pyproject.toml ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f13b64d489ea99764f1a889987b1087f879967ea))
+- Remove Python 3.7 from builds ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f3717b244b6df09562760cc7e232d26a056bb1c2))
+- Internal code restructure (no functional changes) ([commit #1](https://github.com/miguelgrinberg/python-engineio/commit/e26163c8bbc2341e30f91b6acba06b9157247562)) ([commit #2](https://github.com/miguelgrinberg/python-engineio/commit/f15527bc48e2d3da1668e09ab801e594f85b20d5)) ([commit #3](https://github.com/miguelgrinberg/python-engineio/commit/5c996bec85d864526fe41569438a6e15e4a53123)) ([commit #4](https://github.com/miguelgrinberg/python-engineio/commit/ca9ca5bdd1467929be311d5ddcbfd18b5f4231ae))
+
 **Release 4.7.1** - 2023-09-12
 
 - Replace gevent-websocket with simple-websocket when using gevent ([commit](https://github.com/miguelgrinberg/python-engineio/commit/614f564275c635dc8b03d33dab44bf80d280cbcc))
