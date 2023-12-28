@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.8.1** - 2023-12-28
+
+- Fix invalid WebSocket responses [#331](https://github.com/miguelgrinberg/python-engineio/issues/331) [#332](https://github.com/miguelgrinberg/python-engineio/issues/332) [#338](https://github.com/miguelgrinberg/python-engineio/issues/338) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ccc7a86886f507bd7aa6985e5d1b070f9505ac46))
+
 **Release 4.8.0** - 2023-10-14
 
 - Return consistent responses after Websocket connection ends ([commit](https://github.com/miguelgrinberg/python-engineio/commit/785c77c39d8c8fee37f969981f5a28ed2cc1b769))
