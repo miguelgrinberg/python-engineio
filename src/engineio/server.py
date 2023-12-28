@@ -306,7 +306,7 @@ class Server(base_server.BaseServer):
             r = self._method_not_found()
 
         if not isinstance(r, dict):
-            return r or []
+            return r
         if self.http_compression and \
                 len(r['response']) >= self.compression_threshold:
             encodings = [e.split(';')[0].strip() for e in

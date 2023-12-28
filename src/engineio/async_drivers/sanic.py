@@ -114,6 +114,7 @@ class WebSocket(object):  # pragma: no cover
     """
     def __init__(self, handler, server):
         self.handler = handler
+        self.server = server
         self._sock = None
 
     async def __call__(self, environ):
@@ -123,6 +124,7 @@ class WebSocket(object):  # pragma: no cover
 
         self.environ = environ
         await self.handler(self)
+        return self.server._ok()
 
     async def close(self):
         await self._sock.close()

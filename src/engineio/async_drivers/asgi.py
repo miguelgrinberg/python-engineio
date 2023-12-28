@@ -233,9 +233,14 @@ class WebSocket(object):  # pragma: no cover
         self.asgi_send = environ['asgi.send']
         await self.asgi_send({'type': 'websocket.accept'})
         await self.handler(self)
+        return ''  # send nothing as response
 
     async def close(self):
-        pass
+        try:
+            await self.asgi_send({'type': 'websocket.close'})
+        except Exception:
+            # if the socket is already close we don't care
+            pass
 
     async def send(self, message):
         msg_bytes = None

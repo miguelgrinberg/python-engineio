@@ -61,6 +61,7 @@ class uWSGIWebSocket(object):  # pragma: no cover
 
         self.app(self)
         uwsgi.disconnect()
+        return ''  # send nothing as response
 
     def close(self):
         """Disconnects uWSGI from the client."""
