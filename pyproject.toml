@@ -1,6 +1,6 @@
 [project]
 name = "python-engineio"
-version = "4.8.1"
+version = "4.8.2.dev0"
 authors = [{name = "Miguel Grinberg", email = "miguel.grinberg@gmail.com"}]
 description = "Engine.IO server and client for Python"
 classifiers = [
