@@ -309,7 +309,10 @@ class Client(base_client.BaseClient):
                 self.ssl_verify = False
 
         if not self.ssl_verify:
-            extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
+            if 'sslopt' in extra_options:
+                extra_options['sslopt'].update({"cert_reqs": ssl.CERT_NONE})
+            else:
+                extra_options['sslopt'] = {"cert_reqs": ssl.CERT_NONE}
 
         # combine internally generated options with the ones supplied by the
         # caller. The caller's options take precedence.

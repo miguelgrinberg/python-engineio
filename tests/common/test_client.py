@@ -879,7 +879,7 @@ class TestClient(unittest.TestCase):
         http.auth = None
         http.proxies = None
         http.cert = 'foo.crt'
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=http, ssl_verify=False)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -889,7 +889,7 @@ class TestClient(unittest.TestCase):
 
         assert len(create_connection.call_args_list) == 1
         assert create_connection.call_args[1] == {
-            'sslopt': {'certfile': 'foo.crt'},
+            'sslopt': {'cert_reqs': ssl.CERT_NONE, 'certfile': 'foo.crt'},
             'header': {},
             'cookie': '',
             'enable_multithread': True,
