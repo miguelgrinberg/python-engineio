@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 4.8.2** - 2024-01-06
+
+- Combine ssl_verify with other SSL options ([commit](https://github.com/miguelgrinberg/python-engineio/commit/cea2f92b7094dba8b1b0943bab9e833a5362affe)) (thanks **Simon Fonteneau**!)
+- Hold references to background tasks to avoid garbage collection ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0729554455d9ab1bdd36e6386272fb2d6b5607c6))
+- Clearer documentation for the `max_http_buffer_size` argument ([commit](https://github.com/miguelgrinberg/python-engineio/commit/88b19f93ffea7bc1e9527889b9c2b830d082ce6b))
+
 **Release 4.8.1** - 2023-12-28
 
 - Fix invalid WebSocket responses [#331](https://github.com/miguelgrinberg/python-engineio/issues/331) [#332](https://github.com/miguelgrinberg/python-engineio/issues/332) [#338](https://github.com/miguelgrinberg/python-engineio/issues/338) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ccc7a86886f507bd7aa6985e5d1b070f9505ac46))
