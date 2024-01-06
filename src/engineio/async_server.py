@@ -6,6 +6,11 @@ from . import exceptions
 from . import packet
 from . import async_socket
 
+# this set is used to keep references to background tasks to prevent them from
+# being garbage collected mid-execution. Solution taken from
+# https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+task_reference_holder = set()
+
 
 class AsyncServer(base_server.BaseServer):
     """An Engine.IO server for asyncio.
@@ -487,6 +492,8 @@ class AsyncServer(base_server.BaseServer):
 
                 if run_async:
                     ret = self.start_background_task(run_async_handler)
+                    task_reference_holder.add(ret)
+                    ret.add_done_callback(task_reference_holder.discard)
                 else:
                     ret = await run_async_handler()
             else:
@@ -502,6 +509,8 @@ class AsyncServer(base_server.BaseServer):
 
                 if run_async:
                     ret = self.start_background_task(run_sync_handler)
+                    task_reference_holder.add(ret)
+                    ret.add_done_callback(task_reference_holder.discard)
                 else:
                     ret = await run_sync_handler()
         return ret

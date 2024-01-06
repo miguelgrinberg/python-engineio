@@ -15,6 +15,11 @@ from . import payload
 
 async_signal_handler_set = False
 
+# this set is used to keep references to background tasks to prevent them from
+# being garbage collected mid-execution. Solution taken from
+# https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+task_reference_holder = set()
+
 
 def async_signal_handler():
     """SIGINT handler.
@@ -450,8 +455,11 @@ class AsyncClient(base_client.BaseClient):
         if event in self.handlers:
             if asyncio.iscoroutinefunction(self.handlers[event]) is True:
                 if run_async:
-                    return self.start_background_task(self.handlers[event],
+                    task = self.start_background_task(self.handlers[event],
                                                       *args)
+                    task_reference_holder.add(task)
+                    task.add_done_callback(task_reference_holder.discard)
+                    return task
                 else:
                     try:
                         ret = await self.handlers[event](*args)
@@ -468,7 +476,10 @@ class AsyncClient(base_client.BaseClient):
                     async def async_handler():
                         return self.handlers[event](*args)
 
-                    return self.start_background_task(async_handler)
+                    task = self.start_background_task(async_handler)
+                    task_reference_holder.add(task)
+                    task.add_done_callback(task_reference_holder.discard)
+                    return task
                 else:
                     try:
                         ret = self.handlers[event](*args)
