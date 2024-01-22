@@ -541,8 +541,10 @@ class AsyncClient(base_client.BaseClient):
                     timeout=self.ping_interval + self.ping_timeout)
                 if not isinstance(p.data, (str, bytes)):  # pragma: no cover
                     self.logger.warning(
-                        'Server sent unexpected packet %s data %s, aborting',
-                        str(p.type), str(p.data))
+                        'Server sent %s packet data %s, aborting',
+                        'close' if p.type in [aiohttp.WSMsgType.CLOSE,
+                                              aiohttp.WSMsgType.CLOSING]
+                        else str(p.type), str(p.data))
                     await self.queue.put(None)
                     break  # the connection is broken
                 p = p.data

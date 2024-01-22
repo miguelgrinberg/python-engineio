@@ -493,6 +493,9 @@ class Client(base_client.BaseClient):
             p = None
             try:
                 p = self.ws.recv()
+                if len(p) == 0:  # pragma: no cover
+                    # websocket client can return an empty string after close
+                    raise websocket.WebSocketConnectionClosedException()
             except websocket.WebSocketTimeoutException:
                 self.logger.warning(
                     'Server has stopped communicating, aborting')
@@ -503,10 +506,15 @@ class Client(base_client.BaseClient):
                     'WebSocket connection was closed, aborting')
                 self.queue.put(None)
                 break
-            except Exception as e:
-                self.logger.info(
-                    'Unexpected error receiving packet: "%s", aborting',
-                    str(e))
+            except Exception as e:  # pragma: no cover
+                if type(e) is OSError and e.errno == 9:
+                    self.logger.info(
+                        'WebSocket connection is closing, aborting',
+                        str(e))
+                else:
+                    self.logger.info(
+                        'Unexpected error receiving packet: "%s", aborting',
+                        str(e))
                 self.queue.put(None)
                 break
             try:
