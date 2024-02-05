@@ -1631,7 +1631,8 @@ class TestClient(unittest.TestCase):
             headers={'Content-Type': 'text/plain'},
             timeout=5,
         )
-        assert c.state == 'disconnected'
+        assert c.state == 'connected'
+        assert c.write_loop_task is None
 
     def test_write_loop_websocket_one_packet(self):
         c = client.Client()
