@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.9.0** - 2024-02-05
+
+- More robust handling of polling disconnects [#254](https://github.com/miguelgrinberg/python-engineio/issues/254) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e0bb263499525f5bd7eeb5195eea2dbf049d92b2))
+- Clearer client logs after disconnect [#342](https://github.com/miguelgrinberg/python-engineio/issues/342) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5b538a74061d893f255ac3544ffe1402ae97b58e))
+
 **Release 4.8.2** - 2024-01-06
 
 - Combine ssl_verify with other SSL options ([commit](https://github.com/miguelgrinberg/python-engineio/commit/cea2f92b7094dba8b1b0943bab9e833a5362affe)) (thanks **Simon Fonteneau**!)
