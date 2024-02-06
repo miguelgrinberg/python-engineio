@@ -53,11 +53,14 @@ class ASGIApp:
         self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
-        if scope['type'] in ['http', 'websocket'] and \
-                scope['path'].startswith(self.engineio_path):
+        path = scope['path']
+        if 'root_path' in scope and scope['path'].startswith(scope['root_path']):
+            path = scope['path'][len(scope['root_path']):]
+
+        if scope['type'] in ['http', 'websocket'] and path.startswith(self.engineio_path):
             await self.engineio_server.handle_request(scope, receive, send)
         else:
-            static_file = get_static_file(scope['path'], self.static_files) \
+            static_file = get_static_file(path, self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
             if scope['type'] == 'lifespan':
                 await self.lifespan(scope, receive, send)
