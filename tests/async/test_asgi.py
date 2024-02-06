@@ -514,3 +514,30 @@ class AsgiTests(unittest.TestCase):
         environ['asgi.send'].mock.assert_called_with(
             {'type': 'websocket.close'}
         )
+
+    def test_sub_app_routing(self):
+
+        class ASGIDispatcher:
+            def __init__(self, routes):
+                self.routes = routes
+
+            async def __call__(self, scope, receive, send):
+                path = scope['path']
+                for prefix, app in self.routes.items():
+                    if path.startswith(prefix):
+                        await app(scope, receive, send)
+                        return
+                assert False, 'No route found'
+
+        other_app = AsyncMock()
+        mock_server = mock.MagicMock()
+        mock_server.handle_request = AsyncMock()
+        eio_app = async_asgi.ASGIApp(mock_server, engineio_path=None)
+        root_app = ASGIDispatcher({'/foo': other_app, '/eio': eio_app})
+        scope = {'type': 'http', 'path': '/foo/bar'}
+        _run(root_app(scope, 'receive', 'send'))
+        other_app.mock.assert_called_once_with(scope, 'receive', 'send')
+        scope = {'type': 'http', 'path': '/eio/'}
+        _run(root_app(scope, 'receive', 'send'))
+        eio_app.engineio_server.handle_request.mock.assert_called_once_with(
+            scope, 'receive', 'send')
