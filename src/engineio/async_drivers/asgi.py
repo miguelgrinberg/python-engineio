@@ -17,9 +17,17 @@ class ASGIApp:
     :param static_files: A dictionary with static file mapping rules. See the
                          documentation for details on this argument.
     :param other_asgi_app: A separate ASGI app that receives all other traffic.
-    :param engineio_path: The endpoint where the Engine.IO application should
-                          be installed. The default value is appropriate for
-                          most cases.
+    :param engineio_path: The endpoint prefix for the Engine.IO application, 
+                          used to distinguish Engine.IO traffic from other 
+                          traffic based on the request path. The default value
+                          suits most scenarios where Engine.IO operates on a 
+                          specific subpath.
+                          If set to None, the middleware assumes all incoming 
+                          traffic is directed to the Engine.IO server, bypassing
+                          path-based filtering. This setting is useful for 
+                          encapsulated ASGI applications. The other_asgi_app and
+                          static_files parameters are ignored when engineio_path
+                          is None.
     :param on_startup: function to be called on application startup; can be
                        coroutine
     :param on_shutdown: function to be called on application shutdown; can be
@@ -44,27 +52,26 @@ class ASGIApp:
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path
-        if not self.engineio_path.startswith('/'):
-            self.engineio_path = '/' + self.engineio_path
-        if not self.engineio_path.endswith('/'):
-            self.engineio_path += '/'
+        if self.engineio_path is not None:
+            if not self.engineio_path.startswith('/'):
+                self.engineio_path = '/' + self.engineio_path
+            if not self.engineio_path.endswith('/'):
+                self.engineio_path += '/'
         self.static_files = static_files or {}
         self.on_startup = on_startup
         self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
-        path = scope['path']
-        if 'root_path' in scope and scope['path'].startswith(scope['root_path']):
-            path = scope['path'][len(scope['root_path']):]
+        if scope['type'] == 'lifespan':
+            await self.lifespan(scope, receive, send)
+            return
 
-        if scope['type'] in ['http', 'websocket'] and path.startswith(self.engineio_path):
+        if self.engineio_path is None or scope['type'] in ['http', 'websocket'] and scope['path'].startswith(self.engineio_path):
             await self.engineio_server.handle_request(scope, receive, send)
         else:
-            static_file = get_static_file(path, self.static_files) \
+            static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
-            if scope['type'] == 'lifespan':
-                await self.lifespan(scope, receive, send)
-            elif static_file and os.path.exists(static_file['filename']):
+            if static_file and os.path.exists(static_file['filename']):
                 await self.serve_static_file(static_file, receive, send)
             elif self.other_asgi_app is not None:
                 await self.other_asgi_app(scope, receive, send)
