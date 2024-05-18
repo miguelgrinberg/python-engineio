@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 4.9.1** - 2024-05-18
+
+- Fix inverted shutdown logic in async service task [#354](https://github.com/miguelgrinberg/python-engineio/issues/354) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8e688ba42de8aa9418f15943e0084f5626b092be))
+- More robust WebSocket close detection in the sync client [#346](https://github.com/miguelgrinberg/python-engineio/issues/346) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ec2df3f99fc02234c43ff01e2a75fb40c0df0409))
+- Option to disable routing in ASGIApp [#345](https://github.com/miguelgrinberg/python-engineio/issues/345) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/1dbd57334499e839709ec951925b42ddfa70c57f)) (thanks **Rodja Trappe**!)
+
 **Release 4.9.0** - 2024-02-05
 
 - More robust handling of polling disconnects [#254](https://github.com/miguelgrinberg/python-engineio/issues/254) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e0bb263499525f5bd7eeb5195eea2dbf049d92b2))
