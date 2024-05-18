@@ -524,9 +524,9 @@ class AsyncServer(base_server.BaseServer):
                 try:
                     await asyncio.wait_for(self.service_task_event.wait(),
                                            timeout=self.ping_timeout)
-                except asyncio.TimeoutError:
                     break
-                continue
+                except asyncio.TimeoutError:
+                    continue
 
             # go through the entire client list in a ping interval cycle
             sleep_interval = self.ping_timeout / len(self.sockets)
@@ -546,8 +546,9 @@ class AsyncServer(base_server.BaseServer):
                     try:
                         await asyncio.wait_for(self.service_task_event.wait(),
                                                timeout=sleep_interval)
-                    except asyncio.TimeoutError:
                         raise KeyboardInterrupt()
+                    except asyncio.TimeoutError:
+                        continue
             except (
                 SystemExit,
                 KeyboardInterrupt,
