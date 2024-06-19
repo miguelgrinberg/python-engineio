@@ -70,6 +70,10 @@ class AsyncServer(base_server.BaseServer):
     :param async_handlers: If set to ``True``, run message event handlers in
                            non-blocking threads. To run handlers synchronously,
                            set to ``False``. The default is ``True``.
+    :param monitor_clients: If set to ``True``, a background task will ensure
+                            inactive clients are closed. Set to ``False`` to
+                            disable the monitoring task (not recommended). The
+                            default is ``True``.
     :param transports: The list of allowed transports. Valid transports
                        are ``'polling'`` and ``'websocket'``. Defaults to
                        ``['polling', 'websocket']``.
