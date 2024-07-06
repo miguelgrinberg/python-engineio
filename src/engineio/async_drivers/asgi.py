@@ -45,14 +45,14 @@ class ASGIApp:
     """
     def __init__(self, engineio_server, other_asgi_app=None,
                  static_files=None, engineio_path='engine.io',
-                 on_startup=None, on_shutdown=None):
+                 on_startup=None, on_shutdown=None, add_trailing_slash=True):
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path
         if self.engineio_path is not None:
             if not self.engineio_path.startswith('/'):
                 self.engineio_path = '/' + self.engineio_path
-            if not self.engineio_path.endswith('/'):
+            if add_trailing_slash and not self.engineio_path.endswith('/'):
                 self.engineio_path += '/'
         self.static_files = static_files or {}
         self.on_startup = on_startup

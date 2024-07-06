@@ -32,13 +32,13 @@ class WSGIApp(object):
         eventlet.wsgi.server(eventlet.listen(('', 8000)), app)
     """
     def __init__(self, engineio_app, wsgi_app=None, static_files=None,
-                 engineio_path='engine.io'):
+                 engineio_path='engine.io', add_trailing_slash=True):
         self.engineio_app = engineio_app
         self.wsgi_app = wsgi_app
         self.engineio_path = engineio_path
         if not self.engineio_path.startswith('/'):
             self.engineio_path = '/' + self.engineio_path
-        if not self.engineio_path.endswith('/'):
+        if add_trailing_slash and not self.engineio_path.endswith('/'):
             self.engineio_path += '/'
         self.static_files = static_files or {}
 
