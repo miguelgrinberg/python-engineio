@@ -66,15 +66,17 @@ class ASGIApp:
                 scope['path'] += '/'
             if self.engineio_path is None or scope['path'].startswith(self.engineio_path):
                 await self.engineio_server.handle_request(scope, receive, send)
-        else:
-            static_file = get_static_file(scope['path'], self.static_files) \
-                if scope['type'] == 'http' and self.static_files else None
-            if static_file and os.path.exists(static_file['filename']):
-                await self.serve_static_file(static_file, receive, send)
-            elif self.other_asgi_app is not None:
-                await self.other_asgi_app(scope, receive, send)
             else:
-                await self.not_found(receive, send)
+                if scope['path'].endswith('/'):
+                    scope['path'] = scope['path'][:-1]
+                static_file = get_static_file(scope['path'], self.static_files) \
+                    if scope['type'] == 'http' and self.static_files else None
+                if static_file and os.path.exists(static_file['filename']):
+                    await self.serve_static_file(static_file, receive, send)
+                elif self.other_asgi_app is not None:
+                    await self.other_asgi_app(scope, receive, send)
+                else:
+                    await self.not_found(receive, send)
 
     async def serve_static_file(self, static_file, receive,
                                 send):  # pragma: no cover
