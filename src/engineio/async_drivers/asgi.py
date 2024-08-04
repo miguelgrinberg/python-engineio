@@ -1,9 +1,9 @@
-import re
 import os
 import sys
 import asyncio
 
 from engineio.static_files import get_static_file
+
 
 class ASGIApp:
     """ASGI application middleware for Engine.IO.
@@ -45,34 +45,27 @@ class ASGIApp:
     """
     def __init__(self, engineio_server, other_asgi_app=None,
                  static_files=None, engineio_path='engine.io',
-                 on_startup=None, on_shutdown=None, automatic_path_handling=True):
+                 on_startup=None, on_shutdown=None):
         self.engineio_server = engineio_server
         self.other_asgi_app = other_asgi_app
         self.engineio_path = engineio_path
-        self.automatic_path_handling = automatic_path_handling
         if self.engineio_path is not None:
-            self.engineio_path = '/' + self.engineio_path.lstrip('/')
-            if self.automatic_path_handling:
-                self.engineio_path = re.sub(r'/+', '/', self.engineio_path)
-                if self.engineio_path.endswith('/'):
-                    self.engineio_path = self.engineio_path.rstrip('/')
             if not self.engineio_path.startswith('/'):
                 self.engineio_path = '/' + self.engineio_path
+            if not self.engineio_path.endswith('/'):
+                self.engineio_path += '/'
         self.static_files = static_files or {}
         self.on_startup = on_startup
         self.on_shutdown = on_shutdown
 
     async def __call__(self, scope, receive, send):
-        if self.automatic_path_handling and 'path' in scope:
-            if scope['path'].endswith('/'):
-                scope['path'] = scope['path'].rstrip('/')
         if scope['type'] == 'lifespan':
             await self.lifespan(scope, receive, send)
-        elif scope['type'] in ['http', 'websocket'] and (
-                self.engineio_path is None
-                or scope['path'] == self.engineio_path
-                or '/' == self.engineio_path):
-            await self.engineio_server.handle_request(scope, receive, send)
+        elif scope['type'] in ['http', 'websocket']:
+            if not scope['path'].endswith('/'):
+                scope['path'] += '/'
+            if self.engineio_path is None or scope['path'].startswith(self.engineio_path):
+                await self.engineio_server.handle_request(scope, receive, send)
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
                 if scope['type'] == 'http' and self.static_files else None
