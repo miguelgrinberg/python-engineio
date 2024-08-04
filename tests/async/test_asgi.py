@@ -38,12 +38,55 @@ class AsgiTests(unittest.TestCase):
     def test_engineio_routing(self):
         mock_server = mock.MagicMock()
         mock_server.handle_request = AsyncMock()
+
         app = async_asgi.ASGIApp(mock_server)
         scope = {'type': 'http', 'path': '/engine.io/'}
         _run(app(scope, 'receive', 'send'))
         mock_server.handle_request.mock.assert_called_once_with(
             scope, 'receive', 'send'
         )
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/engine.io/'}
+        _run(app(scope, 'receive', 'send'))
+        mock_server.handle_request.mock.assert_called_once_with(
+            scope, 'receive', 'send'
+        )
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/engine.iofoo/'}
+        _run(app(scope, 'receive', AsyncMock()))
+        mock_server.handle_request.mock.assert_not_called()
+
+        app = async_asgi.ASGIApp(mock_server, engineio_path=None)
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/foo'}
+        _run(app(scope, 'receive', 'send'))
+        mock_server.handle_request.mock.assert_called_once_with(
+            scope, 'receive', 'send'
+        )
+
+        app = async_asgi.ASGIApp(mock_server, engineio_path='mysocket.io')
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/mysocket.io'}
+        _run(app(scope, 'receive', 'send'))
+        mock_server.handle_request.mock.assert_called_once_with(
+            scope, 'receive', 'send'
+        )
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/mysocket.io/'}
+        _run(app(scope, 'receive', 'send'))
+        mock_server.handle_request.mock.assert_called_once_with(
+            scope, 'receive', 'send'
+        )
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/mysocket.io/foo'}
+        _run(app(scope, 'receive', 'send'))
+        mock_server.handle_request.mock.assert_called_once_with(
+            scope, 'receive', 'send'
+        )
+        mock_server.handle_request.mock.reset_mock()
+        scope = {'type': 'http', 'path': '/mysocket.iofoo'}
+        _run(app(scope, 'receive', AsyncMock()))
+        mock_server.handle_request.mock.assert_not_called()
 
     def test_other_app_routing(self):
         other_app = AsyncMock()

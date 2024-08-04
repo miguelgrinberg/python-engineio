@@ -63,7 +63,8 @@ class ASGIApp:
             await self.lifespan(scope, receive, send)
         elif scope['type'] in ['http', 'websocket'] and (
                 self.engineio_path is None
-                or scope['path'].startswith(self.engineio_path)):
+                or self._ensure_trailing_slash(scope['path']).startswith(
+                    self.engineio_path)):
             await self.engineio_server.handle_request(scope, receive, send)
         else:
             static_file = get_static_file(scope['path'], self.static_files) \
@@ -126,6 +127,11 @@ class ASGIApp:
                     'headers': [(b'Content-Type', b'text/plain')]})
         await send({'type': 'http.response.body',
                     'body': b'Not Found'})
+
+    def _ensure_trailing_slash(self, path):
+        if not path.endswith('/'):
+            path += '/'
+        return path
 
 
 async def translate_request(scope, receive, send):
