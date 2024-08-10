@@ -4,7 +4,7 @@
   "dependencies": {
     "enchilada": "0.13.0",
     "engine.io": "^6.6.0",
-    "engine.io-client": "^4.1.4",
+    "engine.io-client": "^6.6.0",
     "express": "^4.19.2",
     "smoothie": "1.19.0"
   }
