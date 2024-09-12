@@ -180,7 +180,7 @@ class Server(base_server.BaseServer):
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            for client in self.sockets.values():
+            for client in self.sockets.copy().values():
                 client.close()
             self.sockets = {}
 
