@@ -1,11 +1,18 @@
 import logging
 import unittest
 from unittest import mock
+import sys
 
-from engineio.async_drivers import eventlet as async_eventlet
+# event fails to import in Python 3.13
+try:
+    from engineio.async_drivers import eventlet as async_eventlet
+except AttributeError:
+    pass
 import pytest
 
 
+@pytest.mark.skipif(sys.version_info >= (3, 13),
+                    reason="eventlet fails on python 3.13")
 class TestAsyncEventlet(unittest.TestCase):
     def setUp(self):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
