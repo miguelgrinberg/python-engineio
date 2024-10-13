@@ -660,6 +660,32 @@ class TestAsyncServer(unittest.TestCase):
         assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
+    def test_get_request_bad_websocket_transport(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET',
+             'QUERY_STRING': 'EIO=4&transport=websocket&sid=foo'}
+        )
+        import_module.side_effect = [a]
+        s = async_server.AsyncServer()
+        s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.upgraded = False
+        _run(s.handle_request('request'))
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+
+    @mock.patch('importlib.import_module')
+    def test_get_request_bad_polling_transport(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET',
+             'QUERY_STRING': 'EIO=4&transport=polling&sid=foo'}
+        )
+        import_module.side_effect = [a]
+        s = async_server.AsyncServer()
+        s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.upgraded = True
+        _run(s.handle_request('request'))
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+
+    @mock.patch('importlib.import_module')
     def test_post_request_with_bad_sid(self, import_module):
         a = self.get_async_mock(
             {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}

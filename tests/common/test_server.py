@@ -883,6 +883,28 @@ class TestServer(unittest.TestCase):
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
         assert len(s.sockets) == 0
 
+    def test_get_request_bad_websocket_transport(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        mock_socket.upgraded = False
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'GET',
+                   'QUERY_STRING': 'EIO=4&transport=websocket&sid=foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
+
+    def test_get_request_bad_polling_transport(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        mock_socket.upgraded = True
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'GET',
+                   'QUERY_STRING': 'EIO=4&transport=polling&sid=foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
+
     def test_post_request(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()

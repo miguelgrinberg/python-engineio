@@ -288,18 +288,24 @@ class AsyncServer(base_server.BaseServer):
                     r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
-                    try:
-                        packets = await socket.handle_get_request(environ)
-                        if isinstance(packets, list):
-                            r = self._ok(packets, jsonp_index=jsonp_index)
-                        else:
-                            r = packets
-                    except exceptions.EngineIOError:
-                        if sid in self.sockets:  # pragma: no cover
-                            await self.disconnect(sid)
-                        r = self._bad_request()
-                    if sid in self.sockets and self.sockets[sid].closed:
-                        del self.sockets[sid]
+                    if self.transport(sid) != transport:
+                        self._log_error_once(
+                            'Invalid transport for session ' + sid,
+                            'bad-transport')
+                        r = self._bad_request('Invalid transport')
+                    else:
+                        try:
+                            packets = await socket.handle_get_request(environ)
+                            if isinstance(packets, list):
+                                r = self._ok(packets, jsonp_index=jsonp_index)
+                            else:
+                                r = packets
+                        except exceptions.EngineIOError:
+                            if sid in self.sockets:  # pragma: no cover
+                                await self.disconnect(sid)
+                            r = self._bad_request()
+                        if sid in self.sockets and self.sockets[sid].closed:
+                            del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
                 self._log_error_once('Invalid session ' + sid, 'bad-sid')
