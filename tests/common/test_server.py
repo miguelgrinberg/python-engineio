@@ -111,6 +111,14 @@ class TestServer(unittest.TestCase):
         del sys.modules['engineio.async_drivers.threading']
 
     def test_async_mode_eventlet(self):
+        sys.modules['eventlet'] = mock.MagicMock()
+        sys.modules['eventlet'].green = mock.MagicMock()
+        sys.modules['eventlet.green'] = sys.modules['eventlet'].green
+        sys.modules['eventlet.green'].threading = mock.MagicMock()
+        sys.modules['eventlet.green.threading'] = \
+            sys.modules['eventlet.green'].threading
+        sys.modules['eventlet'].websocket = mock.MagicMock()
+        sys.modules['eventlet.websocket'] = sys.modules['eventlet'].websocket
         s = server.Server(async_mode='eventlet')
         assert s.async_mode == 'eventlet'
 
@@ -120,6 +128,11 @@ class TestServer(unittest.TestCase):
         assert s._async['thread'] == async_eventlet.EventletThread
         assert s._async['queue'] == queue.Queue
         assert s._async['websocket'] == async_eventlet.WebSocketWSGI
+        del sys.modules['eventlet']
+        del sys.modules['eventlet.green']
+        del sys.modules['eventlet.green.threading']
+        del sys.modules['eventlet.websocket']
+        del sys.modules['engineio.async_drivers.eventlet']
 
     @mock.patch('importlib.import_module', side_effect=_mock_import)
     def test_async_mode_gevent_uwsgi(self, import_module):
@@ -228,7 +241,10 @@ class TestServer(unittest.TestCase):
         with pytest.raises(ValueError):
             server.Server(async_mode='foo')
 
-    @mock.patch('importlib.import_module', side_effect=[_mock_async])
+    @mock.patch(
+        'importlib.import_module',
+        side_effect=[_mock_async],
+    )
     def test_async_mode_auto_eventlet(self, import_module):
         s = server.Server()
         assert s.async_mode == 'eventlet'
