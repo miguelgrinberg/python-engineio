@@ -1,5 +1,15 @@
 # python-engineio change log
 
+**Release 4.10.0** - 2024-10-13
+
+- Reject requests with incorrect transport [#367](https://github.com/miguelgrinberg/python-engineio/issues/367) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4d614e5297ed2291ae97fcf30a3ee7223886440a))
+- Fixed runtime error when disconnecting all clients [#368](https://github.com/miguelgrinberg/python-engineio/issues/368) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b3339974c68dcf0e3f85c524450748c24c3a9223))
+- More flexible handling of the ASGI path [#359](https://github.com/miguelgrinberg/python-engineio/issues/359) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/972687b10c9a0fecb1c08fcd30dbd7b5a97c3a52))
+- Remove unused parameter in log message [#377](https://github.com/miguelgrinberg/python-engineio/issues/377) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f9a818d1444c9167457fc9f6fca3667ac7a46cf7))
+- Minor updates to the server and client documentation ([commit](https://github.com/miguelgrinberg/python-engineio/commit/fe56a33fe37355dbdcd6a283f32e372f60115236))
+- Add Python 3.13 CI builds ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e0e577dfd1bc8f79c5f8b033aed61947d44a5ec6))
+- Run tests with mocked eventlet to avoid 3.13 failures ([commit](https://github.com/miguelgrinberg/python-engineio/commit/5b5d67d1ffd98b31eb8fb30417152cb05af6fc97))
+
 **Release 4.9.1** - 2024-05-18
 
 - Fix inverted shutdown logic in async service task [#354](https://github.com/miguelgrinberg/python-engineio/issues/354) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/8e688ba42de8aa9418f15943e0084f5626b092be))
