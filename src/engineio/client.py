@@ -510,8 +510,7 @@ class Client(base_client.BaseClient):
             except Exception as e:  # pragma: no cover
                 if type(e) is OSError and e.errno == 9:
                     self.logger.info(
-                        'WebSocket connection is closing, aborting',
-                        str(e))
+                        'WebSocket connection is closing, aborting')
                 else:
                     self.logger.info(
                         'Unexpected error receiving packet: "%s", aborting',
