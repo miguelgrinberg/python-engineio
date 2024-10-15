@@ -269,11 +269,11 @@ class AsyncServer(base_server.BaseServer):
                                  'bad-jsonp-index')
             r = self._bad_request('Invalid JSONP index number')
         elif method == 'GET':
+            upgrade_header = environ.get('HTTP_UPGRADE').lower() \
+                if 'HTTP_UPGRADE' in environ else None
             if sid is None:
                 # transport must be one of 'polling' or 'websocket'.
                 # if 'websocket', the HTTP_UPGRADE header must match.
-                upgrade_header = environ.get('HTTP_UPGRADE').lower() \
-                    if 'HTTP_UPGRADE' in environ else None
                 if transport == 'polling' \
                         or transport == upgrade_header == 'websocket':
                     r = await self._handle_connect(environ, transport,
@@ -288,7 +288,8 @@ class AsyncServer(base_server.BaseServer):
                     r = self._bad_request('Invalid session ' + sid)
                 else:
                     socket = self._get_socket(sid)
-                    if self.transport(sid) != transport:
+                    if self.transport(sid) != transport and \
+                            transport != upgrade_header:
                         self._log_error_once(
                             'Invalid transport for session ' + sid,
                             'bad-transport')
