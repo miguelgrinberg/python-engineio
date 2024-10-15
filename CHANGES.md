@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.10.1** - 2024-10-15
+
+- Reject request with incorrect transport [#367](https://github.com/miguelgrinberg/python-engineio/issues/367) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7ad14481695df5adb070d52a377de49f43ddf399))
+
 **Release 4.10.0** - 2024-10-13
 
 - Reject requests with incorrect transport [#367](https://github.com/miguelgrinberg/python-engineio/issues/367) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/4d614e5297ed2291ae97fcf30a3ee7223886440a))
