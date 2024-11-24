@@ -1,6 +1,5 @@
 import io
 import time
-import unittest
 from unittest import mock
 
 import pytest
@@ -11,8 +10,8 @@ from engineio import payload
 from engineio import socket
 
 
-class TestSocket(unittest.TestCase):
-    def setUp(self):
+class TestSocket:
+    def setup_method(self):
         self.bg_tasks = []
 
     def _get_mock_server(self):

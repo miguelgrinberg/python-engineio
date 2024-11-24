@@ -1,7 +1,6 @@
 import logging
 import ssl
 import time
-import unittest
 from unittest import mock
 
 import pytest
@@ -15,7 +14,7 @@ from engineio import packet
 from engineio import payload
 
 
-class TestClient(unittest.TestCase):
+class TestClient:
     def test_is_asyncio_based(self):
         c = client.Client()
         assert not c.is_asyncio_based()

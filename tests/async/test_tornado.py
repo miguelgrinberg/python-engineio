@@ -1,5 +1,4 @@
 import asyncio
-import unittest
 from unittest import mock
 
 try:
@@ -15,7 +14,7 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-class TornadoTests(unittest.TestCase):
+class TestTornado:
     def test_get_tornado_handler(self):
         mock_server = mock.MagicMock()
         handler = async_tornado.get_tornado_handler(mock_server)

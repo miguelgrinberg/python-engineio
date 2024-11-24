@@ -1,7 +1,5 @@
 import asyncio
 import ssl
-import sys
-import unittest
 from unittest import mock
 
 try:
@@ -33,8 +31,7 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-@unittest.skipIf(sys.version_info < (3, 5), 'only for Python 3.5+')
-class TestAsyncClient(unittest.TestCase):
+class TestAsyncClient:
     def test_is_asyncio_based(self):
         c = async_client.AsyncClient()
         assert c.is_asyncio_based()

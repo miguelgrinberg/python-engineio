@@ -1,6 +1,5 @@
 import asyncio
 import os
-import unittest
 from unittest import mock
 
 from engineio.async_drivers import asgi as async_asgi
@@ -22,7 +21,7 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-class AsgiTests(unittest.TestCase):
+class TestAsgi:
     def test_create_app(self):
         app = async_asgi.ASGIApp(
             'eio',

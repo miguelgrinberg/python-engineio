@@ -4,7 +4,6 @@ import io
 import logging
 import sys
 import time
-import unittest
 from unittest import mock
 import zlib
 
@@ -25,7 +24,7 @@ def _mock_import(module, *args, **kwargs):
     return module
 
 
-class TestServer(unittest.TestCase):
+class TestServer:
     _mock_async = mock.MagicMock()
     _mock_async._async = {
         'thread': 't',
@@ -43,17 +42,17 @@ class TestServer(unittest.TestCase):
         return mock_socket
 
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         server.Server._default_monitor_clients = False
 
     @classmethod
-    def tearDownClass(cls):
+    def teardown_class(cls):
         server.Server._default_monitor_clients = True
 
-    def setUp(self):
+    def setup_method(self):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
 
-    def tearDown(self):
+    def teardown_method(self):
         # restore JSON encoder, in case a test changed it
         packet.Packet.json = json
 

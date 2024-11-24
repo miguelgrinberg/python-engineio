@@ -1,11 +1,10 @@
 import os
-import unittest
 from unittest import mock
 
 import engineio
 
 
-class TestWSGIApp(unittest.TestCase):
+class TestWSGIApp:
     def test_wsgi_routing(self):
         mock_wsgi_app = mock.MagicMock()
         mock_eio_app = 'foo'

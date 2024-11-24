@@ -1,10 +1,9 @@
-import unittest
 from unittest import mock
 
 from engineio.async_drivers import aiohttp as async_aiohttp
 
 
-class AiohttpTests(unittest.TestCase):
+class TestAiohttp:
     def test_create_route(self):
         app = mock.MagicMock()
         mock_server = mock.MagicMock()

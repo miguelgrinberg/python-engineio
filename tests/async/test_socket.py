@@ -1,6 +1,5 @@
 import asyncio
 import time
-import unittest
 from unittest import mock
 
 import pytest
@@ -27,7 +26,7 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-class TestSocket(unittest.TestCase):
+class TestSocket:
     def _get_read_mock_coro(self, payload):
         mock_input = mock.MagicMock()
         mock_input.read = AsyncMock()

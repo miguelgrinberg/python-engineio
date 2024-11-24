@@ -2,7 +2,6 @@ import asyncio
 import gzip
 import io
 import logging
-import unittest
 from unittest import mock
 import zlib
 
@@ -32,7 +31,7 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-class TestAsyncServer(unittest.TestCase):
+class TestAsyncServer:
     @staticmethod
     def get_async_mock(environ={'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''}):
         if environ.get('QUERY_STRING'):
@@ -67,17 +66,17 @@ class TestAsyncServer(unittest.TestCase):
         return mock_socket
 
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         async_server.AsyncServer._default_monitor_clients = False
 
     @classmethod
-    def tearDownClass(cls):
+    def teardown_class(cls):
         async_server.AsyncServer._default_monitor_clients = True
 
-    def setUp(self):
+    def setup_method(self):
         logging.getLogger('engineio').setLevel(logging.NOTSET)
 
-    def tearDown(self):
+    def teardown_method(self):
         # restore JSON encoder, in case a test changed it
         packet.Packet.json = json
 
@@ -1030,11 +1029,12 @@ class TestAsyncServer(unittest.TestCase):
         async def foo(arg):
             r.append(arg)
 
-        s = async_server.AsyncServer()
-        s.start_background_task(foo, 'bar')
-        pending = asyncio.all_tasks(loop=asyncio.get_event_loop()) \
-            if hasattr(asyncio, 'all_tasks') else asyncio.Task.all_tasks()
-        asyncio.get_event_loop().run_until_complete(asyncio.wait(pending))
+        async def main():
+            s = async_server.AsyncServer()
+            task = s.start_background_task(foo, 'bar')
+            await task
+
+        _run(main())
         assert r == ['bar']
 
     def test_sleep(self):

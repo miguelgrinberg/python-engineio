@@ -1,12 +1,10 @@
-import unittest
-
 import pytest
 
 from engineio import packet
 from engineio import payload
 
 
-class TestPayload(unittest.TestCase):
+class TestPayload:
     def test_encode_empty_payload(self):
         p = payload.Payload()
         assert p.packets == []
