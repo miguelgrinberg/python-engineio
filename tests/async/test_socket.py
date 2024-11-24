@@ -10,17 +10,6 @@ from engineio import packet
 from engineio import payload
 
 
-def AsyncMock(*args, **kwargs):
-    """Return a mock asynchronous function."""
-    m = mock.MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return m(*args, **kwargs)
-
-    mock_coro.mock = m
-    return mock_coro
-
-
 def _run(coro):
     """Run the given coroutine."""
     return asyncio.get_event_loop().run_until_complete(coro)
@@ -29,8 +18,8 @@ def _run(coro):
 class TestSocket:
     def _get_read_mock_coro(self, payload):
         mock_input = mock.MagicMock()
-        mock_input.read = AsyncMock()
-        mock_input.read.mock.return_value = payload
+        mock_input.read = mock.AsyncMock()
+        mock_input.read.return_value = payload
         return mock_input
 
     def _get_mock_server(self):
@@ -49,7 +38,7 @@ class TestSocket:
         }
         mock_server._async['translate_request'].return_value = 'request'
         mock_server._async['make_response'].return_value = 'response'
-        mock_server._trigger_event = AsyncMock()
+        mock_server._trigger_event = mock.AsyncMock()
 
         def bg_task(target, *args, **kwargs):
             return asyncio.ensure_future(target(*args, **kwargs))
@@ -109,7 +98,7 @@ class TestSocket:
         mock_server = self._get_mock_server()
         mock_server.ping_interval = 0.01
         s = async_socket.AsyncSocket(mock_server, 'sid')
-        s.send = AsyncMock()
+        s.send = mock.AsyncMock()
 
         async def schedule_ping():
             s.schedule_ping()
@@ -117,13 +106,13 @@ class TestSocket:
 
         _run(schedule_ping())
         assert s.last_ping is not None
-        assert s.send.mock.call_args_list[0][0][0].encode() == '2'
+        assert s.send.await_args_list[0][0][0].encode() == '2'
 
     def test_schedule_ping_closed_socket(self):
         mock_server = self._get_mock_server()
         mock_server.ping_interval = 0.01
         s = async_socket.AsyncSocket(mock_server, 'sid')
-        s.send = AsyncMock()
+        s.send = mock.AsyncMock()
         s.closed = True
 
         async def schedule_ping():
@@ -132,7 +121,7 @@ class TestSocket:
 
         _run(schedule_ping())
         assert s.last_ping is None
-        s.send.mock.assert_not_called()
+        s.send.assert_not_awaited()
 
     def test_pong(self):
         mock_server = self._get_mock_server()
@@ -145,7 +134,7 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         _run(s.receive(packet.Packet(packet.MESSAGE, data='foo')))
-        mock_server._trigger_event.mock.assert_called_once_with(
+        mock_server._trigger_event.assert_awaited_once_with(
             'message', 'sid', 'foo', run_async=False
         )
 
@@ -154,7 +143,7 @@ class TestSocket:
         s = async_socket.AsyncSocket(mock_server, 'sid')
         mock_server.async_handlers = True
         _run(s.receive(packet.Packet(packet.MESSAGE, data='foo')))
-        mock_server._trigger_event.mock.assert_called_once_with(
+        mock_server._trigger_event.assert_awaited_once_with(
             'message', 'sid', 'foo', run_async=True
         )
 
@@ -170,9 +159,9 @@ class TestSocket:
         mock_server.ping_interval_grace_period = 2
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.last_ping = time.time() - 9
-        s.close = AsyncMock()
+        s.close = mock.AsyncMock()
         _run(s.send('packet'))
-        s.close.mock.assert_called_once_with(wait=False, abort=False)
+        s.close.assert_awaited_once_with(wait=False, abort=False)
 
     def test_polling_read(self):
         mock_server = self._get_mock_server()
@@ -199,7 +188,7 @@ class TestSocket:
         pkt2 = packet.Packet(packet.MESSAGE, data='bye')
         p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         s = async_socket.AsyncSocket(mock_server, 'foo')
-        s.receive = AsyncMock()
+        s.receive = mock.AsyncMock()
         environ = {
             'REQUEST_METHOD': 'POST',
             'QUERY_STRING': 'sid=foo',
@@ -207,7 +196,7 @@ class TestSocket:
             'wsgi.input': self._get_read_mock_coro(p),
         }
         _run(s.handle_post_request(environ))
-        assert s.receive.mock.call_count == 2
+        assert s.receive.await_count == 2
 
     def test_polling_write_too_large(self):
         mock_server = self._get_mock_server()
@@ -216,7 +205,7 @@ class TestSocket:
         p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
         mock_server.max_http_buffer_size = len(p) - 1
         s = async_socket.AsyncSocket(mock_server, 'foo')
-        s.receive = AsyncMock()
+        s.receive = mock.AsyncMock()
         environ = {
             'REQUEST_METHOD': 'POST',
             'QUERY_STRING': 'sid=foo',
@@ -229,7 +218,7 @@ class TestSocket:
     def test_upgrade_handshake(self):
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'foo')
-        s._upgrade_websocket = AsyncMock()
+        s._upgrade_websocket = mock.AsyncMock()
         environ = {
             'REQUEST_METHOD': 'GET',
             'QUERY_STRING': 'sid=foo',
@@ -237,12 +226,12 @@ class TestSocket:
             'HTTP_UPGRADE': 'websocket',
         }
         _run(s.handle_get_request(environ))
-        s._upgrade_websocket.mock.assert_called_once_with(environ)
+        s._upgrade_websocket.assert_awaited_once_with(environ)
 
     def test_upgrade(self):
         mock_server = self._get_mock_server()
         mock_server._async['websocket'] = mock.MagicMock()
-        mock_ws = AsyncMock()
+        mock_ws = mock.AsyncMock()
         mock_server._async['websocket'].return_value = mock_ws
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
@@ -251,7 +240,7 @@ class TestSocket:
         mock_server._async['websocket'].assert_called_once_with(
             s._websocket_handler, mock_server
         )
-        mock_ws.mock.assert_called_once_with(environ)
+        mock_ws.assert_awaited_once_with(environ)
 
     def test_upgrade_twice(self):
         mock_server = self._get_mock_server()
@@ -277,8 +266,8 @@ class TestSocket:
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
         ws = mock.MagicMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.return_value = packet.Packet(packet.NOOP).encode()
+        ws.wait = mock.AsyncMock()
+        ws.wait.return_value = packet.Packet(packet.NOOP).encode()
         _run(s._websocket_handler(ws))
         assert not s.upgraded
 
@@ -286,17 +275,17 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
         probe = 'probe'
-        ws.wait.mock.side_effect = [
+        ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.NOOP).encode(),
         ]
         _run(s._websocket_handler(ws))
-        ws.send.mock.assert_called_once_with(
+        ws.send.assert_awaited_once_with(
             packet.Packet(packet.PONG, data=probe).encode()
         )
         assert _run(s.queue.get()).packet_type == packet.NOOP
@@ -315,91 +304,91 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
-        s.close = AsyncMock()
+        s.close = mock.AsyncMock()
         _run(s.receive(packet.Packet(packet.CLOSE)))
-        s.close.mock.assert_called_once_with(wait=False, abort=True)
+        s.close.assert_awaited_once_with(wait=False, abort=True)
 
     def test_websocket_read_write(self):
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         foo = 'foo'
         bar = 'bar'
-        s.poll = AsyncMock(
+        s.poll = mock.AsyncMock(
             side_effect=[[packet.Packet(packet.MESSAGE, data=bar)], None]
         )
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
-        ws.close = AsyncMock()
+        ws.close = mock.AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.connected
         assert s.upgraded
-        assert mock_server._trigger_event.mock.call_count == 2
-        mock_server._trigger_event.mock.assert_has_calls(
+        assert mock_server._trigger_event.await_count == 2
+        mock_server._trigger_event.assert_has_awaits(
             [
                 mock.call('message', 'sid', 'foo', run_async=False),
                 mock.call('disconnect', 'sid'),
             ]
         )
-        ws.send.mock.assert_called_with('4bar')
-        ws.close.mock.assert_called()
+        ws.send.assert_awaited_with('4bar')
+        ws.close.assert_awaited()
 
     def test_websocket_upgrade_read_write(self):
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         foo = 'foo'
         bar = 'bar'
         probe = 'probe'
-        s.poll = AsyncMock(
+        s.poll = mock.AsyncMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
                 exceptions.QueueEmpty,
             ]
         )
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.UPGRADE).encode(),
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
-        ws.close = AsyncMock()
+        ws.close = mock.AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.upgraded
-        assert mock_server._trigger_event.mock.call_count == 2
-        mock_server._trigger_event.mock.assert_has_calls(
+        assert mock_server._trigger_event.await_count == 2
+        mock_server._trigger_event.assert_has_awaits(
             [
                 mock.call('message', 'sid', 'foo', run_async=False),
                 mock.call('disconnect', 'sid'),
             ]
         )
-        ws.send.mock.assert_called_with('4bar')
-        ws.close.mock.assert_called()
+        ws.send.assert_awaited_with('4bar')
+        ws.close.assert_awaited()
 
     def test_websocket_upgrade_with_payload(self):
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         probe = 'probe'
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
-        ws.close = AsyncMock()
+        ws.close = mock.AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.upgraded
 
@@ -407,17 +396,17 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         probe = 'probe'
         foo = 'foo'
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.UPGRADE, data='2').encode(),
         ]
-        ws.close = AsyncMock()
+        ws.close = mock.AsyncMock()
         s.upgrading = True
         _run(s.send(packet.Packet(packet.MESSAGE, data=foo)))
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'sid=sid'}
@@ -439,10 +428,10 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         foo = 'foo'
         bar = 'bar'
-        s.poll = AsyncMock(
+        s.poll = mock.AsyncMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
                 [packet.Packet(packet.MESSAGE, data=bar)],
@@ -450,14 +439,14 @@ class TestSocket:
             ]
         )
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             RuntimeError,
         ]
-        ws.send.mock.side_effect = [None, RuntimeError]
-        ws.close = AsyncMock()
+        ws.send.side_effect = [None, RuntimeError]
+        ws.close = mock.AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.closed
 
@@ -465,12 +454,12 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = True
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         probe = 'probe'
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.PING, data=probe).encode(),
             packet.Packet(packet.UPGRADE, data='2' * 128).encode(),
         ]
@@ -482,35 +471,35 @@ class TestSocket:
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.connected = False
-        s.queue.join = AsyncMock(return_value=None)
+        s.queue.join = mock.AsyncMock(return_value=None)
         foo = 'foo'
         bar = 'bar'
-        s.poll = AsyncMock(
+        s.poll = mock.AsyncMock(
             side_effect=[
                 [packet.Packet(packet.MESSAGE, data=bar)],
                 exceptions.QueueEmpty,
             ]
         )
         ws = mock.MagicMock()
-        ws.send = AsyncMock()
-        ws.wait = AsyncMock()
-        ws.wait.mock.side_effect = [
+        ws.send = mock.AsyncMock()
+        ws.wait = mock.AsyncMock()
+        ws.wait.side_effect = [
             packet.Packet(packet.OPEN).encode(),
             packet.Packet(packet.MESSAGE, data=foo).encode(),
             None,
         ]
-        ws.close = AsyncMock()
+        ws.close = mock.AsyncMock()
         _run(s._websocket_handler(ws))
         assert s.connected
-        assert mock_server._trigger_event.mock.call_count == 2
-        mock_server._trigger_event.mock.assert_has_calls(
+        assert mock_server._trigger_event.await_count == 2
+        mock_server._trigger_event.assert_has_awaits(
             [
                 mock.call('message', 'sid', foo, run_async=False),
                 mock.call('disconnect', 'sid'),
             ]
         )
-        ws.send.mock.assert_called_with('4bar')
-        ws.close.mock.assert_called()
+        ws.send.assert_awaited_with('4bar')
+        ws.close.assert_awaited()
 
     def test_send_after_close(self):
         mock_server = self._get_mock_server()
@@ -524,27 +513,27 @@ class TestSocket:
         s = async_socket.AsyncSocket(mock_server, 'sid')
         _run(s.close(wait=False))
         assert s.closed
-        assert mock_server._trigger_event.mock.call_count == 1
-        mock_server._trigger_event.mock.assert_called_once_with(
+        assert mock_server._trigger_event.await_count == 1
+        mock_server._trigger_event.assert_awaited_once_with(
             'disconnect', 'sid'
         )
         _run(s.close())
-        assert mock_server._trigger_event.mock.call_count == 1
+        assert mock_server._trigger_event.await_count == 1
 
     def test_close_and_wait(self):
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.queue = mock.MagicMock()
-        s.queue.put = AsyncMock()
-        s.queue.join = AsyncMock()
+        s.queue.put = mock.AsyncMock()
+        s.queue.join = mock.AsyncMock()
         _run(s.close(wait=True))
-        s.queue.join.mock.assert_called_once_with()
+        s.queue.join.assert_awaited_once_with()
 
     def test_close_without_wait(self):
         mock_server = self._get_mock_server()
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.queue = mock.MagicMock()
-        s.queue.put = AsyncMock()
-        s.queue.join = AsyncMock()
+        s.queue.put = mock.AsyncMock()
+        s.queue.join = mock.AsyncMock()
         _run(s.close(wait=False))
-        assert s.queue.join.mock.call_count == 0
+        assert s.queue.join.await_count == 0

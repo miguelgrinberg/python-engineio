@@ -5,17 +5,6 @@ from unittest import mock
 from engineio.async_drivers import asgi as async_asgi
 
 
-def AsyncMock(*args, **kwargs):
-    """Return a mock asynchronous function."""
-    m = mock.MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return m(*args, **kwargs)
-
-    mock_coro.mock = m
-    return mock_coro
-
-
 def _run(coro):
     """Run the given coroutine."""
     return asyncio.get_event_loop().run_until_complete(coro)
@@ -36,70 +25,70 @@ class TestAsgi:
 
     def test_engineio_routing(self):
         mock_server = mock.MagicMock()
-        mock_server.handle_request = AsyncMock()
+        mock_server.handle_request = mock.AsyncMock()
 
         app = async_asgi.ASGIApp(mock_server)
         scope = {'type': 'http', 'path': '/engine.io/'}
         _run(app(scope, 'receive', 'send'))
-        mock_server.handle_request.mock.assert_called_once_with(
+        mock_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send'
         )
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/engine.io/'}
         _run(app(scope, 'receive', 'send'))
-        mock_server.handle_request.mock.assert_called_once_with(
+        mock_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send'
         )
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/engine.iofoo/'}
-        _run(app(scope, 'receive', AsyncMock()))
-        mock_server.handle_request.mock.assert_not_called()
+        _run(app(scope, 'receive', mock.AsyncMock()))
+        mock_server.handle_request.assert_not_awaited()
 
         app = async_asgi.ASGIApp(mock_server, engineio_path=None)
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/foo'}
         _run(app(scope, 'receive', 'send'))
-        mock_server.handle_request.mock.assert_called_once_with(
+        mock_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send'
         )
 
         app = async_asgi.ASGIApp(mock_server, engineio_path='mysocket.io')
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/mysocket.io'}
         _run(app(scope, 'receive', 'send'))
-        mock_server.handle_request.mock.assert_called_once_with(
+        mock_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send'
         )
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/mysocket.io/'}
         _run(app(scope, 'receive', 'send'))
-        mock_server.handle_request.mock.assert_called_once_with(
+        mock_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send'
         )
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/mysocket.io/foo'}
         _run(app(scope, 'receive', 'send'))
-        mock_server.handle_request.mock.assert_called_once_with(
+        mock_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send'
         )
-        mock_server.handle_request.mock.reset_mock()
+        mock_server.handle_request.reset_mock()
         scope = {'type': 'http', 'path': '/mysocket.iofoo'}
-        _run(app(scope, 'receive', AsyncMock()))
-        mock_server.handle_request.mock.assert_not_called()
+        _run(app(scope, 'receive', mock.AsyncMock()))
+        mock_server.handle_request.assert_not_awaited()
 
     def test_other_app_routing(self):
-        other_app = AsyncMock()
+        other_app = mock.AsyncMock()
         app = async_asgi.ASGIApp('eio', other_app)
         scope = {'type': 'http', 'path': '/foo'}
         _run(app(scope, 'receive', 'send'))
-        other_app.mock.assert_called_once_with(scope, 'receive', 'send')
+        other_app.assert_awaited_once_with(scope, 'receive', 'send')
 
     def test_other_app_lifespan_routing(self):
-        other_app = AsyncMock()
+        other_app = mock.AsyncMock()
         app = async_asgi.ASGIApp('eio', other_app)
         scope = {'type': 'lifespan'}
         _run(app(scope, 'receive', 'send'))
-        other_app.mock.assert_called_once_with(scope, 'receive', 'send')
+        other_app.assert_awaited_once_with(scope, 'receive', 'send')
 
     def test_static_file_routing(self):
         root_dir = os.path.dirname(__file__)
@@ -120,10 +109,10 @@ class TestAsgi:
 
         def check_path(path, status_code, content_type, body):
             scope = {'type': 'http', 'path': path}
-            receive = AsyncMock(return_value={'type': 'http.request'})
-            send = AsyncMock()
+            receive = mock.AsyncMock(return_value={'type': 'http.request'})
+            send = mock.AsyncMock()
             _run(app(scope, receive, send))
-            send.mock.assert_any_call(
+            send.assert_any_await(
                 {
                     'type': 'http.response.start',
                     'status': status_code,
@@ -132,7 +121,7 @@ class TestAsgi:
                     ],
                 }
             )
-            send.mock.assert_any_call(
+            send.assert_any_await(
                 {'type': 'http.response.body', 'body': body.encode('utf-8')}
             )
 
@@ -185,11 +174,11 @@ class TestAsgi:
     def test_lifespan_startup(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'},
-                                         {'type': 'lifespan.shutdown'}])
-        send = AsyncMock()
+        receive = mock.AsyncMock(side_effect=[{'type': 'lifespan.startup'},
+                                              {'type': 'lifespan.shutdown'}])
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_any_call(
+        send.assert_any_await(
             {'type': 'lifespan.startup.complete'}
         )
 
@@ -202,11 +191,11 @@ class TestAsgi:
 
         app = async_asgi.ASGIApp('eio', on_startup=startup)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'},
-                                         {'type': 'lifespan.shutdown'}])
-        send = AsyncMock()
+        receive = mock.AsyncMock(side_effect=[{'type': 'lifespan.startup'},
+                                              {'type': 'lifespan.shutdown'}])
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_any_call(
+        send.assert_any_await(
             {'type': 'lifespan.startup.complete'}
         )
         assert up
@@ -220,11 +209,11 @@ class TestAsgi:
 
         app = async_asgi.ASGIApp('eio', on_startup=startup)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'},
-                                         {'type': 'lifespan.shutdown'}])
-        send = AsyncMock()
+        receive = mock.AsyncMock(side_effect=[{'type': 'lifespan.startup'},
+                                              {'type': 'lifespan.shutdown'}])
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_any_call(
+        send.assert_any_await(
             {'type': 'lifespan.startup.complete'}
         )
         assert up
@@ -237,19 +226,19 @@ class TestAsgi:
 
         app = async_asgi.ASGIApp('eio', on_startup=startup)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(side_effect=[{'type': 'lifespan.startup'}])
-        send = AsyncMock()
+        receive = mock.AsyncMock(side_effect=[{'type': 'lifespan.startup'}])
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with({'type': 'lifespan.startup.failed'})
+        send.assert_awaited_once_with({'type': 'lifespan.startup.failed'})
         assert not up
 
     def test_lifespan_shutdown(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.assert_awaited_once_with(
             {'type': 'lifespan.shutdown.complete'}
         )
 
@@ -262,10 +251,10 @@ class TestAsgi:
 
         app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.assert_awaited_once_with(
             {'type': 'lifespan.shutdown.complete'}
         )
         assert down
@@ -279,10 +268,10 @@ class TestAsgi:
 
         app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.assert_awaited_once_with(
             {'type': 'lifespan.shutdown.complete'}
         )
         assert down
@@ -295,45 +284,45 @@ class TestAsgi:
 
         app = async_asgi.ASGIApp('eio', on_shutdown=shutdown)
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(return_value={'type': 'lifespan.shutdown'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'lifespan.shutdown'})
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with({'type': 'lifespan.shutdown.failed'})
+        send.assert_awaited_once_with({'type': 'lifespan.shutdown.failed'})
         assert not down
 
     def test_lifespan_invalid(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'lifespan'}
-        receive = AsyncMock(side_effect=[{'type': 'lifespan.foo'},
-                                         {'type': 'lifespan.shutdown'}])
-        send = AsyncMock()
+        receive = mock.AsyncMock(side_effect=[{'type': 'lifespan.foo'},
+                                              {'type': 'lifespan.shutdown'}])
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_called_once_with(
+        send.assert_awaited_once_with(
             {'type': 'lifespan.shutdown.complete'}
         )
 
     def test_not_found(self):
         app = async_asgi.ASGIApp('eio')
         scope = {'type': 'http', 'path': '/foo'}
-        receive = AsyncMock(return_value={'type': 'http.request'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'http.request'})
+        send = mock.AsyncMock()
         _run(app(scope, receive, send))
-        send.mock.assert_any_call(
+        send.assert_any_await(
             {
                 'type': 'http.response.start',
                 'status': 404,
                 'headers': [(b'Content-Type', b'text/plain')],
             }
         )
-        send.mock.assert_any_call(
+        send.assert_any_await(
             {'type': 'http.response.body', 'body': b'Not Found'}
         )
 
     def test_translate_request(self):
-        receive = AsyncMock(
+        receive = mock.AsyncMock(
             return_value={'type': 'http.request', 'body': b'hello world'}
         )
-        send = AsyncMock()
+        send = mock.AsyncMock()
         environ = _run(
             async_asgi.translate_request(
                 {
@@ -373,10 +362,10 @@ class TestAsgi:
         assert body == b'hello world'
 
     def test_translate_request_no_query_string(self):
-        receive = AsyncMock(
+        receive = mock.AsyncMock(
             return_value={'type': 'http.request', 'body': b'hello world'}
         )
-        send = AsyncMock()
+        send = mock.AsyncMock()
         environ = _run(
             async_asgi.translate_request(
                 {
@@ -415,7 +404,7 @@ class TestAsgi:
         assert body == b'hello world'
 
     def test_translate_request_with_large_body(self):
-        receive = AsyncMock(
+        receive = mock.AsyncMock(
             side_effect=[
                 {'type': 'http.request', 'body': b'hello ', 'more_body': True},
                 {'type': 'http.request', 'body': b'world', 'more_body': True},
@@ -423,7 +412,7 @@ class TestAsgi:
                 {'type': 'http.request', 'body': b'!!!'},
             ]
         )
-        send = AsyncMock()
+        send = mock.AsyncMock()
         environ = _run(
             async_asgi.translate_request(
                 {
@@ -463,8 +452,8 @@ class TestAsgi:
         assert body == b'hello world'
 
     def test_translate_websocket_request(self):
-        receive = AsyncMock(return_value={'type': 'websocket.connect'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'websocket.connect'})
+        send = mock.AsyncMock()
         _run(
             async_asgi.translate_request(
                 {
@@ -483,11 +472,11 @@ class TestAsgi:
                 send,
             )
         )
-        send.mock.assert_not_called()
+        send.assert_not_awaited()
 
     def test_translate_unknown_request(self):
-        receive = AsyncMock(return_value={'type': 'http.foo'})
-        send = AsyncMock()
+        receive = mock.AsyncMock(return_value={'type': 'http.foo'})
+        send = mock.AsyncMock()
         environ = _run(
             async_asgi.translate_request(
                 {'type': 'http', 'path': '/foo/bar', 'query_string': b'baz=1'},
@@ -498,26 +487,27 @@ class TestAsgi:
         assert environ == {}
 
     def test_make_response(self):
-        environ = {'asgi.send': AsyncMock(), 'asgi.scope': {'type': 'http'}}
+        environ = {'asgi.send': mock.AsyncMock(),
+                   'asgi.scope': {'type': 'http'}}
         _run(
             async_asgi.make_response(
                 '202 ACCEPTED', [('foo', 'bar')], b'payload', environ
             )
         )
-        environ['asgi.send'].mock.assert_any_call(
+        environ['asgi.send'].assert_any_await(
             {
                 'type': 'http.response.start',
                 'status': 202,
                 'headers': [(b'foo', b'bar')],
             }
         )
-        environ['asgi.send'].mock.assert_any_call(
+        environ['asgi.send'].assert_any_await(
             {'type': 'http.response.body', 'body': b'payload'}
         )
 
     def test_make_response_websocket_accept(self):
         environ = {
-            'asgi.send': AsyncMock(),
+            'asgi.send': mock.AsyncMock(),
             'asgi.scope': {'type': 'websocket'},
         }
         _run(
@@ -525,13 +515,13 @@ class TestAsgi:
                 '200 OK', [('foo', 'bar')], b'payload', environ
             )
         )
-        environ['asgi.send'].mock.assert_called_with(
+        environ['asgi.send'].assert_awaited_with(
             {'type': 'websocket.accept', 'headers': [(b'foo', b'bar')]}
         )
 
     def test_make_response_websocket_reject(self):
         environ = {
-            'asgi.send': AsyncMock(),
+            'asgi.send': mock.AsyncMock(),
             'asgi.scope': {'type': 'websocket'},
         }
         _run(
@@ -539,13 +529,13 @@ class TestAsgi:
                 '401 UNAUTHORIZED', [('foo', 'bar')], b'payload', environ
             )
         )
-        environ['asgi.send'].mock.assert_called_with(
+        environ['asgi.send'].assert_awaited_with(
             {'type': 'websocket.close', 'reason': 'payload'}
         )
 
     def test_make_response_websocket_reject_no_payload(self):
         environ = {
-            'asgi.send': AsyncMock(),
+            'asgi.send': mock.AsyncMock(),
             'asgi.scope': {'type': 'websocket'},
         }
         _run(
@@ -553,7 +543,7 @@ class TestAsgi:
                 '401 UNAUTHORIZED', [('foo', 'bar')], None, environ
             )
         )
-        environ['asgi.send'].mock.assert_called_with(
+        environ['asgi.send'].assert_awaited_with(
             {'type': 'websocket.close'}
         )
 
@@ -571,15 +561,15 @@ class TestAsgi:
                         return
                 assert False, 'No route found'
 
-        other_app = AsyncMock()
+        other_app = mock.AsyncMock()
         mock_server = mock.MagicMock()
-        mock_server.handle_request = AsyncMock()
+        mock_server.handle_request = mock.AsyncMock()
         eio_app = async_asgi.ASGIApp(mock_server, engineio_path=None)
         root_app = ASGIDispatcher({'/foo': other_app, '/eio': eio_app})
         scope = {'type': 'http', 'path': '/foo/bar'}
         _run(root_app(scope, 'receive', 'send'))
-        other_app.mock.assert_called_once_with(scope, 'receive', 'send')
+        other_app.assert_awaited_once_with(scope, 'receive', 'send')
         scope = {'type': 'http', 'path': '/eio/'}
         _run(root_app(scope, 'receive', 'send'))
-        eio_app.engineio_server.handle_request.mock.assert_called_once_with(
+        eio_app.engineio_server.handle_request.assert_awaited_once_with(
             scope, 'receive', 'send')

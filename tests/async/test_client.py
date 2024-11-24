@@ -15,17 +15,6 @@ from engineio import packet
 from engineio import payload
 
 
-def AsyncMock(*args, **kwargs):
-    """Return a mock asynchronous function."""
-    m = mock.MagicMock(*args, **kwargs)
-
-    async def mock_coro(*args, **kwargs):
-        return m(*args, **kwargs)
-
-    mock_coro.mock = m
-    return mock_coro
-
-
 def _run(coro):
     """Run the given coroutine."""
     return asyncio.get_event_loop().run_until_complete(coro)
@@ -49,63 +38,63 @@ class TestAsyncClient:
 
     def test_some_invalid_transports(self):
         c = async_client.AsyncClient()
-        c._connect_websocket = AsyncMock()
+        c._connect_websocket = mock.AsyncMock()
         _run(c.connect('http://foo', transports=['foo', 'websocket', 'bar']))
         assert c.transports == ['websocket']
 
     def test_connect_polling(self):
         c = async_client.AsyncClient()
-        c._connect_polling = AsyncMock(return_value='foo')
+        c._connect_polling = mock.AsyncMock(return_value='foo')
         assert _run(c.connect('http://foo')) == 'foo'
-        c._connect_polling.mock.assert_called_once_with(
+        c._connect_polling.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
 
         c = async_client.AsyncClient()
-        c._connect_polling = AsyncMock(return_value='foo')
+        c._connect_polling = mock.AsyncMock(return_value='foo')
         assert _run(c.connect('http://foo', transports=['polling'])) == 'foo'
-        c._connect_polling.mock.assert_called_once_with(
+        c._connect_polling.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
 
         c = async_client.AsyncClient()
-        c._connect_polling = AsyncMock(return_value='foo')
+        c._connect_polling = mock.AsyncMock(return_value='foo')
         assert (
             _run(c.connect('http://foo', transports=['polling', 'websocket']))
             == 'foo'
         )
-        c._connect_polling.mock.assert_called_once_with(
+        c._connect_polling.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
 
     def test_connect_websocket(self):
         c = async_client.AsyncClient()
-        c._connect_websocket = AsyncMock(return_value='foo')
+        c._connect_websocket = mock.AsyncMock(return_value='foo')
         assert _run(c.connect('http://foo', transports=['websocket'])) == 'foo'
-        c._connect_websocket.mock.assert_called_once_with(
+        c._connect_websocket.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
 
         c = async_client.AsyncClient()
-        c._connect_websocket = AsyncMock(return_value='foo')
+        c._connect_websocket = mock.AsyncMock(return_value='foo')
         assert _run(c.connect('http://foo', transports='websocket')) == 'foo'
-        c._connect_websocket.mock.assert_called_once_with(
+        c._connect_websocket.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
 
     def test_connect_query_string(self):
         c = async_client.AsyncClient()
-        c._connect_polling = AsyncMock(return_value='foo')
+        c._connect_polling = mock.AsyncMock(return_value='foo')
         assert _run(c.connect('http://foo?bar=baz')) == 'foo'
-        c._connect_polling.mock.assert_called_once_with(
+        c._connect_polling.assert_awaited_once_with(
             'http://foo?bar=baz', {}, 'engine.io'
         )
 
     def test_connect_custom_headers(self):
         c = async_client.AsyncClient()
-        c._connect_polling = AsyncMock(return_value='foo')
+        c._connect_polling = mock.AsyncMock(return_value='foo')
         assert _run(c.connect('http://foo', headers={'Foo': 'Bar'})) == 'foo'
-        c._connect_polling.mock.assert_called_once_with(
+        c._connect_polling.assert_awaited_once_with(
             'http://foo', {'Foo': 'Bar'}, 'engine.io'
         )
 
@@ -160,16 +149,16 @@ class TestAsyncClient:
         c.state = 'connected'
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c.queue.join = AsyncMock()
-        c.read_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c.queue.join = mock.AsyncMock()
+        c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
-        c.ws.close = AsyncMock()
-        c._trigger_event = AsyncMock()
+        c.ws.close = mock.AsyncMock()
+        c._trigger_event = mock.AsyncMock()
         _run(c.disconnect())
-        c.ws.close.mock.assert_not_called()
+        c.ws.close.assert_not_awaited()
         assert c not in base_client.connected_clients
-        c._trigger_event.mock.assert_called_once_with(
+        c._trigger_event.assert_awaited_once_with(
             'disconnect', run_async=False
         )
 
@@ -179,16 +168,16 @@ class TestAsyncClient:
         c.state = 'connected'
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c.queue.join = AsyncMock()
-        c.read_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c.queue.join = mock.AsyncMock()
+        c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
-        c.ws.close = AsyncMock()
-        c._trigger_event = AsyncMock()
+        c.ws.close = mock.AsyncMock()
+        c._trigger_event = mock.AsyncMock()
         _run(c.disconnect())
-        c.ws.close.mock.assert_called_once_with()
+        c.ws.close.assert_awaited_once_with()
         assert c not in base_client.connected_clients
-        c._trigger_event.mock.assert_called_once_with(
+        c._trigger_event.assert_awaited_once_with(
             'disconnect', run_async=False
         )
 
@@ -198,14 +187,14 @@ class TestAsyncClient:
         c.state = 'connected'
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c.queue.join = AsyncMock()
-        c.read_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c.queue.join = mock.AsyncMock()
+        c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
-        c.ws.close = AsyncMock()
+        c.ws.close = mock.AsyncMock()
         _run(c.disconnect(abort=True))
-        c.queue.join.mock.assert_not_called()
-        c.ws.close.mock.assert_not_called()
+        c.queue.join.assert_not_awaited()
+        c.ws.close.assert_not_awaited()
         assert c not in base_client.connected_clients
 
     def test_disconnect_websocket_abort(self):
@@ -214,14 +203,14 @@ class TestAsyncClient:
         c.state = 'connected'
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c.queue.join = AsyncMock()
-        c.read_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c.queue.join = mock.AsyncMock()
+        c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
-        c.ws.close = AsyncMock()
+        c.ws.close = mock.AsyncMock()
         _run(c.disconnect(abort=True))
-        c.queue.join.mock.assert_not_called()
-        c.ws.mock.assert_not_called()
+        c.queue.join.assert_not_awaited()
+        c.ws.assert_not_called()
         assert c not in base_client.connected_clients
 
     def test_background_tasks(self):
@@ -257,10 +246,10 @@ class TestAsyncClient:
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_polling_connection_failed(self, _time):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock(return_value=None)
+        c._send_request = mock.AsyncMock(return_value=None)
         with pytest.raises(exceptions.ConnectionError):
             _run(c.connect('http://foo', headers={'Foo': 'Bar'}))
-        c._send_request.mock.assert_called_once_with(
+        c._send_request.assert_awaited_once_with(
             'GET',
             'http://foo/engine.io/?transport=polling&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
@@ -269,9 +258,9 @@ class TestAsyncClient:
 
     def test_polling_connection_404(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 404
-        c._send_request.mock.return_value.json = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 404
+        c._send_request.return_value.json = mock.AsyncMock(
             return_value={'foo': 'bar'}
         )
         try:
@@ -285,9 +274,9 @@ class TestAsyncClient:
 
     def test_polling_connection_404_no_json(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 404
-        c._send_request.mock.return_value.json = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 404
+        c._send_request.return_value.json = mock.AsyncMock(
             side_effect=aiohttp.ContentTypeError('foo', 'bar')
         )
         try:
@@ -301,17 +290,17 @@ class TestAsyncClient:
 
     def test_polling_connection_invalid_packet(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(return_value=b'foo')
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(return_value=b'foo')
         with pytest.raises(exceptions.ConnectionError):
             _run(c.connect('http://foo'))
 
     def test_polling_connection_no_open_packet(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
             return_value=payload.Payload(
                 packets=[
                     packet.Packet(
@@ -331,9 +320,9 @@ class TestAsyncClient:
 
     def test_polling_connection_successful(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
             return_value=payload.Payload(
                 packets=[
                     packet.Packet(
@@ -348,17 +337,17 @@ class TestAsyncClient:
                 ]
             ).encode().encode('utf-8')
         )
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
-        on_connect = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
+        on_connect = mock.AsyncMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
 
-        c._read_loop_polling.mock.assert_called_once_with()
-        c._read_loop_websocket.mock.assert_not_called()
-        c._write_loop.mock.assert_called_once_with()
-        on_connect.mock.assert_called_once_with()
+        c._read_loop_polling.assert_awaited_once_with()
+        c._read_loop_websocket.assert_not_awaited()
+        c._write_loop.assert_awaited_once_with()
+        on_connect.assert_awaited_once_with()
         assert c in base_client.connected_clients
         assert (
             c.base_url
@@ -372,9 +361,9 @@ class TestAsyncClient:
 
     def test_polling_https_noverify_connection_successful(self):
         c = async_client.AsyncClient(ssl_verify=False)
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
             return_value=payload.Payload(
                 packets=[
                     packet.Packet(
@@ -389,17 +378,17 @@ class TestAsyncClient:
                 ]
             ).encode().encode('utf-8')
         )
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
-        on_connect = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
+        on_connect = mock.AsyncMock()
         c.on('connect', on_connect)
         _run(c.connect('https://foo'))
 
-        c._read_loop_polling.mock.assert_called_once_with()
-        c._read_loop_websocket.mock.assert_not_called()
-        c._write_loop.mock.assert_called_once_with()
-        on_connect.mock.assert_called_once_with()
+        c._read_loop_polling.assert_awaited_once_with()
+        c._read_loop_websocket.assert_not_awaited()
+        c._write_loop.assert_awaited_once_with()
+        on_connect.assert_awaited_once_with()
         assert c in base_client.connected_clients
         assert (
             c.base_url
@@ -413,9 +402,9 @@ class TestAsyncClient:
 
     def test_polling_connection_with_more_packets(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
             return_value=payload.Payload(
                 packets=[
                     packet.Packet(
@@ -431,24 +420,24 @@ class TestAsyncClient:
                 ]
             ).encode().encode('utf-8')
         )
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
-        c._receive_packet = AsyncMock()
-        on_connect = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
+        c._receive_packet = mock.AsyncMock()
+        on_connect = mock.AsyncMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
-        assert c._receive_packet.mock.call_count == 1
+        assert c._receive_packet.await_count == 1
         assert (
-            c._receive_packet.mock.call_args_list[0][0][0].packet_type
+            c._receive_packet.await_args_list[0][0][0].packet_type
             == packet.NOOP
         )
 
     def test_polling_connection_upgraded(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
             return_value=payload.Payload(
                 packets=[
                     packet.Packet(
@@ -463,12 +452,12 @@ class TestAsyncClient:
                 ]
             ).encode().encode('utf-8')
         )
-        c._connect_websocket = AsyncMock(return_value=True)
+        c._connect_websocket = mock.AsyncMock(return_value=True)
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
 
-        c._connect_websocket.mock.assert_called_once_with(
+        c._connect_websocket.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
         on_connect.assert_called_once_with()
@@ -484,9 +473,9 @@ class TestAsyncClient:
 
     def test_polling_connection_not_upgraded(self):
         c = async_client.AsyncClient()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
             return_value=payload.Payload(
                 packets=[
                     packet.Packet(
@@ -501,20 +490,20 @@ class TestAsyncClient:
                 ]
             ).encode().encode('utf-8')
         )
-        c._connect_websocket = AsyncMock(return_value=False)
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._connect_websocket = mock.AsyncMock(return_value=False)
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('http://foo'))
 
-        c._connect_websocket.mock.assert_called_once_with(
+        c._connect_websocket.assert_awaited_once_with(
             'http://foo', {}, 'engine.io'
         )
-        c._read_loop_polling.mock.assert_called_once_with()
-        c._read_loop_websocket.mock.assert_not_called()
-        c._write_loop.mock.assert_called_once_with()
+        c._read_loop_polling.assert_awaited_once_with()
+        c._read_loop_websocket.assert_not_awaited()
+        c._write_loop.assert_awaited_once_with()
         on_connect.assert_called_once_with()
         assert c in base_client.connected_clients
 
@@ -522,7 +511,7 @@ class TestAsyncClient:
     def test_websocket_connection_failed(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock(
+        c.http.ws_connect = mock.AsyncMock(
             side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
         )
         with pytest.raises(exceptions.ConnectionError):
@@ -533,7 +522,7 @@ class TestAsyncClient:
                     headers={'Foo': 'Bar'},
                 )
             )
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
             timeout=5
@@ -546,7 +535,7 @@ class TestAsyncClient:
             'timeout': 10
         })
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock(
+        c.http.ws_connect = mock.AsyncMock(
             side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
         )
         with pytest.raises(exceptions.ConnectionError):
@@ -557,7 +546,7 @@ class TestAsyncClient:
                     headers={'Foo': 'Bar'},
                 )
             )
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar', 'Baz': 'Qux'},
             timeout=10,
@@ -567,12 +556,12 @@ class TestAsyncClient:
     def test_websocket_upgrade_failed(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock(
+        c.http.ws_connect = mock.AsyncMock(
             side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
         )
         c.sid = '123'
         assert not _run(c.connect('http://foo', transports=['websocket']))
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&sid=123&t=123.456',
             headers={},
             timeout=5,
@@ -581,10 +570,10 @@ class TestAsyncClient:
     def test_websocket_connection_no_open_packet(self):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.CLOSE
         ).encode()
         with pytest.raises(exceptions.ConnectionError):
@@ -594,10 +583,10 @@ class TestAsyncClient:
     def test_websocket_connection_successful(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
             {
                 'sid': '123',
@@ -606,16 +595,16 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('ws://foo', transports=['websocket']))
 
-        c._read_loop_polling.mock.assert_not_called()
-        c._read_loop_websocket.mock.assert_called_once_with()
-        c._write_loop.mock.assert_called_once_with()
+        c._read_loop_polling.assert_not_awaited()
+        c._read_loop_websocket.assert_awaited_once_with()
+        c._write_loop.assert_awaited_once_with()
         on_connect.assert_called_once_with()
         assert c in base_client.connected_clients
         assert c.base_url == 'ws://foo/engine.io/?transport=websocket&EIO=4'
@@ -625,7 +614,7 @@ class TestAsyncClient:
         assert c.upgrades == []
         assert c.transport() == 'websocket'
         assert c.ws == ws
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
             timeout=5,
@@ -635,10 +624,10 @@ class TestAsyncClient:
     def test_websocket_https_noverify_connection_successful(self, _time):
         c = async_client.AsyncClient(ssl_verify=False)
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
             {
                 'sid': '123',
@@ -647,16 +636,16 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('wss://foo', transports=['websocket']))
 
-        c._read_loop_polling.mock.assert_not_called()
-        c._read_loop_websocket.mock.assert_called_once_with()
-        c._write_loop.mock.assert_called_once_with()
+        c._read_loop_polling.assert_not_awaited()
+        c._read_loop_websocket.assert_awaited_once_with()
+        c._write_loop.assert_awaited_once_with()
         on_connect.assert_called_once_with()
         assert c in base_client.connected_clients
         assert c.base_url == 'wss://foo/engine.io/?transport=websocket&EIO=4'
@@ -666,7 +655,7 @@ class TestAsyncClient:
         assert c.upgrades == []
         assert c.transport() == 'websocket'
         assert c.ws == ws
-        _, kwargs = c.http.ws_connect.mock.call_args
+        _, kwargs = c.http.ws_connect.await_args
         assert 'ssl' in kwargs
         assert isinstance(kwargs['ssl'], ssl.SSLContext)
         assert kwargs['ssl'].verify_mode == ssl.CERT_NONE
@@ -675,10 +664,10 @@ class TestAsyncClient:
     def test_websocket_connection_with_cookies(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
             {
                 'sid': '123',
@@ -692,13 +681,13 @@ class TestAsyncClient:
         c.http._cookie_jar[0].value = 'value'
         c.http._cookie_jar[1].key = 'key2'
         c.http._cookie_jar[1].value = 'value2'
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(c.connect('ws://foo', transports=['websocket']))
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
             timeout=5,
@@ -708,10 +697,10 @@ class TestAsyncClient:
     def test_websocket_connection_with_cookie_header(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
             {
                 'sid': '123',
@@ -721,9 +710,9 @@ class TestAsyncClient:
             },
         ).encode()
         c.http._cookie_jar = []
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(
@@ -733,7 +722,7 @@ class TestAsyncClient:
                 transports=['websocket'],
             )
         )
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
             timeout=5,
@@ -746,10 +735,10 @@ class TestAsyncClient:
     def test_websocket_connection_with_cookies_and_headers(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
             {
                 'sid': '123',
@@ -763,9 +752,9 @@ class TestAsyncClient:
         c.http._cookie_jar[0].value = 'value'
         c.http._cookie_jar[1].key = 'key2'
         c.http._cookie_jar[1].value = 'value2'
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         _run(
@@ -775,7 +764,7 @@ class TestAsyncClient:
                 transports=['websocket'],
             )
         )
-        c.http.ws_connect.mock.assert_called_once_with(
+        c.http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
             timeout=5,
@@ -787,10 +776,10 @@ class TestAsyncClient:
     def test_websocket_upgrade_no_pong(self):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
             {
                 'sid': '123',
@@ -799,54 +788,54 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
-        ws.send_str = AsyncMock()
+        ws.send_str = mock.AsyncMock()
         c.sid = '123'
         c.current_transport = 'polling'
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         assert not _run(c.connect('ws://foo', transports=['websocket']))
 
-        c._read_loop_polling.mock.assert_not_called()
-        c._read_loop_websocket.mock.assert_not_called()
-        c._write_loop.mock.assert_not_called()
+        c._read_loop_polling.assert_not_awaited()
+        c._read_loop_websocket.assert_not_awaited()
+        c._write_loop.assert_not_awaited()
         on_connect.assert_not_called()
         assert c.transport() == 'polling'
-        ws.send_str.mock.assert_called_once_with('2probe')
+        ws.send_str.assert_awaited_once_with('2probe')
 
     def test_websocket_upgrade_successful(self):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = AsyncMock()
-        ws = c.http.ws_connect.mock.return_value
-        ws.receive = AsyncMock()
-        ws.receive.mock.return_value.data = packet.Packet(
+        c.http.ws_connect = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
             packet.PONG, 'probe'
         ).encode()
-        ws.send_str = AsyncMock()
+        ws.send_str = mock.AsyncMock()
         c.sid = '123'
         c.base_url = 'http://foo'
         c.current_transport = 'polling'
-        c._read_loop_polling = AsyncMock()
-        c._read_loop_websocket = AsyncMock()
-        c._write_loop = AsyncMock()
+        c._read_loop_polling = mock.AsyncMock()
+        c._read_loop_websocket = mock.AsyncMock()
+        c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         assert _run(c.connect('ws://foo', transports=['websocket']))
 
-        c._read_loop_polling.mock.assert_not_called()
-        c._read_loop_websocket.mock.assert_called_once_with()
-        c._write_loop.mock.assert_called_once_with()
+        c._read_loop_polling.assert_not_awaited()
+        c._read_loop_websocket.assert_awaited_once_with()
+        c._write_loop.assert_awaited_once_with()
         on_connect.assert_not_called()  # was called by polling
         assert c not in base_client.connected_clients  # was added by polling
         assert c.base_url == 'http://foo'  # not changed
         assert c.sid == '123'  # not changed
         assert c.transport() == 'websocket'
         assert c.ws == ws
-        assert ws.send_str.mock.call_args_list[0] == (('2probe',),)  # ping
-        assert ws.send_str.mock.call_args_list[1] == (('5',),)  # upgrade
+        assert ws.send_str.await_args_list[0] == (('2probe',),)  # ping
+        assert ws.send_str.await_args_list[1] == (('5',),)  # upgrade
 
     def test_receive_unknown_packet(self):
         c = async_client.AsyncClient()
@@ -860,23 +849,23 @@ class TestAsyncClient:
 
     def test_receive_ping_packet(self):
         c = async_client.AsyncClient()
-        c._send_packet = AsyncMock()
+        c._send_packet = mock.AsyncMock()
         _run(c._receive_packet(packet.Packet(packet.PING)))
-        assert c._send_packet.mock.call_args_list[0][0][0].encode() == '3'
+        assert c._send_packet.await_args_list[0][0][0].encode() == '3'
 
     def test_receive_message_packet(self):
         c = async_client.AsyncClient()
-        c._trigger_event = AsyncMock()
+        c._trigger_event = mock.AsyncMock()
         _run(c._receive_packet(packet.Packet(packet.MESSAGE, {'foo': 'bar'})))
-        c._trigger_event.mock.assert_called_once_with(
+        c._trigger_event.assert_awaited_once_with(
             'message', {'foo': 'bar'}, run_async=True
         )
 
     def test_receive_close_packet(self):
         c = async_client.AsyncClient()
-        c.disconnect = AsyncMock()
+        c.disconnect = mock.AsyncMock()
         _run(c._receive_packet(packet.Packet(packet.CLOSE)))
-        c.disconnect.mock.assert_called_once_with(abort=True)
+        c.disconnect.assert_awaited_once_with(abort=True)
 
     def test_send_packet_disconnected(self):
         c = async_client.AsyncClient()
@@ -1007,10 +996,10 @@ class TestAsyncClient:
     def test_read_loop_polling_disconnected(self):
         c = async_client.AsyncClient()
         c.state = 'disconnected'
-        c._trigger_event = AsyncMock()
-        c.write_loop_task = AsyncMock()()
+        c._trigger_event = mock.AsyncMock()
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_polling())
-        c._trigger_event.mock.assert_not_called()
+        c._trigger_event.assert_not_awaited()
         # should not block
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -1021,17 +1010,17 @@ class TestAsyncClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c._send_request = AsyncMock(return_value=None)
-        c._trigger_event = AsyncMock()
-        c.write_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c._send_request = mock.AsyncMock(return_value=None)
+        c._trigger_event = mock.AsyncMock()
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_polling())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
-        c._send_request.mock.assert_called_once_with(
+        c.queue.put.assert_awaited_once_with(None)
+        c._send_request.assert_awaited_once_with(
             'GET', 'http://foo&t=123.456', timeout=30
         )
-        c._trigger_event.mock.assert_called_once_with(
+        c._trigger_event.assert_awaited_once_with(
             'disconnect', run_async=False
         )
 
@@ -1043,14 +1032,14 @@ class TestAsyncClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 400
-        c.write_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 400
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_polling())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
-        c._send_request.mock.assert_called_once_with(
+        c.queue.put.assert_awaited_once_with(None)
+        c._send_request.assert_awaited_once_with(
             'GET', 'http://foo&t=123.456', timeout=30
         )
 
@@ -1062,15 +1051,15 @@ class TestAsyncClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
-        c._send_request.mock.return_value.read = AsyncMock(return_value=b'foo')
-        c.write_loop_task = AsyncMock()()
+        c.queue.put = mock.AsyncMock()
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(return_value=b'foo')
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_polling())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
-        c._send_request.mock.assert_called_once_with(
+        c.queue.put.assert_awaited_once_with(None)
+        c._send_request.assert_awaited_once_with(
             'GET', 'http://foo&t=123.456', timeout=65
         )
 
@@ -1081,12 +1070,12 @@ class TestAsyncClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
-        c._send_request = AsyncMock()
-        c._send_request.mock.side_effect = [
+        c.queue.put = mock.AsyncMock()
+        c._send_request = mock.AsyncMock()
+        c._send_request.side_effect = [
             mock.MagicMock(
                 status=200,
-                read=AsyncMock(
+                read=mock.AsyncMock(
                     return_value=payload.Payload(
                         packets=[
                             packet.Packet(packet.PING),
@@ -1097,20 +1086,20 @@ class TestAsyncClient:
             ),
             None,
         ]
-        c.write_loop_task = AsyncMock()()
-        c._receive_packet = AsyncMock()
+        c.write_loop_task = mock.AsyncMock()()
+        c._receive_packet = mock.AsyncMock()
         _run(c._read_loop_polling())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
-        assert c._send_request.mock.call_count == 2
-        assert c._receive_packet.mock.call_count == 2
-        assert c._receive_packet.mock.call_args_list[0][0][0].encode() == '2'
-        assert c._receive_packet.mock.call_args_list[1][0][0].encode() == '6'
+        c.queue.put.assert_awaited_once_with(None)
+        assert c._send_request.await_count == 2
+        assert c._receive_packet.await_count == 2
+        assert c._receive_packet.await_args_list[0][0][0].encode() == '2'
+        assert c._receive_packet.await_args_list[1][0][0].encode() == '6'
 
     def test_read_loop_websocket_disconnected(self):
         c = async_client.AsyncClient()
         c.state = 'disconnected'
-        c.write_loop_task = AsyncMock()()
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_websocket())
         # should not block
 
@@ -1121,13 +1110,13 @@ class TestAsyncClient:
         c.base_url = 'ws://foo'
         c.state = 'connected'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
+        c.queue.put = mock.AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.receive = AsyncMock(side_effect=asyncio.TimeoutError())
-        c.write_loop_task = AsyncMock()()
+        c.ws.receive = mock.AsyncMock(side_effect=asyncio.TimeoutError())
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_websocket())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
+        c.queue.put.assert_awaited_once_with(None)
 
     def test_read_loop_websocket_no_response(self):
         c = async_client.AsyncClient()
@@ -1136,15 +1125,15 @@ class TestAsyncClient:
         c.base_url = 'ws://foo'
         c.state = 'connected'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
+        c.queue.put = mock.AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.receive = AsyncMock(
+        c.ws.receive = mock.AsyncMock(
             side_effect=aiohttp.client_exceptions.ServerDisconnectedError()
         )
-        c.write_loop_task = AsyncMock()()
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_websocket())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
+        c.queue.put.assert_awaited_once_with(None)
 
     def test_read_loop_websocket_unexpected_error(self):
         c = async_client.AsyncClient()
@@ -1153,13 +1142,13 @@ class TestAsyncClient:
         c.base_url = 'ws://foo'
         c.state = 'connected'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
+        c.queue.put = mock.AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.receive = AsyncMock(side_effect=ValueError)
-        c.write_loop_task = AsyncMock()()
+        c.ws.receive = mock.AsyncMock(side_effect=ValueError)
+        c.write_loop_task = mock.AsyncMock()()
         _run(c._read_loop_websocket())
         assert c.state == 'disconnected'
-        c.queue.put.mock.assert_called_once_with(None)
+        c.queue.put.assert_awaited_once_with(None)
 
     def test_read_loop_websocket(self):
         c = async_client.AsyncClient()
@@ -1168,20 +1157,20 @@ class TestAsyncClient:
         c.base_url = 'ws://foo'
         c.state = 'connected'
         c.queue = mock.MagicMock()
-        c.queue.put = AsyncMock()
+        c.queue.put = mock.AsyncMock()
         c.ws = mock.MagicMock()
-        c.ws.receive = AsyncMock(
+        c.ws.receive = mock.AsyncMock(
             side_effect=[
                 mock.MagicMock(data=packet.Packet(packet.PING).encode()),
                 ValueError,
             ]
         )
-        c.write_loop_task = AsyncMock()()
-        c._receive_packet = AsyncMock()
+        c.write_loop_task = mock.AsyncMock()()
+        c._receive_packet = mock.AsyncMock()
         _run(c._read_loop_websocket())
         assert c.state == 'disconnected'
-        assert c._receive_packet.mock.call_args_list[0][0][0].encode() == '2'
-        c.queue.put.mock.assert_called_once_with(None)
+        assert c._receive_packet.await_args_list[0][0][0].encode() == '2'
+        c.queue.put.assert_awaited_once_with(None)
 
     def test_write_loop_disconnected(self):
         c = async_client.AsyncClient()
@@ -1195,10 +1184,10 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
-        c.queue.get = AsyncMock(return_value=None)
+        c.queue.get = mock.AsyncMock(return_value=None)
         _run(c._write_loop())
         c.queue.task_done.assert_called_once_with()
-        c.queue.get.mock.assert_called_once_with()
+        c.queue.get.assert_awaited_once_with()
 
     def test_write_loop_empty_queue(self):
         c = async_client.AsyncClient()
@@ -1207,9 +1196,9 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(side_effect=RuntimeError)
+        c.queue.get = mock.AsyncMock(side_effect=RuntimeError)
         _run(c._write_loop())
-        c.queue.get.mock.assert_called_once_with()
+        c.queue.get.assert_awaited_once_with()
 
     def test_write_loop_polling_one_packet(self):
         c = async_client.AsyncClient()
@@ -1220,21 +1209,21 @@ class TestAsyncClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
                 RuntimeError,
             ]
         )
         c.queue.get_nowait = mock.MagicMock(side_effect=RuntimeError)
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 1
         p = payload.Payload(
             packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
-        c._send_request.mock.assert_called_once_with(
+        c._send_request.assert_awaited_once_with(
             'POST',
             'http://foo',
             body=p.encode(),
@@ -1251,7 +1240,7 @@ class TestAsyncClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
                 RuntimeError,
@@ -1264,8 +1253,8 @@ class TestAsyncClient:
                 RuntimeError,
             ]
         )
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 3
         p = payload.Payload(
@@ -1275,7 +1264,7 @@ class TestAsyncClient:
                 packet.Packet(packet.NOOP),
             ]
         )
-        c._send_request.mock.assert_called_once_with(
+        c._send_request.assert_awaited_once_with(
             'POST',
             'http://foo',
             body=p.encode(),
@@ -1292,7 +1281,7 @@ class TestAsyncClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
                 RuntimeError,
@@ -1301,8 +1290,8 @@ class TestAsyncClient:
         c.queue.get_nowait = mock.MagicMock(
             side_effect=[packet.Packet(packet.PING), None]
         )
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 200
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 3
         p = payload.Payload(
@@ -1311,7 +1300,7 @@ class TestAsyncClient:
                 packet.Packet(packet.PING),
             ]
         )
-        c._send_request.mock.assert_called_once_with(
+        c._send_request.assert_awaited_once_with(
             'POST',
             'http://foo',
             body=p.encode(),
@@ -1329,17 +1318,17 @@ class TestAsyncClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
         c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
-        c._send_request = AsyncMock(return_value=None)
+        c._send_request = mock.AsyncMock(return_value=None)
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 1
         p = payload.Payload(
             packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
-        c._send_request.mock.assert_called_once_with(
+        c._send_request.assert_awaited_once_with(
             'POST',
             'http://foo',
             body=p.encode(),
@@ -1357,18 +1346,18 @@ class TestAsyncClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
         c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
-        c._send_request = AsyncMock()
-        c._send_request.mock.return_value.status = 500
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 500
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 1
         p = payload.Payload(
             packets=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
-        c._send_request.mock.assert_called_once_with(
+        c._send_request.assert_awaited_once_with(
             'POST',
             'http://foo',
             body=p.encode(),
@@ -1386,7 +1375,7 @@ class TestAsyncClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
                 RuntimeError,
@@ -1394,11 +1383,11 @@ class TestAsyncClient:
         )
         c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
         c.ws = mock.MagicMock()
-        c.ws.send_str = AsyncMock()
+        c.ws.send_str = mock.AsyncMock()
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 1
-        assert c.ws.send_str.mock.call_count == 1
-        c.ws.send_str.mock.assert_called_once_with('4{"foo":"bar"}')
+        assert c.ws.send_str.await_count == 1
+        c.ws.send_str.assert_awaited_once_with('4{"foo":"bar"}')
 
     def test_write_loop_websocket_three_packets(self):
         c = async_client.AsyncClient()
@@ -1408,7 +1397,7 @@ class TestAsyncClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
                 RuntimeError,
@@ -1422,13 +1411,13 @@ class TestAsyncClient:
             ]
         )
         c.ws = mock.MagicMock()
-        c.ws.send_str = AsyncMock()
+        c.ws.send_str = mock.AsyncMock()
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 3
-        assert c.ws.send_str.mock.call_count == 3
-        assert c.ws.send_str.mock.call_args_list[0][0][0] == '4{"foo":"bar"}'
-        assert c.ws.send_str.mock.call_args_list[1][0][0] == '2'
-        assert c.ws.send_str.mock.call_args_list[2][0][0] == '6'
+        assert c.ws.send_str.await_count == 3
+        assert c.ws.send_str.await_args_list[0][0][0] == '4{"foo":"bar"}'
+        assert c.ws.send_str.await_args_list[1][0][0] == '2'
+        assert c.ws.send_str.await_args_list[2][0][0] == '6'
 
     def test_write_loop_websocket_one_packet_binary(self):
         c = async_client.AsyncClient()
@@ -1438,16 +1427,16 @@ class TestAsyncClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, b'foo'), RuntimeError]
         )
         c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
         c.ws = mock.MagicMock()
-        c.ws.send_bytes = AsyncMock()
+        c.ws.send_bytes = mock.AsyncMock()
         _run(c._write_loop())
         assert c.queue.task_done.call_count == 1
-        assert c.ws.send_bytes.mock.call_count == 1
-        c.ws.send_bytes.mock.assert_called_once_with(b'foo')
+        assert c.ws.send_bytes.await_count == 1
+        c.ws.send_bytes.assert_awaited_once_with(b'foo')
 
     def test_write_loop_websocket_bad_connection(self):
         c = async_client.AsyncClient()
@@ -1457,7 +1446,7 @@ class TestAsyncClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue.Empty = RuntimeError
-        c.queue.get = AsyncMock(
+        c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
                 RuntimeError,
@@ -1465,7 +1454,7 @@ class TestAsyncClient:
         )
         c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
         c.ws = mock.MagicMock()
-        c.ws.send_str = AsyncMock(
+        c.ws.send_str = mock.AsyncMock(
             side_effect=aiohttp.client_exceptions.ServerDisconnectedError()
         )
         _run(c._write_loop())
