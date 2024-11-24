@@ -39,7 +39,7 @@ class TestClient(unittest.TestCase):
             assert getattr(c, attr) is None, attr + ' is not None'
         assert c.state == 'disconnected'
 
-    def test_custon_json(self):
+    def test_custom_json(self):
         client.Client()
         assert packet.Packet.json == json
         client.Client(json='foo')
@@ -65,6 +65,14 @@ class TestClient(unittest.TestCase):
         assert c.request_timeout == 5
         c = client.Client(request_timeout=27)
         assert c.request_timeout == 27
+
+    def test_timestamp_requests(self):
+        c = client.Client()
+        assert c.timestamp_requests
+        assert c._get_url_timestamp().startswith('&t=')
+        c = client.Client(timestamp_requests=False)
+        assert not c.timestamp_requests
+        assert c._get_url_timestamp() == ''
 
     def test_on_event(self):
         c = client.Client()

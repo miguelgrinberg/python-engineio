@@ -55,6 +55,9 @@ class Client(base_client.BaseClient):
     :param websocket_extra_options: Dictionary containing additional keyword
                                     arguments passed to
                                     ``websocket.create_connection()``.
+    :param timestamp_requests: If ``True`` a timestamp is added to the query
+                               string of Socket.IO requests as a cache-busting
+                               measure. Set to ``False`` to disable.
     """
     def connect(self, url, headers=None, transports=None,
                 engineio_path='engine.io'):

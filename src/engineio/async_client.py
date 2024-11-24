@@ -75,6 +75,9 @@ class AsyncClient(base_client.BaseClient):
     :param websocket_extra_options: Dictionary containing additional keyword
                                     arguments passed to
                                     ``aiohttp.ws_connect()``.
+    :param timestamp_requests: If ``True`` a timestamp is added to the query
+                               string of Socket.IO requests as a cache-busting
+                               measure. Set to ``False`` to disable.
     """
     def is_asyncio_based(self):
         return True
