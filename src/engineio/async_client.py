@@ -37,7 +37,7 @@ def async_signal_handler():
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-        asyncio.get_event_loop().stop()
+        asyncio.get_running_loop().stop()
 
     asyncio.ensure_future(_handler())
 
@@ -109,7 +109,7 @@ class AsyncClient(base_client.BaseClient):
         if self.handle_sigint and not async_signal_handler_set and \
                 threading.current_thread() == threading.main_thread():
             try:
-                asyncio.get_event_loop().add_signal_handler(
+                asyncio.get_running_loop().add_signal_handler(
                     signal.SIGINT, async_signal_handler)
             except NotImplementedError:  # pragma: no cover
                 self.logger.warning('Signal handler is unsupported')

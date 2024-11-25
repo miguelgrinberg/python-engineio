@@ -528,6 +528,7 @@ class AsyncServer(base_server.BaseServer):
 
     async def _service_task(self):  # pragma: no cover
         """Monitor connected clients and clean up those that time out."""
+        loop = asyncio.get_running_loop()
         self.service_task_event = self.create_event()
         while not self.service_task_event.is_set():
             if len(self.sockets) == 0:
@@ -569,7 +570,7 @@ class AsyncServer(base_server.BaseServer):
                 self.logger.info('service task canceled')
                 break
             except:
-                if asyncio.get_event_loop().is_closed():
+                if loop.is_closed():
                     self.logger.info('event loop is closed, exiting service '
                                      'task')
                     break
