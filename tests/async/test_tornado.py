@@ -1,4 +1,3 @@
-import asyncio
 from unittest import mock
 
 try:
@@ -9,18 +8,13 @@ except ImportError:
 from engineio.async_drivers import tornado as async_tornado
 
 
-def _run(coro):
-    """Run the given coroutine."""
-    return asyncio.get_event_loop().run_until_complete(coro)
-
-
 class TestTornado:
-    def test_get_tornado_handler(self):
+    async def test_get_tornado_handler(self):
         mock_server = mock.MagicMock()
         handler = async_tornado.get_tornado_handler(mock_server)
         assert issubclass(handler, tornado.websocket.WebSocketHandler)
 
-    def test_translate_request(self):
+    async def test_translate_request(self):
         mock_handler = mock.MagicMock()
         mock_handler.request.method = 'PUT'
         mock_handler.request.path = '/foo/bar'
@@ -49,11 +43,11 @@ class TestTornado:
         }
         for k, v in expected_environ.items():
             assert v == environ[k]
-        payload = _run(environ['wsgi.input'].read(1))
-        payload += _run(environ['wsgi.input'].read())
+        payload = await environ['wsgi.input'].read(1)
+        payload += await environ['wsgi.input'].read()
         assert payload == b'hello world'
 
-    def test_make_response(self):
+    async def test_make_response(self):
         mock_handler = mock.MagicMock()
         mock_environ = {'tornado.handler': mock_handler}
         async_tornado.make_response(
