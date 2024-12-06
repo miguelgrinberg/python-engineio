@@ -190,7 +190,7 @@ async def translate_request(scope, receive, send):
 
     for hdr_name, hdr_value in scope['headers']:
         hdr_name = hdr_name.upper().decode('utf-8')
-        hdr_value = hdr_value.decode('utf-8')
+        hdr_value = hdr_value.decode('utf-8', errors='replace')
         if hdr_name == 'CONTENT-TYPE':
             environ['CONTENT_TYPE'] = hdr_value
             continue
