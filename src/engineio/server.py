@@ -389,6 +389,7 @@ class Server(base_server.BaseServer):
             'sid': sid,
             'upgrades': self._upgrades(sid, transport),
             'pingTimeout': int(self.ping_timeout * 1000),
+            'maxPayload': self.max_http_buffer_size,
             'pingInterval': int(
                 self.ping_interval + self.ping_interval_grace_period) * 1000})
         s.send(pkt)
