@@ -195,6 +195,9 @@ class TestAsyncServer:
         assert 'upgrades' in packets[0].data
         assert packets[0].data['upgrades'] == ['websocket']
         assert 'sid' in packets[0].data
+        assert packets[0].data['pingTimeout'] == 20000
+        assert packets[0].data['pingInterval'] == 25000
+        assert packets[0].data['maxPayload'] == 1000000
 
     @mock.patch('importlib.import_module')
     async def test_connect_async_request_response_handlers(
@@ -252,13 +255,15 @@ class TestAsyncServer:
     async def test_connect_custom_ping_times(self, import_module):
         a = self.get_async_mock()
         import_module.side_effect = [a]
-        s = async_server.AsyncServer(ping_timeout=123, ping_interval=456)
+        s = async_server.AsyncServer(ping_timeout=123, ping_interval=456,
+                                     max_http_buffer_size=12345678)
         await s.handle_request('request')
         packets = payload.Payload(
             encoded_payload=a._async['make_response'].call_args[0][2].decode(
                 'utf-8')).packets
         assert packets[0].data['pingTimeout'] == 123000
         assert packets[0].data['pingInterval'] == 456000
+        assert packets[0].data['maxPayload'] == 12345678
 
     @mock.patch('importlib.import_module')
     @mock.patch('engineio.async_server.async_socket.AsyncSocket')

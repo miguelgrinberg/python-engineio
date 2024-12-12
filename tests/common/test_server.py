@@ -427,6 +427,9 @@ class TestServer:
         assert 'upgrades' in packets[0].data
         assert packets[0].data['upgrades'] == ['websocket']
         assert 'sid' in packets[0].data
+        assert packets[0].data['pingTimeout'] == 20000
+        assert packets[0].data['pingInterval'] == 25000
+        assert packets[0].data['maxPayload'] == 1000000
 
     def test_connect_no_upgrades(self):
         s = server.Server(allow_upgrades=False)
@@ -445,13 +448,15 @@ class TestServer:
         assert b'unsupported version' in r[0]
 
     def test_connect_custom_ping_times(self):
-        s = server.Server(ping_timeout=123, ping_interval=456)
+        s = server.Server(ping_timeout=123, ping_interval=456,
+                          max_http_buffer_size=12345678)
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4'}
         start_response = mock.MagicMock()
         r = s.handle_request(environ, start_response)
         packets = payload.Payload(encoded_payload=r[0].decode('utf-8')).packets
         assert packets[0].data['pingTimeout'] == 123000
         assert packets[0].data['pingInterval'] == 456000
+        assert packets[0].data['maxPayload'] == 12345678
 
     @mock.patch(
         'engineio.socket.Socket.poll', side_effect=exceptions.QueueEmpty
