@@ -440,7 +440,8 @@ class AsyncServer(base_server.BaseServer):
         s = async_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
 
-        pkt = packet.Packet(packet.OPEN, {'sid': sid,
+        pkt = packet.Packet(packet.OPEN, {
+            'sid': sid,
             'upgrades': self._upgrades(sid, transport),
             'pingTimeout': int(self.ping_timeout * 1000),
             'pingInterval': int(
