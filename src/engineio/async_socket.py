@@ -134,7 +134,7 @@ class AsyncSocket(base_socket.BaseSocket):
     async def _upgrade_websocket(self, environ):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
-            raise IOError('Socket has been upgraded already')
+            raise OSError('Socket has been upgraded already')
         if self.server._async['websocket'] is None:
             # the selected async mode does not support websocket
             return self.server._bad_request()
@@ -156,7 +156,7 @@ class AsyncSocket(base_socket.BaseSocket):
 
             try:
                 pkt = await websocket_wait()
-            except IOError:  # pragma: no cover
+            except OSError:  # pragma: no cover
                 return
             decoded_pkt = packet.Packet(encoded_packet=pkt)
             if decoded_pkt.packet_type != packet.PING or \
@@ -170,7 +170,7 @@ class AsyncSocket(base_socket.BaseSocket):
 
             try:
                 pkt = await websocket_wait()
-            except IOError:  # pragma: no cover
+            except OSError:  # pragma: no cover
                 self.upgrading = False
                 return
             decoded_pkt = packet.Packet(encoded_packet=pkt)

@@ -254,7 +254,7 @@ class Client(base_client.BaseClient):
         extra_options = {}
         if self.http:
             # cookies
-            cookies = '; '.join(["{}={}".format(cookie.name, cookie.value)
+            cookies = '; '.join([f"{cookie.name}={cookie.value}"
                                  for cookie in self.http.cookies])
             for header, value in headers.items():
                 if header.lower() == 'cookie':
@@ -328,7 +328,7 @@ class Client(base_client.BaseClient):
         try:
             ws = websocket.create_connection(
                 websocket_url + self._get_url_timestamp(), **extra_options)
-        except (ConnectionError, IOError, websocket.WebSocketException):
+        except (ConnectionError, OSError, websocket.WebSocketException):
             if upgrade:
                 self.logger.warning(
                     'WebSocket upgrade failed: connection error')

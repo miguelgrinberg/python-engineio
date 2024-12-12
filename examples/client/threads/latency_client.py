@@ -21,7 +21,7 @@ def on_connect():
 def on_message(data):
     global start_timer
     latency = time.time() - start_timer
-    print('latency is {0:.2f} ms'.format(latency * 1000))
+    print(f'latency is {latency * 1000:.2f} ms')
     eio.sleep(1)
     send_ping()
 

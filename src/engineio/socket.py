@@ -137,7 +137,7 @@ class Socket(base_socket.BaseSocket):
     def _upgrade_websocket(self, environ, start_response):
         """Upgrade the connection from polling to websocket."""
         if self.upgraded:
-            raise IOError('Socket has been upgraded already')
+            raise OSError('Socket has been upgraded already')
         if self.server._async['websocket'] is None:
             # the selected async mode does not support websocket
             return self.server._bad_request()

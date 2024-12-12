@@ -89,7 +89,7 @@ class AsyncServer(base_server.BaseServer):
     def attach(self, app, engineio_path='engine.io'):
         """Attach the Engine.IO server to an application."""
         engineio_path = engineio_path.strip('/')
-        self._async['create_route'](app, self, '/{}/'.format(engineio_path))
+        self._async['create_route'](app, self, f'/{engineio_path}/')
 
     async def send(self, sid, data):
         """Send a message to a client.
@@ -162,7 +162,7 @@ class AsyncServer(base_server.BaseServer):
                 async with eio.session(sid) as session:
                     print('received message from ', session['username'])
         """
-        class _session_context_manager(object):
+        class _session_context_manager:
             def __init__(self, server, sid):
                 self.server = server
                 self.sid = sid

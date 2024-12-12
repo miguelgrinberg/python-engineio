@@ -135,7 +135,7 @@ class ASGIApp:
 
 
 async def translate_request(scope, receive, send):
-    class AwaitablePayload(object):  # pragma: no cover
+    class AwaitablePayload:  # pragma: no cover
         def __init__(self, payload):
             self.payload = payload or b''
 
@@ -200,7 +200,7 @@ async def translate_request(scope, receive, send):
 
         key = 'HTTP_%s' % hdr_name.replace('-', '_')
         if key in environ:
-            hdr_value = '%s,%s' % (environ[key], hdr_value)
+            hdr_value = f'{environ[key]},{hdr_value}'
 
         environ[key] = hdr_value
 
@@ -231,7 +231,7 @@ async def make_response(status, headers, payload, environ):
                                 'body': payload})
 
 
-class WebSocket(object):  # pragma: no cover
+class WebSocket:  # pragma: no cover
     """
     This wrapper class provides an asgi WebSocket interface that is
     somewhat compatible with eventlet's implementation.
@@ -269,7 +269,7 @@ class WebSocket(object):  # pragma: no cover
     async def wait(self):
         event = await self.asgi_receive()
         if event['type'] != 'websocket.receive':
-            raise IOError()
+            raise OSError()
         return event.get('bytes') or event.get('text')
 
 
