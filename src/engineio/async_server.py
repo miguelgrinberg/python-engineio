@@ -440,11 +440,13 @@ class AsyncServer(base_server.BaseServer):
         s = async_socket.AsyncSocket(self, sid)
         self.sockets[sid] = s
 
-        pkt = packet.Packet(
-            packet.OPEN, {'sid': sid,
-                          'upgrades': self._upgrades(sid, transport),
-                          'pingTimeout': int(self.ping_timeout * 1000),
-                          'pingInterval': int(self.ping_interval * 1000)})
+        pkt = packet.Packet(packet.OPEN, {'sid': sid,
+            'upgrades': self._upgrades(sid, transport),
+            'pingTimeout': int(self.ping_timeout * 1000),
+            'pingInterval': int(
+                self.ping_interval + self.ping_interval_grace_period) * 1000,
+            'maxPayload': self.max_http_buffer_size,
+        })
         await s.send(pkt)
         s.schedule_ping()
 
