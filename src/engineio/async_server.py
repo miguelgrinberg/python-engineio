@@ -284,33 +284,41 @@ class AsyncServer(base_server.BaseServer):
                     r = self._bad_request('Invalid websocket upgrade')
             else:
                 if sid not in self.sockets:
-                    self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                    r = self._bad_request('Invalid session ' + sid)
+                    self._log_error_once(f'Invalid session {sid}', 'bad-sid')
+                    r = self._bad_request(f'Invalid session {sid}')
                 else:
-                    socket = self._get_socket(sid)
-                    if self.transport(sid) != transport and \
-                            transport != upgrade_header:
-                        self._log_error_once(
-                            'Invalid transport for session ' + sid,
-                            'bad-transport')
-                        r = self._bad_request('Invalid transport')
+                    try:
+                        socket = self._get_socket(sid)
+                    except KeyError as e:  # pragma: no cover
+                        self._log_error_once(f'{e} {sid}', 'bad-sid')
+                        r = self._bad_request(f'{e} {sid}')
                     else:
-                        try:
-                            packets = await socket.handle_get_request(environ)
-                            if isinstance(packets, list):
-                                r = self._ok(packets, jsonp_index=jsonp_index)
-                            else:
-                                r = packets
-                        except exceptions.EngineIOError:
-                            if sid in self.sockets:  # pragma: no cover
-                                await self.disconnect(sid)
-                            r = self._bad_request()
-                        if sid in self.sockets and self.sockets[sid].closed:
-                            del self.sockets[sid]
+                        if self.transport(sid) != transport and \
+                                transport != upgrade_header:
+                            self._log_error_once(
+                                f'Invalid transport for session {sid}',
+                                'bad-transport')
+                            r = self._bad_request('Invalid transport')
+                        else:
+                            try:
+                                packets = await socket.handle_get_request(
+                                    environ)
+                                if isinstance(packets, list):
+                                    r = self._ok(packets,
+                                                 jsonp_index=jsonp_index)
+                                else:
+                                    r = packets
+                            except exceptions.EngineIOError:
+                                if sid in self.sockets:  # pragma: no cover
+                                    await self.disconnect(sid)
+                                r = self._bad_request()
+                            if sid in self.sockets and \
+                                    self.sockets[sid].closed:
+                                del self.sockets[sid]
         elif method == 'POST':
             if sid is None or sid not in self.sockets:
-                self._log_error_once('Invalid session ' + sid, 'bad-sid')
-                r = self._bad_request('Invalid session ' + sid)
+                self._log_error_once(f'Invalid session {sid}', 'bad-sid')
+                r = self._bad_request(f'Invalid session {sid}')
             else:
                 socket = self._get_socket(sid)
                 try:
