@@ -176,12 +176,12 @@ class Server(base_server.BaseServer):
                 # the socket was already closed or gone
                 pass
             else:
-                socket.close()
+                socket.close(reason=self.reason.SERVER_DISCONNECT)
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
             for client in self.sockets.copy().values():
-                client.close()
+                client.close(reason=self.reason.SERVER_SHUTDOWN)
             self.sockets = {}
 
     def handle_request(self, environ, start_response):
@@ -446,7 +446,14 @@ class Server(base_server.BaseServer):
         if event in self.handlers:
             def run_handler():
                 try:
-                    return self.handlers[event](*args)
+                    try:
+                        return self.handlers[event](*args)
+                    except TypeError:
+                        if event == 'disconnect' and \
+                                len(args) == 2:  # pragma: no branch
+                            # legacy disconnect events do not have a reason
+                            # argument
+                            return self.handlers[event](args[0])
                 except:
                     self.logger.exception(event + ' handler error')
                     if event == 'connect':

@@ -48,7 +48,8 @@ class Socket(base_socket.BaseSocket):
         elif pkt.packet_type == packet.UPGRADE:
             self.send(packet.Packet(packet.NOOP))
         elif pkt.packet_type == packet.CLOSE:
-            self.close(wait=False, abort=True)
+            self.close(wait=False, abort=True,
+                       reason=self.server.reason.CLIENT_DISCONNECT)
         else:
             raise exceptions.UnknownPacketError()
 
@@ -63,7 +64,8 @@ class Socket(base_socket.BaseSocket):
             # Passing abort=False here will cause close() to write a
             # CLOSE packet. This has the effect of updating half-open sockets
             # to their correct state of disconnected
-            self.close(wait=False, abort=False)
+            self.close(wait=False, abort=False,
+                       reason=self.server.reason.PING_TIMEOUT)
             return False
         return True
 
@@ -97,7 +99,7 @@ class Socket(base_socket.BaseSocket):
             packets = self.poll()
         except exceptions.QueueEmpty:
             exc = sys.exc_info()
-            self.close(wait=False)
+            self.close(wait=False, reason=self.server.reason.TRANSPORT_ERROR)
             raise exc[1].with_traceback(exc[2])
         return packets
 
@@ -112,11 +114,13 @@ class Socket(base_socket.BaseSocket):
             for pkt in p.packets:
                 self.receive(pkt)
 
-    def close(self, wait=True, abort=False):
+    def close(self, wait=True, abort=False, reason=None):
         """Close the socket connection."""
         if not self.closed and not self.closing:
             self.closing = True
-            self.server._trigger_event('disconnect', self.sid, run_async=False)
+            self.server._trigger_event('disconnect', self.sid,
+                                       reason or self.server.reason.UNKNOWN,
+                                       run_async=False)
             if not abort:
                 self.send(packet.Packet(packet.CLOSE))
             self.closed = True

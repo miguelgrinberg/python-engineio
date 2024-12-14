@@ -161,8 +161,8 @@ functions must be defined using the ``on`` decorator::
         print('I received a message!')
 
     @eio.on('disconnect')
-    def on_disconnect(sid):
-        print('Client disconnected!')
+    def on_disconnect(sid, reason):
+        print('Client disconnected! reason:', reason)
 
 For the ``asyncio`` server, event handlers can be regular functions as above,
 or can also be coroutines::
@@ -172,10 +172,7 @@ or can also be coroutines::
         print('I received a message!')
 
 The argument given to the ``on`` decorator is the event name. The events that
-are supported are ``connect``, ``message`` and ``disconnect``. Note that the
-``disconnect`` handler is invoked for client initiated disconnects,
-server initiated disconnects, or accidental disconnects, for example due to
-networking failures.
+are supported are ``connect``, ``message`` and ``disconnect``.
 
 The ``sid`` argument passed into all the event handlers is a connection
 identifier for the client. All the events from a client will use the same
@@ -191,6 +188,20 @@ rejected. A rejected connection triggers a response with a 401 status code.
 
 The ``data`` argument passed to the ``'message'`` event handler contains
 application-specific data provided by the client with the event.
+
+The ``disconnect`` handler is invoked for client initiated disconnects,
+server initiated disconnects, or accidental disconnects, for example due to
+networking failures. The second argument passed to this handler provides the
+disconnect reason. Example::
+
+    @eio.on('disconnect')
+    def on_disconnect(sid, reason):
+        if reason == sio.reason.CLIENT_DISCONNECT:
+            print('the client went away')
+        elif reason == sio.reason.SERVER_DISCONNECT:
+            print('the client was kicked out')
+        else:
+            print(f'disconnect reason: {reason}')
 
 Sending Messages
 ----------------

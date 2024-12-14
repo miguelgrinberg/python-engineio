@@ -305,6 +305,10 @@ class TestServer:
             f['bar'] = sid + data
             return 'bar'
 
+        @s.on('disconnect')
+        def baz(sid, reason):
+            return sid + reason
+
         r = s._trigger_event('connect', 1, 2, run_async=False)
         assert r == 3
         r = s._trigger_event('message', 3, 4, run_async=True)
@@ -312,6 +316,18 @@ class TestServer:
         assert f['bar'] == 7
         r = s._trigger_event('message', 5, 6)
         assert r == 'bar'
+        r = s._trigger_event('disconnect', 'foo', 'bar')
+        assert r == 'foobar'
+
+    def test_trigger_legacy_disconnect_event(self):
+        s = server.Server(async_mode='threading')
+
+        @s.on('disconnect')
+        def baz(sid):
+            return sid
+
+        r = s._trigger_event('disconnect', 'foo', 'bar')
+        assert r == 'foo'
 
     def test_trigger_event_error(self):
         s = server.Server()

@@ -128,7 +128,8 @@ class TestAsyncServer:
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
         await s.disconnect('foo')
         assert mock_socket.close.await_count == 1
-        mock_socket.close.assert_awaited_once_with()
+        mock_socket.close.assert_awaited_once_with(
+            reason=s.reason.SERVER_DISCONNECT)
         assert 'foo' not in s.sockets
 
     async def test_disconnect_all(self):
@@ -138,8 +139,10 @@ class TestAsyncServer:
         await s.disconnect()
         assert mock_foo.close.await_count == 1
         assert mock_bar.close.await_count == 1
-        mock_foo.close.assert_awaited_once_with()
-        mock_bar.close.assert_awaited_once_with()
+        mock_foo.close.assert_awaited_once_with(
+            reason=s.reason.SERVER_SHUTDOWN)
+        mock_bar.close.assert_awaited_once_with(
+            reason=s.reason.SERVER_SHUTDOWN)
         assert 'foo' not in s.sockets
         assert 'bar' not in s.sockets
 
@@ -1137,6 +1140,16 @@ class TestAsyncServer:
         fut = await s._trigger_event('message', 'bar', run_async=True)
         await fut
         assert result == ['bar']
+
+    async def test_trigger_legacy_disconnect_event(self):
+        s = async_server.AsyncServer()
+
+        @s.on('disconnect')
+        async def baz(sid):
+            return sid
+
+        r = await s._trigger_event('disconnect', 'foo', 'bar')
+        assert r == 'foo'
 
     async def test_create_queue(self):
         s = async_server.AsyncServer()

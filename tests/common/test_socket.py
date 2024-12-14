@@ -153,7 +153,8 @@ class TestSocket:
         s.last_ping = time.time() - 9
         s.close = mock.MagicMock()
         s.send('packet')
-        s.close.assert_called_once_with(wait=False, abort=False)
+        s.close.assert_called_once_with(wait=False, abort=False,
+                                        reason=mock_server.reason.PING_TIMEOUT)
 
     def test_polling_read(self):
         mock_server = self._get_mock_server()
@@ -291,7 +292,9 @@ class TestSocket:
         s.connected = True
         s.close = mock.MagicMock()
         s.receive(packet.Packet(packet.CLOSE))
-        s.close.assert_called_once_with(wait=False, abort=True)
+        s.close.assert_called_once_with(
+            wait=False, abort=True,
+            reason=mock_server.reason.CLIENT_DISCONNECT)
 
     def test_invalid_packet_type(self):
         mock_server = self._get_mock_server()
@@ -336,7 +339,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_calls(
             [
                 mock.call('message', 'sid', 'foo', run_async=True),
-                mock.call('disconnect', 'sid', run_async=False),
+                mock.call('disconnect', 'sid', mock_server.reason.UNKNOWN,
+                          run_async=False)
             ]
         )
         ws.send.assert_called_with('4bar')
@@ -369,7 +373,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_calls(
             [
                 mock.call('message', 'sid', 'foo', run_async=True),
-                mock.call('disconnect', 'sid', run_async=False),
+                mock.call('disconnect', 'sid', mock_server.reason.UNKNOWN,
+                          run_async=False)
             ]
         )
         ws.send.assert_called_with('4bar')
@@ -486,7 +491,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_calls(
             [
                 mock.call('message', 'sid', foo, run_async=True),
-                mock.call('disconnect', 'sid', run_async=False),
+                mock.call('disconnect', 'sid', mock_server.reason.UNKNOWN,
+                          run_async=False)
             ]
         )
         ws.send.assert_called_with('4bar')
@@ -505,7 +511,7 @@ class TestSocket:
         assert s.closed
         assert mock_server._trigger_event.call_count == 1
         mock_server._trigger_event.assert_called_once_with(
-            'disconnect', 'sid', run_async=False
+            'disconnect', 'sid', mock_server.reason.UNKNOWN, run_async=False
         )
         s.close()
         assert mock_server._trigger_event.call_count == 1

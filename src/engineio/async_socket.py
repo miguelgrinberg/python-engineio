@@ -47,7 +47,8 @@ class AsyncSocket(base_socket.BaseSocket):
         elif pkt.packet_type == packet.UPGRADE:
             await self.send(packet.Packet(packet.NOOP))
         elif pkt.packet_type == packet.CLOSE:
-            await self.close(wait=False, abort=True)
+            await self.close(wait=False, abort=True,
+                             reason=self.server.reason.CLIENT_DISCONNECT)
         else:
             raise exceptions.UnknownPacketError()
 
@@ -62,7 +63,8 @@ class AsyncSocket(base_socket.BaseSocket):
             # Passing abort=False here will cause close() to write a
             # CLOSE packet. This has the effect of updating half-open sockets
             # to their correct state of disconnected
-            await self.close(wait=False, abort=False)
+            await self.close(wait=False, abort=False,
+                             reason=self.server.reason.PING_TIMEOUT)
             return False
         return True
 
@@ -95,7 +97,8 @@ class AsyncSocket(base_socket.BaseSocket):
             packets = await self.poll()
         except exceptions.QueueEmpty:
             exc = sys.exc_info()
-            await self.close(wait=False)
+            await self.close(wait=False,
+                             reason=self.server.reason.TRANSPORT_ERROR)
             raise exc[1].with_traceback(exc[2])
         return packets
 
@@ -110,11 +113,13 @@ class AsyncSocket(base_socket.BaseSocket):
             for pkt in p.packets:
                 await self.receive(pkt)
 
-    async def close(self, wait=True, abort=False):
+    async def close(self, wait=True, abort=False, reason=None):
         """Close the socket connection."""
         if not self.closed and not self.closing:
             self.closing = True
-            await self.server._trigger_event('disconnect', self.sid)
+            await self.server._trigger_event(
+                'disconnect', self.sid, reason or self.server.reason.UNKNOWN,
+                run_async=False)
             if not abort:
                 await self.send(packet.Packet(packet.CLOSE))
             self.closed = True
