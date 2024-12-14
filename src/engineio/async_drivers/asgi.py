@@ -161,9 +161,15 @@ async def translate_request(scope, receive, send):
     else:
         return {}
 
-    raw_uri = scope['path'].encode('utf-8')
+    raw_uri = scope['path']
+    query_string = ''
     if 'query_string' in scope and scope['query_string']:
-        raw_uri += b'?' + scope['query_string']
+        try:
+            query_string = scope['query_string'].decode('utf-8')
+        except UnicodeDecodeError:
+            pass
+        else:
+            raw_uri += '?' + query_string
     environ = {
         'wsgi.input': AwaitablePayload(payload),
         'wsgi.errors': sys.stderr,
@@ -175,8 +181,8 @@ async def translate_request(scope, receive, send):
         'SERVER_SOFTWARE': 'asgi',
         'REQUEST_METHOD': scope.get('method', 'GET'),
         'PATH_INFO': scope['path'],
-        'QUERY_STRING': scope.get('query_string', b'').decode('utf-8'),
-        'RAW_URI': raw_uri.decode('utf-8'),
+        'QUERY_STRING': query_string,
+        'RAW_URI': raw_uri,
         'SCRIPT_NAME': '',
         'SERVER_PROTOCOL': 'HTTP/1.1',
         'REMOTE_ADDR': '127.0.0.1',
@@ -189,8 +195,12 @@ async def translate_request(scope, receive, send):
     }
 
     for hdr_name, hdr_value in scope['headers']:
-        hdr_name = hdr_name.upper().decode('utf-8')
-        hdr_value = hdr_value.decode('utf-8')
+        try:
+            hdr_name = hdr_name.upper().decode('utf-8')
+            hdr_value = hdr_value.decode('utf-8')
+        except UnicodeDecodeError:
+            # skip header if it cannot be decoded
+            continue
         if hdr_name == 'CONTENT-TYPE':
             environ['CONTENT_TYPE'] = hdr_value
             continue

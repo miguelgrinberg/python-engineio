@@ -472,6 +472,30 @@ class TestAsgi:
         )
         assert environ == {}
 
+    async def test_translate_request_bad_unicode(self):
+        receive = mock.AsyncMock(return_value={'type': 'http.request',
+                                               'body': b'foo'})
+        send = mock.AsyncMock()
+        environ = await async_asgi.translate_request(
+            {
+                'type': 'http.request',
+                'headers': [
+                    (b'a', b'b'),
+                    (b'c', b'\xa0'),
+                    (b'e', b'f'),
+                ],
+                'path': '/foo/bar',
+                'query_string': b'baz=1&bad=\xa0',
+            },
+            receive,
+            send,
+        )
+        assert environ['HTTP_A'] == 'b'
+        assert environ['HTTP_E'] == 'f'
+        assert 'HTTP_C' not in environ
+        assert environ['QUERY_STRING'] == ''
+        assert environ['RAW_URI'] == '/foo/bar'
+
     async def test_make_response(self):
         environ = {'asgi.send': mock.AsyncMock(),
                    'asgi.scope': {'type': 'http'}}
