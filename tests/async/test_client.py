@@ -154,7 +154,7 @@ class TestAsyncClient:
         c.ws.close.assert_not_awaited()
         assert c not in base_client.connected_clients
         c._trigger_event.assert_awaited_once_with(
-            'disconnect', run_async=False
+            'disconnect', c.reason.CLIENT_DISCONNECT, run_async=False
         )
 
     async def test_disconnect_websocket(self):
@@ -173,7 +173,7 @@ class TestAsyncClient:
         c.ws.close.assert_awaited_once_with()
         assert c not in base_client.connected_clients
         c._trigger_event.assert_awaited_once_with(
-            'disconnect', run_async=False
+            'disconnect', c.reason.CLIENT_DISCONNECT, run_async=False
         )
 
     async def test_disconnect_polling_abort(self):
@@ -849,7 +849,8 @@ class TestAsyncClient:
         c = async_client.AsyncClient()
         c.disconnect = mock.AsyncMock()
         await c._receive_packet(packet.Packet(packet.CLOSE))
-        c.disconnect.assert_awaited_once_with(abort=True)
+        c.disconnect.assert_awaited_once_with(
+            abort=True, reason=c.reason.SERVER_DISCONNECT)
 
     async def test_send_packet_disconnected(self):
         c = async_client.AsyncClient()
@@ -977,6 +978,26 @@ class TestAsyncClient:
         await c._trigger_event('message', 123, run_async=True)
         # should do nothing
 
+    async def test_trigger_legacy_disconnect_event(self):
+        c = async_client.AsyncClient()
+
+        @c.on('disconnect')
+        def baz():
+            return 'baz'
+
+        r = await c._trigger_event('disconnect', 'foo')
+        assert r == 'baz'
+
+    async def test_trigger_legacy_disconnect_event_async(self):
+        c = async_client.AsyncClient()
+
+        @c.on('disconnect')
+        async def baz():
+            return 'baz'
+
+        r = await c._trigger_event('disconnect', 'foo')
+        assert r == 'baz'
+
     async def test_read_loop_polling_disconnected(self):
         c = async_client.AsyncClient()
         c.state = 'disconnected'
@@ -1005,7 +1026,7 @@ class TestAsyncClient:
             'GET', 'http://foo&t=123.456', timeout=30
         )
         c._trigger_event.assert_awaited_once_with(
-            'disconnect', run_async=False
+            'disconnect', c.reason.TRANSPORT_ERROR, run_async=False
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)

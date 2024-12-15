@@ -1145,6 +1145,16 @@ class TestAsyncServer:
         s = async_server.AsyncServer()
 
         @s.on('disconnect')
+        def baz(sid):
+            return sid
+
+        r = await s._trigger_event('disconnect', 'foo', 'bar')
+        assert r == 'foo'
+
+    async def test_trigger_legacy_disconnect_event_async(self):
+        s = async_server.AsyncServer()
+
+        @s.on('disconnect')
         async def baz(sid):
             return sid
 

@@ -454,6 +454,8 @@ class Server(base_server.BaseServer):
                             # legacy disconnect events do not have a reason
                             # argument
                             return self.handlers[event](args[0])
+                        else:  # pragma: no cover
+                            raise
                 except:
                     self.logger.exception(event + ' handler error')
                     if event == 'connect':

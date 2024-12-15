@@ -513,6 +513,8 @@ class AsyncServer(base_server.BaseServer):
                                 # legacy disconnect events do not have a reason
                                 # argument
                                 return await self.handlers[event](args[0])
+                            else:  # pragma: no cover
+                                raise
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
                     except:
@@ -531,7 +533,16 @@ class AsyncServer(base_server.BaseServer):
             else:
                 async def run_sync_handler():
                     try:
-                        return self.handlers[event](*args)
+                        try:
+                            return self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 2:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                return self.handlers[event](args[0])
+                            else:  # pragma: no cover
+                                raise
                     except:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
