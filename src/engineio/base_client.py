@@ -31,8 +31,12 @@ class BaseClient:
     event_names = ['connect', 'disconnect', 'message']
 
     class reason:
+        """Disconnection reasons."""
+        #: Client-initiated disconnection.
         CLIENT_DISCONNECT = 'client disconnect'
+        #: Server-initiated disconnection.
         SERVER_DISCONNECT = 'server disconnect'
+        #: Transport error.
         TRANSPORT_ERROR = 'transport error'
 
     def __init__(self, logger=False, json=None, request_timeout=5,

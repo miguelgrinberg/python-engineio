@@ -20,11 +20,18 @@ class BaseServer:
     sequence_number = 0
 
     class reason:
+        """Disconnection reasons."""
+        #: Unknown reason.
         UNKNOWN = 'unknown'
+        #: Server-initiated disconnection.
         SERVER_DISCONNECT = 'server disconnect'
+        #: Client-initiated disconnection.
         CLIENT_DISCONNECT = 'client disconnect'
+        #: Ping timeout.
         PING_TIMEOUT = 'ping timeout'
+        #: Server shutdown.
         SERVER_SHUTDOWN = 'server shutdown'
+        #: Transport error.
         TRANSPORT_ERROR = 'transport error'
 
     def __init__(self, async_mode=None, ping_interval=25, ping_timeout=20,

@@ -52,8 +52,8 @@ functions must be defined using the ``on`` decorator::
         print('I received a message!')
 
     @eio.on('disconnect')
-    def on_disconnect():
-        print('I'm disconnected!')
+    def on_disconnect(reason):
+        print('I'm disconnected! reason:', reason)
 
 For the ``asyncio`` server, event handlers can be regular functions as above,
 or can also be coroutines::
@@ -63,13 +63,24 @@ or can also be coroutines::
         print('I received a message!')
 
 The argument given to the ``on`` decorator is the event name. The events that
-are supported are ``connect``, ``message`` and ``disconnect``. Note that the
-``disconnect`` handler is invoked for application initiated disconnects,
-server initiated disconnects, or accidental disconnects, for example due to
-networking failures.
+are supported are ``connect``, ``message`` and ``disconnect``.
 
 The ``data`` argument passed to the ``'message'`` event handler contains
 application-specific data provided by the server with the event.
+
+The ``disconnect`` handler is invoked for client initiated disconnects, server
+initiated disconnects, or accidental disconnects, for example due to
+networking failures. The argument passed to this handler provides the
+disconnect reason. Example::
+
+    @eio.on('disconnect')
+    def on_disconnect(reason):
+        if reason == eio.reason.CLIENT_DISCONNECT:
+            print('client disconnection')
+        elif reason == eio.reason.SERVER_DISCONNECT:
+            print('the server kicked me out')
+        else:
+            print(f'disconnect reason: {reason}')
 
 Connecting to a Server
 ----------------------

@@ -196,9 +196,9 @@ disconnect reason. Example::
 
     @eio.on('disconnect')
     def on_disconnect(sid, reason):
-        if reason == sio.reason.CLIENT_DISCONNECT:
+        if reason == eio.reason.CLIENT_DISCONNECT:
             print('the client went away')
-        elif reason == sio.reason.SERVER_DISCONNECT:
+        elif reason == eio.reason.SERVER_DISCONNECT:
             print('the client was kicked out')
         else:
             print(f'disconnect reason: {reason}')
