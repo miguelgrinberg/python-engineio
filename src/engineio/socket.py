@@ -118,9 +118,10 @@ class Socket(base_socket.BaseSocket):
         """Close the socket connection."""
         if not self.closed and not self.closing:
             self.closing = True
-            self.server._trigger_event('disconnect', self.sid,
-                                       reason or self.server.reason.UNKNOWN,
-                                       run_async=False)
+            self.server._trigger_event(
+                'disconnect', self.sid,
+                reason or self.server.reason.SERVER_DISCONNECT,
+                run_async=False)
             if not abort:
                 self.send(packet.Packet(packet.CLOSE))
             self.closed = True

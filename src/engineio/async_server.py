@@ -198,7 +198,7 @@ class AsyncServer(base_server.BaseServer):
         else:
             await asyncio.wait([
                 asyncio.create_task(client.close(
-                    reason=self.reason.SERVER_SHUTDOWN))
+                    reason=self.reason.SERVER_DISCONNECT))
                 for client in self.sockets.values()
             ])
             self.sockets = {}

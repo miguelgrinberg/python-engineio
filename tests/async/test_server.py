@@ -140,9 +140,9 @@ class TestAsyncServer:
         assert mock_foo.close.await_count == 1
         assert mock_bar.close.await_count == 1
         mock_foo.close.assert_awaited_once_with(
-            reason=s.reason.SERVER_SHUTDOWN)
+            reason=s.reason.SERVER_DISCONNECT)
         mock_bar.close.assert_awaited_once_with(
-            reason=s.reason.SERVER_SHUTDOWN)
+            reason=s.reason.SERVER_DISCONNECT)
         assert 'foo' not in s.sockets
         assert 'bar' not in s.sockets
 

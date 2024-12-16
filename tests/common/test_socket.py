@@ -339,7 +339,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_calls(
             [
                 mock.call('message', 'sid', 'foo', run_async=True),
-                mock.call('disconnect', 'sid', mock_server.reason.UNKNOWN,
+                mock.call('disconnect', 'sid',
+                          mock_server.reason.SERVER_DISCONNECT,
                           run_async=False)
             ]
         )
@@ -373,7 +374,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_calls(
             [
                 mock.call('message', 'sid', 'foo', run_async=True),
-                mock.call('disconnect', 'sid', mock_server.reason.UNKNOWN,
+                mock.call('disconnect', 'sid',
+                          mock_server.reason.SERVER_DISCONNECT,
                           run_async=False)
             ]
         )
@@ -491,7 +493,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_calls(
             [
                 mock.call('message', 'sid', foo, run_async=True),
-                mock.call('disconnect', 'sid', mock_server.reason.UNKNOWN,
+                mock.call('disconnect', 'sid',
+                          mock_server.reason.SERVER_DISCONNECT,
                           run_async=False)
             ]
         )
@@ -511,7 +514,8 @@ class TestSocket:
         assert s.closed
         assert mock_server._trigger_event.call_count == 1
         mock_server._trigger_event.assert_called_once_with(
-            'disconnect', 'sid', mock_server.reason.UNKNOWN, run_async=False
+            'disconnect', 'sid', mock_server.reason.SERVER_DISCONNECT,
+            run_async=False
         )
         s.close()
         assert mock_server._trigger_event.call_count == 1

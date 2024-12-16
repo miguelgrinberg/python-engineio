@@ -181,7 +181,7 @@ class Server(base_server.BaseServer):
                     del self.sockets[sid]
         else:
             for client in self.sockets.copy().values():
-                client.close(reason=self.reason.SERVER_SHUTDOWN)
+                client.close(reason=self.reason.SERVER_DISCONNECT)
             self.sockets = {}
 
     def handle_request(self, environ, start_response):

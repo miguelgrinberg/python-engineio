@@ -118,7 +118,8 @@ class AsyncSocket(base_socket.BaseSocket):
         if not self.closed and not self.closing:
             self.closing = True
             await self.server._trigger_event(
-                'disconnect', self.sid, reason or self.server.reason.UNKNOWN,
+                'disconnect', self.sid,
+                reason or self.server.reason.SERVER_DISCONNECT,
                 run_async=False)
             if not abort:
                 await self.send(packet.Packet(packet.CLOSE))
@@ -256,4 +257,5 @@ class AsyncSocket(base_socket.BaseSocket):
 
         await self.queue.put(None)  # unlock the writer task so it can exit
         await asyncio.wait_for(writer_task, timeout=None)
-        await self.close(wait=False, abort=True)
+        await self.close(wait=False, abort=True,
+                         reason=self.server.reason.TRANSPORT_CLOSE)

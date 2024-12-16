@@ -21,16 +21,14 @@ class BaseServer:
 
     class reason:
         """Disconnection reasons."""
-        #: Unknown reason.
-        UNKNOWN = 'unknown'
         #: Server-initiated disconnection.
         SERVER_DISCONNECT = 'server disconnect'
         #: Client-initiated disconnection.
         CLIENT_DISCONNECT = 'client disconnect'
         #: Ping timeout.
         PING_TIMEOUT = 'ping timeout'
-        #: Server shutdown.
-        SERVER_SHUTDOWN = 'server shutdown'
+        #: Transport close.
+        TRANSPORT_CLOSE = 'transport close'
         #: Transport error.
         TRANSPORT_ERROR = 'transport error'
 
