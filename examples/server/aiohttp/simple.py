@@ -24,8 +24,8 @@ async def message(sid, data):
 
 
 @eio.on('disconnect')
-def disconnect(sid):
-    print('disconnect ', sid)
+def disconnect(sid, reason):
+    print('disconnect ', sid, reason)
 
 
 app.router.add_static('/static', 'static')
