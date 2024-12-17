@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.11.1** - 2024-12-17
+
+- Remove debugging prints :blush: ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ded35d682690bf8a74d6df1325ec5b7e28d6eed6))
+
 **Release 4.11.0** - 2024-12-17
 
 - Pass a `reason` argument to the disconnect handler [#393](https://github.com/miguelgrinberg/python-engineio/issues/393) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d782d9b9adc04fb691a490f29713239ad40de6c5))
