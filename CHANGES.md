@@ -1,5 +1,18 @@
 # python-engineio change log
 
+**Release 4.11.0** - 2024-12-17
+
+- Pass a `reason` argument to the disconnect handler [#393](https://github.com/miguelgrinberg/python-engineio/issues/393) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d782d9b9adc04fb691a490f29713239ad40de6c5))
+- Add `maxPayload` to connection response [#392](https://github.com/miguelgrinberg/python-engineio/issues/392) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/12e423fecd15c17ddecbef396844634431c45836)) (thanks **HeySMMReseller & HeySMMProvider**!)
+- Client option to disable timestamps in connection URLs [#386](https://github.com/miguelgrinberg/python-engineio/issues/386) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/e8f9bbafc8c3ef8126dbe06343d0a30e32074627))
+- Return disconnected sessions as 400 errors [#391](https://github.com/miguelgrinberg/python-engineio/issues/391) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/55a9e46ff91aacfc04cb21683e12345e71fe2f98))
+- Handle unicode errors in ASGI driver [#389](https://github.com/miguelgrinberg/python-engineio/issues/389) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/44ce778c9a7e26d62254563e3de8c4a0c073bdc0))
+- Replaced deprecated `get_event_loop` with `get_running_loop` [#384](https://github.com/miguelgrinberg/python-engineio/issues/384) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/a6e5d92ca98b41d2054737c6c49fc0511da0c3c6))
+- Remove constructs required by older, now unsupported Python versions ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2f257c3f83be91a464141ff4d8366cdcd7d9543b))
+- Switched to pyenv-asyncio for async unit tests ([commit](https://github.com/miguelgrinberg/python-engineio/commit/08ea5ad5127e3505120ddc8ac12657f3f70f9fef))
+- Adopted `unittest.mock.AsyncMock` in async unit tests instead of homegrown version ([commit](https://github.com/miguelgrinberg/python-engineio/commit/0a25a1d404dd8aab968e2b8aef870ad52c858dfc))
+- Removed tests dependency on `unittest.TestCase` base class ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7de6d63f4034c4e8610e02c0c3478f8b97e1bc65))
+
 **Release 4.10.1** - 2024-10-15
 
 - Reject request with incorrect transport [#367](https://github.com/miguelgrinberg/python-engineio/issues/367) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7ad14481695df5adb070d52a377de49f43ddf399))
