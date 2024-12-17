@@ -31,6 +31,11 @@ def on_message(data):
     print('received: ' + str(data))
 
 
+@eio.on('disconnect')
+def on_disconnect(reason):
+    print('disconnected from server with reason: ', reason)
+
+
 def signal_handler(sig, frame):
     exit_event.set()
     print('exiting')

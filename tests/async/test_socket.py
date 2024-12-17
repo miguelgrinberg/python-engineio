@@ -156,7 +156,8 @@ class TestSocket:
         s.last_ping = time.time() - 9
         s.close = mock.AsyncMock()
         await s.send('packet')
-        s.close.assert_awaited_once_with(wait=False, abort=False)
+        s.close.assert_awaited_once_with(
+            wait=False, abort=False, reason=mock_server.reason.PING_TIMEOUT)
 
     async def test_polling_read(self):
         mock_server = self._get_mock_server()
@@ -301,7 +302,9 @@ class TestSocket:
         s.connected = True
         s.close = mock.AsyncMock()
         await s.receive(packet.Packet(packet.CLOSE))
-        s.close.assert_awaited_once_with(wait=False, abort=True)
+        s.close.assert_awaited_once_with(
+            wait=False, abort=True,
+            reason=mock_server.reason.CLIENT_DISCONNECT)
 
     async def test_websocket_read_write(self):
         mock_server = self._get_mock_server()
@@ -328,7 +331,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_awaits(
             [
                 mock.call('message', 'sid', 'foo', run_async=False),
-                mock.call('disconnect', 'sid'),
+                mock.call('disconnect', 'sid',
+                          mock_server.reason.TRANSPORT_CLOSE, run_async=False),
             ]
         )
         ws.send.assert_awaited_with('4bar')
@@ -364,7 +368,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_awaits(
             [
                 mock.call('message', 'sid', 'foo', run_async=False),
-                mock.call('disconnect', 'sid'),
+                mock.call('disconnect', 'sid',
+                          mock_server.reason.TRANSPORT_CLOSE, run_async=False),
             ]
         )
         ws.send.assert_awaited_with('4bar')
@@ -490,7 +495,8 @@ class TestSocket:
         mock_server._trigger_event.assert_has_awaits(
             [
                 mock.call('message', 'sid', foo, run_async=False),
-                mock.call('disconnect', 'sid'),
+                mock.call('disconnect', 'sid',
+                          mock_server.reason.TRANSPORT_CLOSE, run_async=False),
             ]
         )
         ws.send.assert_awaited_with('4bar')
@@ -510,7 +516,8 @@ class TestSocket:
         assert s.closed
         assert mock_server._trigger_event.await_count == 1
         mock_server._trigger_event.assert_awaited_once_with(
-            'disconnect', 'sid'
+            'disconnect', 'sid', mock_server.reason.SERVER_DISCONNECT,
+            run_async=False
         )
         await s.close()
         assert mock_server._trigger_event.await_count == 1

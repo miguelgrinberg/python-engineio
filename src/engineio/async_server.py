@@ -192,12 +192,15 @@ class AsyncServer(base_server.BaseServer):
                 # the socket was already closed or gone
                 pass
             else:
-                await socket.close()
+                await socket.close(reason=self.reason.SERVER_DISCONNECT)
                 if sid in self.sockets:  # pragma: no cover
                     del self.sockets[sid]
         else:
-            await asyncio.wait([asyncio.create_task(client.close())
-                                for client in self.sockets.values()])
+            await asyncio.wait([
+                asyncio.create_task(client.close(
+                    reason=self.reason.SERVER_DISCONNECT))
+                for client in self.sockets.values()
+            ])
             self.sockets = {}
 
     async def handle_request(self, *args, **kwargs):
@@ -502,7 +505,16 @@ class AsyncServer(base_server.BaseServer):
             if asyncio.iscoroutinefunction(self.handlers[event]):
                 async def run_async_handler():
                     try:
-                        return await self.handlers[event](*args)
+                        try:
+                            return await self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 2:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                return await self.handlers[event](args[0])
+                            else:  # pragma: no cover
+                                raise
                     except asyncio.CancelledError:  # pragma: no cover
                         pass
                     except:
@@ -521,7 +533,16 @@ class AsyncServer(base_server.BaseServer):
             else:
                 async def run_sync_handler():
                     try:
-                        return self.handlers[event](*args)
+                        try:
+                            return self.handlers[event](*args)
+                        except TypeError:
+                            if event == 'disconnect' and \
+                                    len(args) == 2:  # pragma: no branch
+                                # legacy disconnect events do not have a reason
+                                # argument
+                                return self.handlers[event](args[0])
+                            else:  # pragma: no cover
+                                raise
                     except:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':

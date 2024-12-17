@@ -216,7 +216,8 @@ class TestClient:
         c.read_loop_task.join.assert_called_once_with()
         c.ws.mock.assert_not_called()
         assert c not in base_client.connected_clients
-        c._trigger_event.assert_called_once_with('disconnect', run_async=False)
+        c._trigger_event.assert_called_once_with(
+            'disconnect', c.reason.CLIENT_DISCONNECT, run_async=False)
 
     def test_disconnect_websocket(self):
         c = client.Client()
@@ -231,7 +232,8 @@ class TestClient:
         c.read_loop_task.join.assert_called_once_with()
         c.ws.close.assert_called_once_with()
         assert c not in base_client.connected_clients
-        c._trigger_event.assert_called_once_with('disconnect', run_async=False)
+        c._trigger_event.assert_called_once_with(
+            'disconnect', c.reason.CLIENT_DISCONNECT, run_async=False)
 
     def test_disconnect_polling_abort(self):
         c = client.Client()
@@ -1200,7 +1202,8 @@ class TestClient:
         c = client.Client()
         c.disconnect = mock.MagicMock()
         c._receive_packet(packet.Packet(packet.CLOSE))
-        c.disconnect.assert_called_once_with(abort=True)
+        c.disconnect.assert_called_once_with(
+            abort=True, reason=c.reason.SERVER_DISCONNECT)
 
     def test_send_packet_disconnected(self):
         c = client.Client()
@@ -1231,6 +1234,10 @@ class TestClient:
             f['bar'] = data
             return 'bar'
 
+        @c.on('disconnect')
+        def baz(reason):
+            return reason
+
         r = c._trigger_event('connect', run_async=False)
         assert r == 'foo'
         r = c._trigger_event('message', 123, run_async=True)
@@ -1238,6 +1245,18 @@ class TestClient:
         assert f['bar'] == 123
         r = c._trigger_event('message', 321)
         assert r == 'bar'
+        r = c._trigger_event('disconnect', 'foo')
+        assert r == 'foo'
+
+    def test_trigger_legacy_disconnect_event(self):
+        c = client.Client()
+
+        @c.on('disconnect')
+        def baz():
+            return 'baz'
+
+        r = c._trigger_event('disconnect', 'foo')
+        assert r == 'baz'
 
     def test_trigger_unknown_event(self):
         c = client.Client()
@@ -1323,7 +1342,8 @@ class TestClient:
         c._send_request.assert_called_once_with(
             'GET', 'http://foo&t=123.456', timeout=30
         )
-        c._trigger_event.assert_called_once_with('disconnect', run_async=False)
+        c._trigger_event.assert_called_once_with(
+            'disconnect', c.reason.TRANSPORT_ERROR, run_async=False)
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     def test_read_loop_polling_bad_status(self, _time):
