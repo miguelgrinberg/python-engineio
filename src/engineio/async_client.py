@@ -471,7 +471,6 @@ class AsyncClient(base_client.BaseClient):
                         try:
                             ret = await self.handlers[event](*args)
                         except TypeError:
-                            print(args, len(args))
                             if event == 'disconnect' and \
                                     len(args) == 1:  # pragma: no branch
                                 # legacy disconnect events do not have a reason
@@ -501,7 +500,6 @@ class AsyncClient(base_client.BaseClient):
                         try:
                             ret = self.handlers[event](*args)
                         except TypeError:
-                            print(args, len(args))
                             if event == 'disconnect' and \
                                     len(args) == 1:  # pragma: no branch
                                 # legacy disconnect events do not have a reason

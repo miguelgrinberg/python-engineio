@@ -6,7 +6,6 @@ try:  # pragma: no cover
     try:
         from sanic.server.protocols.websocket_protocol import WebSocketProtocol
     except ImportError:
-        print('yay')
         from sanic.websocket import WebSocketProtocol
 except ImportError:
     HTTPResponse = None
