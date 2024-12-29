@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.11.2** - 2024-12-29
+
+- Fix incorrect disconnection reason reported when browser page is closed ([commit](https://github.com/miguelgrinberg/python-engineio/commit/132fbd9b2728c342fb989d559fa8c24b324c3cf3))
+
 **Release 4.11.1** - 2024-12-17
 
 - Remove debugging prints :blush: ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ded35d682690bf8a74d6df1325ec5b7e28d6eed6))
