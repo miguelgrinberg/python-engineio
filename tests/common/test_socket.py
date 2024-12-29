@@ -340,7 +340,7 @@ class TestSocket:
             [
                 mock.call('message', 'sid', 'foo', run_async=True),
                 mock.call('disconnect', 'sid',
-                          mock_server.reason.SERVER_DISCONNECT,
+                          mock_server.reason.TRANSPORT_CLOSE,
                           run_async=False)
             ]
         )
@@ -375,7 +375,7 @@ class TestSocket:
             [
                 mock.call('message', 'sid', 'foo', run_async=True),
                 mock.call('disconnect', 'sid',
-                          mock_server.reason.SERVER_DISCONNECT,
+                          mock_server.reason.TRANSPORT_CLOSE,
                           run_async=False)
             ]
         )
@@ -494,7 +494,7 @@ class TestSocket:
             [
                 mock.call('message', 'sid', foo, run_async=True),
                 mock.call('disconnect', 'sid',
-                          mock_server.reason.SERVER_DISCONNECT,
+                          mock_server.reason.TRANSPORT_CLOSE,
                           run_async=False)
             ]
         )
