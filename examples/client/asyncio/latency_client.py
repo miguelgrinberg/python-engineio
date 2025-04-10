@@ -21,7 +21,6 @@ async def on_connect():
 
 @eio.on('message')
 async def on_message(data):
-    global start_timer
     latency = time.time() - start_timer
     print(f'latency is {latency * 1000:.2f} ms')
     await eio.sleep(1)
