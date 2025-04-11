@@ -303,8 +303,13 @@ class BaseServer:
             allowed_origins = [self.cors_allowed_origins]
         elif callable(self.cors_allowed_origins):
             origin = environ.get('HTTP_ORIGIN')
+            try:
+                is_allowed = self.cors_allowed_origins(
+                    origin, default_origins=default_origins, environ=environ)
+            except TypeError:
+                is_allowed = self.cors_allowed_origins(origin)
             allowed_origins = [origin] \
-                if self.cors_allowed_origins(origin) else []
+                if is_allowed else []
         else:
             allowed_origins = self.cors_allowed_origins
         return allowed_origins
