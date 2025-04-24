@@ -1,5 +1,5 @@
 Click==7.0
-h11==0.8.1
+h11==0.16.0
 httptools==0.0.13
 python_engineio
 six==1.11.0
