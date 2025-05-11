@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.12.1** - 2025-05-11
+
+- Accept empty binary values in the async server [#404](https://github.com/miguelgrinberg/python-engineio/issues/404) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/83691dd46336f10de8f288b3aa23b60e211307e1))
+- Add SPDX license identifier [#401](https://github.com/miguelgrinberg/python-engineio/issues/401) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b7f1e680f7d012294402c7e2a50d7dbcd9b2e40f)) (thanks **Marc Mueller**!)
+
 **Release 4.12.0** - 2025-04-12
 
 - Optimize packet parsing to avoid unnecessary calls to JSON parser [#399](https://github.com/miguelgrinberg/python-engineio/issues/399) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/2dda203103d93bc751ab0967719f18318cffc8da))
