@@ -280,9 +280,9 @@ class WebSocket:  # pragma: no cover
         event = await self.asgi_receive()
         if event['type'] != 'websocket.receive':
             raise OSError()
-        if 'bytes' in event:
+        if event.get('bytes', None) is not None:
             return event['bytes']
-        elif 'text' in event:
+        elif event.get('text', None) is not None:
             return event['text']
         else:  # pragma: no cover
             raise OSError()
