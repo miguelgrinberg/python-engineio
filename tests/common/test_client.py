@@ -289,7 +289,7 @@ class TestClient:
     def test_create_queue(self):
         c = client.Client()
         q = c.create_queue()
-        with pytest.raises(q.Empty):
+        with pytest.raises(c.queue_empty_exc):
             q.get(timeout=0.01)
 
     def test_create_event(self):
@@ -1499,7 +1499,7 @@ class TestClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = RuntimeError
         c._write_loop()
         c.queue.get.assert_called_once_with(timeout=7)
@@ -1512,7 +1512,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1541,7 +1541,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1576,7 +1576,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1610,7 +1610,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1639,7 +1639,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1668,7 +1668,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1688,7 +1688,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1712,7 +1712,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, b'foo'),
             RuntimeError,
@@ -1732,7 +1732,7 @@ class TestClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty_exc = RuntimeError
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,

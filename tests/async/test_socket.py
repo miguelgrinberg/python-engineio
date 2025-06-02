@@ -40,7 +40,7 @@ class TestSocket:
 
         def create_queue(*args, **kwargs):
             queue = asyncio.Queue(*args, **kwargs)
-            queue.Empty = asyncio.QueueEmpty
+            queue.Empty = asyncio.QueueEmpty # this is not actually necessary
             return queue
 
         mock_server.start_background_task = bg_task

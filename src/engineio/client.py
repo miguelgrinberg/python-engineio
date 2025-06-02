@@ -163,7 +163,7 @@ class Client(base_client.BaseClient):
     def create_queue(self, *args, **kwargs):
         """Create a queue object."""
         q = queue.Queue(*args, **kwargs)
-        q.Empty = queue.Empty
+        self.queue_empty_exc = queue.Empty
         return q
 
     def create_event(self, *args, **kwargs):
@@ -566,7 +566,7 @@ class Client(base_client.BaseClient):
             packets = None
             try:
                 packets = [self.queue.get(timeout=timeout)]
-            except self.queue.Empty:
+            except self.queue_empty_exc:
                 self.logger.error('packet queue is empty, aborting')
                 break
             if packets == [None]:
@@ -576,7 +576,7 @@ class Client(base_client.BaseClient):
                 while True:
                     try:
                         packets.append(self.queue.get(block=False))
-                    except self.queue.Empty:
+                    except self.queue_empty_exc:
                         break
                     if packets[-1] is None:
                         packets = packets[:-1]

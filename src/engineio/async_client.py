@@ -202,7 +202,7 @@ class AsyncClient(base_client.BaseClient):
     def create_queue(self):
         """Create a queue object."""
         q = asyncio.Queue()
-        q.Empty = asyncio.QueueEmpty
+        self.queue_empty_exc = asyncio.QueueEmpty
         return q
 
     def create_event(self):
@@ -624,7 +624,7 @@ class AsyncClient(base_client.BaseClient):
             packets = None
             try:
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
-            except (self.queue.Empty, asyncio.TimeoutError):
+            except (self.queue_empty_exc, asyncio.TimeoutError):
                 self.logger.error('packet queue is empty, aborting')
                 break
             except asyncio.CancelledError:  # pragma: no cover
@@ -636,7 +636,7 @@ class AsyncClient(base_client.BaseClient):
                 while True:
                     try:
                         packets.append(self.queue.get_nowait())
-                    except self.queue.Empty:
+                    except self.queue_empty_exc:
                         break
                     if packets[-1] is None:
                         packets = packets[:-1]

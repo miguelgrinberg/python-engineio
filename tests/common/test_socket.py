@@ -28,9 +28,29 @@ class TestSocket:
             import Queue as queue
         import threading
 
+        class MockQueue:  # this allows setting ".join" on the mock queue instance
+            def __init__(self, *args, **kwargs):
+                self._queue = queue.Queue(*args, **kwargs)
+
+            def join(self):
+                return self._queue.join()
+
+            # a list of methods that can be replaced, along with their default implementations
+            __hot_patch_methods = ["join", "_queue"]
+
+            def __getattr__(self, name):
+                if name in MockQueue.__hot_patch_methods:
+                    return object.__getattribute__(self, name)
+                return getattr(self._queue, name)
+
+            def __setattr__(self, name, value):
+                if name in MockQueue.__hot_patch_methods:
+                    return object.__setattr__(self, name, value)
+                return setattr(self._queue, name, value)
+
         mock_server._async = {
             'threading': threading.Thread,
-            'queue': queue.Queue,
+            'queue': MockQueue,
             'websocket': None,
         }
 
@@ -41,7 +61,7 @@ class TestSocket:
             return th
 
         def create_queue(*args, **kwargs):
-            return queue.Queue(*args, **kwargs)
+            return MockQueue(*args, **kwargs)
 
         mock_server.start_background_task = bg_task
         mock_server.create_queue = create_queue
