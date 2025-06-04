@@ -225,7 +225,7 @@ class TestAsyncClient:
     async def test_create_queue(self):
         c = async_client.AsyncClient()
         q = c.create_queue()
-        with pytest.raises(q.Empty):
+        with pytest.raises(c.queue_empty):
             q.get_nowait()
 
     async def test_create_event(self):
@@ -1200,7 +1200,7 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(side_effect=RuntimeError)
         await c._write_loop()
         c.queue.get.assert_awaited_once_with()
@@ -1213,7 +1213,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
@@ -1244,7 +1244,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
@@ -1285,7 +1285,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
@@ -1322,7 +1322,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
@@ -1350,7 +1350,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
@@ -1379,7 +1379,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
@@ -1401,7 +1401,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
@@ -1431,7 +1431,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, b'foo'), RuntimeError]
         )
@@ -1450,7 +1450,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
-        c.queue.Empty = RuntimeError
+        c.queue_empty = RuntimeError
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
