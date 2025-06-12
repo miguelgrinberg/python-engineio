@@ -310,7 +310,10 @@ class BaseServer:
                 is_allowed = self.cors_allowed_origins(origin)
             allowed_origins = [origin] if is_allowed else []
         else:
-            allowed_origins = self.cors_allowed_origins
+            if '*' in self.cors_allowed_origins:
+                allowed_origins = None
+            else:
+                allowed_origins = self.cors_allowed_origins
         return allowed_origins
 
     def _cors_headers(self, environ):
