@@ -454,12 +454,25 @@ class TestAsyncServer:
         assert ('Access-Control-Allow-Origin', '*') not in headers
 
     @mock.patch('importlib.import_module')
-    async def test_connect_cors_all_origins(self, import_module):
+    async def test_connect_str_cors_all_origins(self, import_module):
         a = self.get_async_mock(
             {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'foo'}
         )
         import_module.side_effect = [a]
         s = async_server.AsyncServer(cors_allowed_origins='*')
+        await s.handle_request('request')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        headers = a._async['make_response'].call_args[0][1]
+        assert ('Access-Control-Allow-Origin', 'foo') in headers
+        assert ('Access-Control-Allow-Credentials', 'true') in headers
+
+    @mock.patch('importlib.import_module')
+    async def test_connect_list_cors_all_origins(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'GET', 'QUERY_STRING': '', 'HTTP_ORIGIN': 'foo'}
+        )
+        import_module.side_effect = [a]
+        s = async_server.AsyncServer(cors_allowed_origins=['*'])
         await s.handle_request('request')
         assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
@@ -564,10 +577,21 @@ class TestAsyncServer:
             assert header[0] != 'Access-Control-Allow-Origin'
 
     @mock.patch('importlib.import_module')
-    async def test_connect_cors_all_no_origin(self, import_module):
+    async def test_connect_str_cors_all_no_origin(self, import_module):
         a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''})
         import_module.side_effect = [a]
         s = async_server.AsyncServer(cors_allowed_origins='*')
+        await s.handle_request('request')
+        assert a._async['make_response'].call_args[0][0] == '200 OK'
+        headers = a._async['make_response'].call_args[0][1]
+        for header in headers:
+            assert header[0] != 'Access-Control-Allow-Origin'
+
+    @mock.patch('importlib.import_module')
+    async def test_connect_list_cors_all_no_origin(self, import_module):
+        a = self.get_async_mock({'REQUEST_METHOD': 'GET', 'QUERY_STRING': ''})
+        import_module.side_effect = [a]
+        s = async_server.AsyncServer(cors_allowed_origins=['*'])
         await s.handle_request('request')
         assert a._async['make_response'].call_args[0][0] == '200 OK'
         headers = a._async['make_response'].call_args[0][1]
