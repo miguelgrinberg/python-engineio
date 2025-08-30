@@ -2,7 +2,7 @@ appdirs==1.4.0
 click==6.7
 enum-compat==0.0.2
 enum34==1.1.6
-eventlet==0.35.2
+eventlet==0.40.3
 Flask==1.0.2
 greenlet==0.4.12
 itsdangerous==0.24
