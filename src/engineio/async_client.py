@@ -214,6 +214,12 @@ class AsyncClient(base_client.BaseClient):
 
     async def _reset(self):
         super()._reset()
+        while True:  # pragma: no cover
+            try:
+                self.queue.get_nowait()
+                self.queue.task_done()
+            except self.queue_empty:
+                break
         if not self.external_http:  # pragma: no cover
             if self.http and not self.http.closed:
                 await self.http.close()

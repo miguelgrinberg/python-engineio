@@ -210,6 +210,7 @@ class TestClient:
         c.state = 'connected'
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.read_loop_task = mock.MagicMock()
         c.ws = mock.MagicMock()
         c._trigger_event = mock.MagicMock()
@@ -226,6 +227,7 @@ class TestClient:
         c.state = 'connected'
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.read_loop_task = mock.MagicMock()
         c.ws = mock.MagicMock()
         c._trigger_event = mock.MagicMock()
@@ -242,6 +244,7 @@ class TestClient:
         c.state = 'connected'
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.read_loop_task = mock.MagicMock()
         c.ws = mock.MagicMock()
         c.disconnect(abort=True)
@@ -256,6 +259,7 @@ class TestClient:
         c.state = 'connected'
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.read_loop_task = mock.MagicMock()
         c.ws = mock.MagicMock()
         c.disconnect(abort=True)
@@ -1333,6 +1337,7 @@ class TestClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c._send_request = mock.MagicMock(return_value=None)
         c._trigger_event = mock.MagicMock()
         c.write_loop_task = mock.MagicMock()
@@ -1354,6 +1359,7 @@ class TestClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c._send_request = mock.MagicMock()
         c._send_request.return_value.status_code = 400
         c.write_loop_task = mock.MagicMock()
@@ -1373,6 +1379,7 @@ class TestClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c._send_request = mock.MagicMock()
         c._send_request.return_value.status_code = 200
         c._send_request.return_value.content = b'foo'
@@ -1392,6 +1399,7 @@ class TestClient:
         c.state = 'connected'
         c.base_url = 'http://foo'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c._send_request = mock.MagicMock()
         c._send_request.side_effect = [
             mock.MagicMock(
@@ -1426,6 +1434,7 @@ class TestClient:
         c = client.Client()
         c.state = 'connected'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.ws = mock.MagicMock()
         c.ws.recv.side_effect = websocket.WebSocketTimeoutException
         c.write_loop_task = mock.MagicMock()
@@ -1438,6 +1447,7 @@ class TestClient:
         c = client.Client()
         c.state = 'connected'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.ws = mock.MagicMock()
         c.ws.recv.side_effect = websocket.WebSocketConnectionClosedException
         c.write_loop_task = mock.MagicMock()
@@ -1450,6 +1460,7 @@ class TestClient:
         c = client.Client()
         c.state = 'connected'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.ws = mock.MagicMock()
         c.ws.recv.side_effect = ValueError
         c.write_loop_task = mock.MagicMock()
@@ -1464,6 +1475,7 @@ class TestClient:
         c.ping_timeout = 2
         c.state = 'connected'
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.ws = mock.MagicMock()
         c.ws.recv.side_effect = [
             packet.Packet(packet.PING).encode(),
@@ -1489,6 +1501,7 @@ class TestClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.return_value = None
         c._write_loop()
         c.queue.task_done.assert_called_once_with()
@@ -1501,6 +1514,7 @@ class TestClient:
         c.ping_timeout = 2
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = RuntimeError
         c._write_loop()
         c.queue.get.assert_called_once_with(timeout=7)
@@ -1514,6 +1528,7 @@ class TestClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1543,6 +1558,7 @@ class TestClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1578,6 +1594,7 @@ class TestClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1612,6 +1629,7 @@ class TestClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1641,6 +1659,7 @@ class TestClient:
         c.current_transport = 'polling'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1670,6 +1689,7 @@ class TestClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,
@@ -1690,6 +1710,7 @@ class TestClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             packet.Packet(packet.PING),
@@ -1714,6 +1735,7 @@ class TestClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, b'foo'),
             RuntimeError,
@@ -1734,6 +1756,7 @@ class TestClient:
         c.current_transport = 'websocket'
         c.queue = mock.MagicMock()
         c.queue_empty = RuntimeError
+        c.queue.get_nowait.side_effect = c.queue_empty
         c.queue.get.side_effect = [
             packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
             RuntimeError,

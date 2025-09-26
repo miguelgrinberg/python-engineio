@@ -173,6 +173,15 @@ class Client(base_client.BaseClient):
         """Create an event object."""
         return threading.Event(*args, **kwargs)
 
+    def _reset(self):
+        super()._reset()
+        while True:  # pragma: no cover
+            try:
+                self.queue.get_nowait()
+                self.queue.task_done()
+            except self.queue_empty:
+                break
+
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
         if requests is None:  # pragma: no cover
