@@ -16,6 +16,14 @@ from engineio import payload
 
 
 class TestAsyncClient:
+    def mock_queue(self, client):
+        client.queue = mock.MagicMock()
+        client.queue_empty = RuntimeError
+        client.queue.get_nowait.side_effect = client.queue_empty
+        client.queue.get = mock.AsyncMock()
+        client.queue.put = mock.AsyncMock()
+        client.queue.join = mock.AsyncMock()
+
     async def test_is_asyncio_based(self):
         c = async_client.AsyncClient()
         assert c.is_asyncio_based()
@@ -143,9 +151,7 @@ class TestAsyncClient:
         base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
-        c.queue.join = mock.AsyncMock()
+        self.mock_queue(c)
         c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
         c.ws.close = mock.AsyncMock()
@@ -162,9 +168,7 @@ class TestAsyncClient:
         base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'websocket'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
-        c.queue.join = mock.AsyncMock()
+        self.mock_queue(c)
         c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
         c.ws.close = mock.AsyncMock()
@@ -181,9 +185,7 @@ class TestAsyncClient:
         base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
-        c.queue.join = mock.AsyncMock()
+        self.mock_queue(c)
         c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
         c.ws.close = mock.AsyncMock()
@@ -197,9 +199,7 @@ class TestAsyncClient:
         base_client.connected_clients.append(c)
         c.state = 'connected'
         c.current_transport = 'websocket'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
-        c.queue.join = mock.AsyncMock()
+        self.mock_queue(c)
         c.read_loop_task = mock.AsyncMock()()
         c.ws = mock.MagicMock()
         c.ws.close = mock.AsyncMock()
@@ -1014,8 +1014,7 @@ class TestAsyncClient:
         c.ping_timeout = 5
         c.state = 'connected'
         c.base_url = 'http://foo'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c._send_request = mock.AsyncMock(return_value=None)
         c._trigger_event = mock.AsyncMock()
         c.write_loop_task = mock.AsyncMock()()
@@ -1036,8 +1035,7 @@ class TestAsyncClient:
         c.ping_timeout = 5
         c.state = 'connected'
         c.base_url = 'http://foo'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c._send_request = mock.AsyncMock()
         c._send_request.return_value.status = 400
         c.write_loop_task = mock.AsyncMock()()
@@ -1055,8 +1053,7 @@ class TestAsyncClient:
         c.ping_timeout = 60
         c.state = 'connected'
         c.base_url = 'http://foo'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c._send_request = mock.AsyncMock()
         c._send_request.return_value.status = 200
         c._send_request.return_value.read = mock.AsyncMock(return_value=b'foo')
@@ -1074,8 +1071,7 @@ class TestAsyncClient:
         c.ping_timeout = 5
         c.state = 'connected'
         c.base_url = 'http://foo'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c._send_request = mock.AsyncMock()
         c._send_request.side_effect = [
             mock.MagicMock(
@@ -1114,8 +1110,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.base_url = 'ws://foo'
         c.state = 'connected'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c.ws = mock.MagicMock()
         c.ws.receive = mock.AsyncMock(side_effect=asyncio.TimeoutError())
         c.write_loop_task = mock.AsyncMock()()
@@ -1129,8 +1124,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.base_url = 'ws://foo'
         c.state = 'connected'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c.ws = mock.MagicMock()
         c.ws.receive = mock.AsyncMock(
             side_effect=aiohttp.client_exceptions.ServerDisconnectedError()
@@ -1146,8 +1140,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.base_url = 'ws://foo'
         c.state = 'connected'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c.ws = mock.MagicMock()
         c.ws.receive = mock.AsyncMock(side_effect=ValueError)
         c.write_loop_task = mock.AsyncMock()()
@@ -1161,8 +1154,7 @@ class TestAsyncClient:
         c.ping_timeout = 2
         c.base_url = 'ws://foo'
         c.state = 'connected'
-        c.queue = mock.MagicMock()
-        c.queue.put = mock.AsyncMock()
+        self.mock_queue(c)
         c.ws = mock.MagicMock()
         c.ws.receive = mock.AsyncMock(
             side_effect=[
@@ -1188,7 +1180,7 @@ class TestAsyncClient:
         c.state = 'connected'
         c.ping_interval = 1
         c.ping_timeout = 2
-        c.queue = mock.MagicMock()
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(return_value=None)
         await c._write_loop()
         c.queue.task_done.assert_called_once_with()
@@ -1199,9 +1191,8 @@ class TestAsyncClient:
         c.state = 'connected'
         c.ping_interval = 1
         c.ping_timeout = 2
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
-        c.queue.get = mock.AsyncMock(side_effect=RuntimeError)
+        self.mock_queue(c)
+        c.queue.get = mock.AsyncMock(side_effect=c.queue_empty)
         await c._write_loop()
         c.queue.get.assert_awaited_once_with()
 
@@ -1212,15 +1203,14 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
-        c.queue.get_nowait = mock.MagicMock(side_effect=RuntimeError)
+        c.queue.get_nowait = mock.MagicMock(side_effect=c.queue_empty)
         c._send_request = mock.AsyncMock()
         c._send_request.return_value.status = 200
         await c._write_loop()
@@ -1243,19 +1233,18 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
         c.queue.get_nowait = mock.MagicMock(
             side_effect=[
                 packet.Packet(packet.PING),
                 packet.Packet(packet.NOOP),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
         c._send_request = mock.AsyncMock()
@@ -1284,12 +1273,11 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
         c.queue.get_nowait = mock.MagicMock(
@@ -1321,12 +1309,11 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
-        c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[c.queue_empty])
         c._send_request = mock.AsyncMock(return_value=None)
         await c._write_loop()
         assert c.queue.task_done.call_count == 1
@@ -1349,12 +1336,11 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'polling'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[packet.Packet(packet.MESSAGE, {'foo': 'bar'})]
         )
-        c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[c.queue_empty])
         c._send_request = mock.AsyncMock()
         c._send_request.return_value.status = 500
         await c._write_loop()
@@ -1378,15 +1364,14 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'websocket'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
-        c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[c.queue_empty])
         c.ws = mock.MagicMock()
         c.ws.send_str = mock.AsyncMock()
         await c._write_loop()
@@ -1400,19 +1385,18 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'websocket'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
         c.queue.get_nowait = mock.MagicMock(
             side_effect=[
                 packet.Packet(packet.PING),
                 packet.Packet(packet.NOOP),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
         c.ws = mock.MagicMock()
@@ -1430,12 +1414,11 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'websocket'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
-            side_effect=[packet.Packet(packet.MESSAGE, b'foo'), RuntimeError]
+            side_effect=[packet.Packet(packet.MESSAGE, b'foo'), c.queue_empty]
         )
-        c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[c.queue_empty])
         c.ws = mock.MagicMock()
         c.ws.send_bytes = mock.AsyncMock()
         await c._write_loop()
@@ -1449,15 +1432,14 @@ class TestAsyncClient:
         c.ping_interval = 1
         c.ping_timeout = 2
         c.current_transport = 'websocket'
-        c.queue = mock.MagicMock()
-        c.queue_empty = RuntimeError
+        self.mock_queue(c)
         c.queue.get = mock.AsyncMock(
             side_effect=[
                 packet.Packet(packet.MESSAGE, {'foo': 'bar'}),
-                RuntimeError,
+                c.queue_empty,
             ]
         )
-        c.queue.get_nowait = mock.MagicMock(side_effect=[RuntimeError])
+        c.queue.get_nowait = mock.MagicMock(side_effect=[c.queue_empty])
         c.ws = mock.MagicMock()
         c.ws.send_str = mock.AsyncMock(
             side_effect=aiohttp.client_exceptions.ServerDisconnectedError()
