@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.12.3** - 2025-09-28
+
+- Reset client queue upon disconnection [#414](https://github.com/miguelgrinberg/python-engineio/issues/414) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/af57bf235b824f7f179a68ef61a03d76a2c56655))
+- Support `['*']` in addition to `'*'` in the `cors_allowed_origins` option [#410](https://github.com/miguelgrinberg/python-engineio/issues/410) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/d59658c22207a8ca9f8c9c28312887da8fd9ee29)) (thanks **Wu Clan**!)
+
 **Release 4.12.2** - 2025-06-04
 
 - Support new monkey-patched gevent `Queue` class in the client [#403](https://github.com/miguelgrinberg/python-engineio/issues/403) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/dcde006b62e004c8a1d29d3478c95fbffbb11122))
