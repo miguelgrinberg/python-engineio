@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import urllib
 
 from . import base_server
@@ -212,7 +213,7 @@ class AsyncServer(base_server.BaseServer):
         Note: this method is a coroutine.
         """
         translate_request = self._async['translate_request']
-        if asyncio.iscoroutinefunction(translate_request):
+        if inspect.iscoroutinefunction(translate_request):
             environ = await translate_request(*args, **kwargs)
         else:
             environ = translate_request(*args, **kwargs)
@@ -427,7 +428,7 @@ class AsyncServer(base_server.BaseServer):
     async def _make_response(self, response_dict, environ):
         cors_headers = self._cors_headers(environ)
         make_response = self._async['make_response']
-        if asyncio.iscoroutinefunction(make_response):
+        if inspect.iscoroutinefunction(make_response):
             response = await make_response(
                 response_dict['status'],
                 response_dict['headers'] + cors_headers,
@@ -502,7 +503,7 @@ class AsyncServer(base_server.BaseServer):
         run_async = kwargs.pop('run_async', False)
         ret = None
         if event in self.handlers:
-            if asyncio.iscoroutinefunction(self.handlers[event]):
+            if inspect.iscoroutinefunction(self.handlers[event]):
                 async def run_async_handler():
                     try:
                         try:
