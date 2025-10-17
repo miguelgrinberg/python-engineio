@@ -19,6 +19,7 @@ from . import base_client
 from . import exceptions
 from . import packet
 from . import payload
+from . import client_cookies
 
 default_logger = logging.getLogger('engineio.client')
 
@@ -264,17 +265,20 @@ class Client(base_client.BaseClient):
 
         # get cookies and other settings from the long-polling connection
         # so that they are preserved when connecting to the WebSocket route
-        cookies = None
+        cookies = {}
         extra_options = {}
         if self.http:
             # cookies
-            cookies = '; '.join([f"{cookie.name}={cookie.value}"
-                                 for cookie in self.http.cookies])
+            cookies.update(
+                {cookie.name: cookie.value for cookie in self.http.cookies}
+            )
             for header, value in headers.items():
                 if header.lower() == 'cookie':
-                    if cookies:
-                        cookies += '; '
-                    cookies += value
+                    cookies.update(
+                        client_cookies.decode_cookie_string(
+                            value
+                        )
+                    )
                     del headers[header]
                     break
 
@@ -335,7 +339,8 @@ class Client(base_client.BaseClient):
         # caller. The caller's options take precedence.
         headers.update(self.websocket_extra_options.pop('header', {}))
         extra_options['header'] = headers
-        extra_options['cookie'] = cookies
+        cookie_header = client_cookies.encode_cookie_dict(cookies)
+        extra_options['cookie'] = cookie_header
         extra_options['enable_multithread'] = True
         extra_options['timeout'] = self.request_timeout
         extra_options.update(self.websocket_extra_options)

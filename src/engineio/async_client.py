@@ -12,6 +12,7 @@ from . import base_client
 from . import exceptions
 from . import packet
 from . import payload
+from . import client_cookies
 
 async_signal_handler_set = False
 
@@ -319,14 +320,12 @@ class AsyncClient(base_client.BaseClient):
 
         # extract any new cookies passed in a header so that they can also be
         # sent the the WebSocket route
-        cookies = {}
         for header, value in headers.items():
             if header.lower() == 'cookie':
-                cookies = dict(
-                    [cookie.split('=', 1) for cookie in value.split('; ')])
+                cookie_dict = client_cookies.decode_cookie_string(value)
+                self.http.cookie_jar.update_cookies(cookie_dict)
                 del headers[header]
                 break
-        self.http.cookie_jar.update_cookies(cookies)
 
         extra_options = {'timeout': self.request_timeout}
         if not self.ssl_verify:

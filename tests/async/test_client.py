@@ -705,7 +705,7 @@ class TestAsyncClient:
         c.on('connect', on_connect)
         await c.connect(
             'ws://foo',
-            headers={'Cookie': 'key=value; key2=value2; key3="value3="'},
+            headers={'Cookie': 'key=value; key2=value2; key3="value3=";'},
             transports=['websocket'],
         )
         c.http.ws_connect.assert_awaited_once_with(
@@ -714,7 +714,7 @@ class TestAsyncClient:
             timeout=5,
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(
-            {'key': 'value', 'key2': 'value2', 'key3': '"value3="'}
+            {'key': 'value', 'key2': 'value2', 'key3': 'value3='}
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
@@ -745,7 +745,7 @@ class TestAsyncClient:
         c.on('connect', on_connect)
         await c.connect(
             'ws://foo',
-            headers={'Foo': 'Bar', 'Cookie': 'key3=value3'},
+            headers={'Foo': 'Bar', 'Cookie': 'key3="value3="'},
             transports=['websocket'],
         )
         c.http.ws_connect.assert_awaited_once_with(
@@ -754,7 +754,7 @@ class TestAsyncClient:
             timeout=5,
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(
-            {'key3': 'value3'}
+            {'key3': 'value3='}
         )
 
     async def test_websocket_upgrade_no_pong(self):

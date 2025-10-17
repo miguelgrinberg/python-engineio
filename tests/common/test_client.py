@@ -572,7 +572,7 @@ class TestClient:
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             header={'Foo': 'Bar'},
-            cookie=None,
+            cookie='',
             enable_multithread=True,
             timeout=5
         )
@@ -592,7 +592,7 @@ class TestClient:
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             header={'Foo': 'Bar', 'Baz': 'Qux'},
-            cookie=None,
+            cookie='',
             enable_multithread=True,
             timeout=10
         )
@@ -613,7 +613,7 @@ class TestClient:
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             header={'Foo': 'Bar'},
-            cookie=None,
+            cookie='',
             enable_multithread=True,
             timeout=5
         )
@@ -632,7 +632,7 @@ class TestClient:
         create_connection.assert_called_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&sid=123&t=123.456',
             header={},
-            cookie=None,
+            cookie='',
             enable_multithread=True,
             timeout=5
         )
@@ -681,7 +681,7 @@ class TestClient:
         assert len(create_connection.call_args_list) == 1
         assert create_connection.call_args[1] == {
             'header': {},
-            'cookie': None,
+            'cookie': '',
             'enable_multithread': True,
             'timeout': 5,
         }
@@ -723,7 +723,7 @@ class TestClient:
         assert len(create_connection.call_args_list) == 1
         assert create_connection.call_args[1] == {
             'header': {},
-            'cookie': None,
+            'cookie': '',
             'enable_multithread': True,
             'timeout': 5,
             'sslopt': {'cert_reqs': ssl.CERT_NONE},
@@ -745,7 +745,7 @@ class TestClient:
         http.cookies[0].name = 'key'
         http.cookies[0].value = 'value'
         http.cookies[1].name = 'key2'
-        http.cookies[1].value = 'value2'
+        http.cookies[1].value = '"value2"'
         http.auth = None
         http.proxies = None
         http.cert = None
@@ -761,7 +761,7 @@ class TestClient:
         assert len(create_connection.call_args_list) == 1
         assert create_connection.call_args[1] == {
             'header': {},
-            'cookie': 'key=value; key2=value2',
+            'cookie': 'key=value; key2="\\"value2\\""',
             'enable_multithread': True,
             'timeout': 5,
         }
