@@ -1,4 +1,5 @@
 import asyncio
+from http.cookies import SimpleCookie
 import signal
 import ssl
 import threading
@@ -319,14 +320,13 @@ class AsyncClient(base_client.BaseClient):
 
         # extract any new cookies passed in a header so that they can also be
         # sent the the WebSocket route
-        cookies = {}
         for header, value in headers.items():
             if header.lower() == 'cookie':
-                cookies = dict(
-                    [cookie.split('=', 1) for cookie in value.split('; ')])
+                ck = SimpleCookie(headers[header])
+                self.http.cookie_jar.update_cookies(
+                    {k: m.value for k, m in ck.items()})
                 del headers[header]
                 break
-        self.http.cookie_jar.update_cookies(cookies)
 
         extra_options = {'timeout': self.request_timeout}
         if not self.ssl_verify:

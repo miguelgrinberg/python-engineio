@@ -714,7 +714,7 @@ class TestAsyncClient:
             timeout=5,
         )
         c.http.cookie_jar.update_cookies.assert_called_once_with(
-            {'key': 'value', 'key2': 'value2', 'key3': '"value3="'}
+            {'key': 'value', 'key2': 'value2', 'key3': 'value3='}
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)

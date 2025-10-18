@@ -1,11 +1,12 @@
 from base64 import b64encode
-from engineio.json import JSONDecodeError
+from http.cookies import SimpleCookie
 import logging
 import queue
 import ssl
 import threading
 import time
 import urllib
+from engineio.json import JSONDecodeError
 
 try:
     import requests
@@ -268,8 +269,10 @@ class Client(base_client.BaseClient):
         extra_options = {}
         if self.http:
             # cookies
-            cookies = '; '.join([f"{cookie.name}={cookie.value}"
-                                 for cookie in self.http.cookies])
+            ck = SimpleCookie()
+            for cookie in self.http.cookies:
+                ck[cookie.name] = cookie.value
+            cookies = ck.output(header='', sep=';').strip()
             for header, value in headers.items():
                 if header.lower() == 'cookie':
                     if cookies:
