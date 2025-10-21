@@ -2,7 +2,6 @@ import asyncio
 import sys
 
 from aiohttp.web import Response, WebSocketResponse
-from aiohttp.web_request import Request
 
 
 def create_route(app, engineio_server, engineio_endpoint):
@@ -18,7 +17,7 @@ def create_route(app, engineio_server, engineio_endpoint):
                          engineio_server.handle_request)
 
 
-def translate_request(request: Request):
+def translate_request(request):
     """This function takes the arguments passed to the request handler and
     uses them to generate a WSGI compatible environ dictionary.
     """
@@ -34,7 +33,7 @@ def translate_request(request: Request):
         'REQUEST_METHOD': request.method,
         'QUERY_STRING': request.query_string or '',
         'RAW_URI': request.path_qs,
-        'SERVER_PROTOCOL': 'HTTP/%s.%s' % request.version,
+        'SERVER_PROTOCOL': f'HTTP/{request.version[0]}.{request.version[1]}',
         'REMOTE_ADDR': '127.0.0.1',
         'REMOTE_PORT': '0',
         'SERVER_NAME': 'aiohttp',
