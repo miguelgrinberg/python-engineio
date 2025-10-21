@@ -1,5 +1,8 @@
 from unittest import mock
 
+import yarl
+from aiohttp.web import Request
+
 from engineio.async_drivers import aiohttp as async_aiohttp
 
 
@@ -12,18 +15,28 @@ class TestAiohttp:
         app.router.add_post.assert_any_call('/foo', mock_server.handle_request)
 
     def test_translate_request(self):
-        request = mock.MagicMock()
-        request._message.method = 'PUT'
-        request._message.path = '/foo/bar?baz=1'
-        request._message.version = (1, 1)
-        request._message.headers = {
+        message = mock.MagicMock()
+        message.url = yarl.URL('https://example.com/foo/bar?baz=1')
+        message.method = 'PUT'
+        message.path = '/foo/bar?baz=1'
+        message.version = (1, 1)
+        message.headers = {
             'a': 'b',
             'c-c': 'd',
             'c_c': 'e',
             'content-type': 'application/json',
             'content-length': 123,
         }
-        request._payload = b'hello world'
+
+        request = Request(
+            message,
+            payload=b'hello world',
+            protocol=mock.MagicMock(),
+            payload_writer=mock.MagicMock(),
+            task=mock.MagicMock(),
+            loop=mock.MagicMock(),
+        )
+
         environ = async_aiohttp.translate_request(request)
         expected_environ = {
             'REQUEST_METHOD': 'PUT',
