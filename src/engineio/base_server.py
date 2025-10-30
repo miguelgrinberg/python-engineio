@@ -4,12 +4,11 @@ import importlib
 import io
 import logging
 import secrets
+import warnings
 import zlib
 
 from . import packet
 from . import payload
-
-default_logger = logging.getLogger('engineio.server')
 
 
 class BaseServer:
@@ -36,9 +35,20 @@ class BaseServer:
                  max_http_buffer_size=1000000, allow_upgrades=True,
                  http_compression=True, compression_threshold=1024,
                  cookie=None, cors_allowed_origins=None,
-                 cors_credentials=True, logger=False, json=None,
+                 cors_credentials=True, logger=None, json=None,
                  async_handlers=True, monitor_clients=None, transports=None,
                  **kwargs):
+        if isinstance(logger, bool):
+            logger = None
+            warnings.warn(
+                (
+                    'The logger parameter as a boolean is deprecated. '
+                    'Use a logging.Logger instance or None instead.'
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         self.ping_timeout = ping_timeout
         if isinstance(ping_interval, tuple):
             self.ping_interval = ping_interval[0]
@@ -63,16 +73,7 @@ class BaseServer:
         self.service_task_event = None
         if json is not None:
             packet.Packet.json = json
-        if not isinstance(logger, bool):
-            self.logger = logger
-        else:
-            self.logger = default_logger
-            if self.logger.level == logging.NOTSET:
-                if logger:
-                    self.logger.setLevel(logging.INFO)
-                else:
-                    self.logger.setLevel(logging.ERROR)
-                self.logger.addHandler(logging.StreamHandler())
+        self.logger = logger or logging.getLogger('engineio.server')
         modes = self.async_modes()
         if async_mode is not None:
             modes = [async_mode] if async_mode in modes else []

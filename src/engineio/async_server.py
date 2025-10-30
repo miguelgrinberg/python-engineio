@@ -60,9 +60,8 @@ class AsyncServer(base_server.BaseServer):
                                  to ``[]`` to disable CORS handling.
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server.
-    :param logger: To enable logging set to ``True`` or pass a logger object to
-                   use. To disable logging set to ``False``. Note that fatal
-                   errors are logged even when ``logger`` is ``False``.
+    :param logger: Logger instance to use.
+    :type logger: logging.Logger, optional
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library

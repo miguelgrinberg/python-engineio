@@ -1009,20 +1009,6 @@ class TestAsyncServer:
         for header, value in headers:
             assert header != 'Set-Cookie'
 
-    async def test_logger(self):
-        s = async_server.AsyncServer(logger=False)
-        assert s.logger.getEffectiveLevel() == logging.ERROR
-        s.logger.setLevel(logging.NOTSET)
-        s = async_server.AsyncServer(logger=True)
-        assert s.logger.getEffectiveLevel() == logging.INFO
-        s.logger.setLevel(logging.WARNING)
-        s = async_server.AsyncServer(logger=True)
-        assert s.logger.getEffectiveLevel() == logging.WARNING
-        s.logger.setLevel(logging.NOTSET)
-        my_logger = logging.Logger('foo')
-        s = async_server.AsyncServer(logger=my_logger)
-        assert s.logger == my_logger
-
     async def test_custom_json(self):
         # Warning: this test cannot run in parallel with other tests, as it
         # changes the JSON encoding/decoding functions

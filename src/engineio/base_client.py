@@ -3,9 +3,9 @@ import signal
 import threading
 import time
 import urllib
+import warnings
 from . import packet
 
-default_logger = logging.getLogger('engineio.client')
 connected_clients = []
 
 
@@ -39,9 +39,20 @@ class BaseClient:
         #: Transport error.
         TRANSPORT_ERROR = 'transport error'
 
-    def __init__(self, logger=False, json=None, request_timeout=5,
+    def __init__(self, logger=None, json=None, request_timeout=5,
                  http_session=None, ssl_verify=True, handle_sigint=True,
                  websocket_extra_options=None, timestamp_requests=True):
+        if isinstance(logger, bool):
+            logger = None
+            warnings.warn(
+                (
+                    'The logger parameter as a boolean is deprecated. '
+                    'Use a logging.Logger instance or None instead.'
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         global original_signal_handler
         if handle_sigint and original_signal_handler is None and \
                 threading.current_thread() == threading.main_thread():
@@ -70,17 +81,8 @@ class BaseClient:
 
         if json is not None:
             packet.Packet.json = json
-        if not isinstance(logger, bool):
-            self.logger = logger
-        else:
-            self.logger = default_logger
-            if self.logger.level == logging.NOTSET:
-                if logger:
-                    self.logger.setLevel(logging.INFO)
-                else:
-                    self.logger.setLevel(logging.ERROR)
-                self.logger.addHandler(logging.StreamHandler())
 
+        self.logger = logger or logging.getLogger('engineio.client')
         self.request_timeout = request_timeout
 
     def is_asyncio_based(self):

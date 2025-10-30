@@ -51,20 +51,6 @@ class TestClient:
         assert packet.Packet.json == 'foo'
         packet.Packet.json = json
 
-    def test_logger(self):
-        c = client.Client(logger=False)
-        assert c.logger.getEffectiveLevel() == logging.ERROR
-        c.logger.setLevel(logging.NOTSET)
-        c = client.Client(logger=True)
-        assert c.logger.getEffectiveLevel() == logging.INFO
-        c.logger.setLevel(logging.WARNING)
-        c = client.Client(logger=True)
-        assert c.logger.getEffectiveLevel() == logging.WARNING
-        c.logger.setLevel(logging.NOTSET)
-        my_logger = logging.Logger('foo')
-        c = client.Client(logger=my_logger)
-        assert c.logger == my_logger
-
     def test_custom_timeout(self):
         c = client.Client()
         assert c.request_timeout == 5

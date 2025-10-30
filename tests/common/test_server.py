@@ -1125,20 +1125,6 @@ class TestServer:
         for header, value in start_response.call_args[0][1]:
             assert header != 'Set-Cookie'
 
-    def test_logger(self):
-        s = server.Server(logger=False)
-        assert s.logger.getEffectiveLevel() == logging.ERROR
-        s.logger.setLevel(logging.NOTSET)
-        s = server.Server(logger=True)
-        assert s.logger.getEffectiveLevel() == logging.INFO
-        s.logger.setLevel(logging.WARNING)
-        s = server.Server(logger=True)
-        assert s.logger.getEffectiveLevel() == logging.WARNING
-        s.logger.setLevel(logging.NOTSET)
-        my_logger = logging.Logger('foo')
-        s = server.Server(logger=my_logger)
-        assert s.logger == my_logger
-
     def test_custom_json(self):
         # Warning: this test cannot run in parallel with other tests, as it
         # changes the JSON encoding/decoding functions

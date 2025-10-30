@@ -1,12 +1,9 @@
-import logging
 import urllib
 
 from . import base_server
 from . import exceptions
 from . import packet
 from . import socket
-
-default_logger = logging.getLogger('engineio.server')
 
 
 class Server(base_server.BaseServer):
@@ -59,10 +56,8 @@ class Server(base_server.BaseServer):
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server. The default
                              is ``True``.
-    :param logger: To enable logging set to ``True`` or pass a logger object to
-                   use. To disable logging set to ``False``. The default is
-                   ``False``. Note that fatal errors are logged even when
-                   ``logger`` is ``False``.
+    :param logger: Logger instance to use.
+    :type logger: logging.Logger, optional
     :param json: An alternative json module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
