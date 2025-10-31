@@ -339,17 +339,8 @@ for.
 Debugging and Troubleshooting
 -----------------------------
 
-To help you debug issues, the server outputs logs to the terminal (``stderr``)
-by default.
-
-The ``logger`` argument controls logging behavior:
-
-* ``True``: Enables log output at the ``INFO`` level.
-* ``False``: Enables log output at the ``ERROR`` level (default).
-* ``logging.Logger`` instance: Uses the provided logger without additional
-  configuration.
-
-Example::
+To help you debug issues, the server can be configured to output logs to the
+terminal::
 
     import engineio
 
@@ -358,6 +349,14 @@ Example::
 
     # asyncio
     eio = engineio.AsyncServer(logger=True)
+
+The ``logger`` argument controls logging behavior:
+
+* ``True``: Enables log output to ``stderr`` at the ``INFO`` level.
+* ``False``: Enables log output to ``stderr`` at the ``ERROR`` level. This is
+  the default.
+* A ``logging.Logger`` instance: Uses the provided logger without additional
+  configuration.
 
 Logging can help identify the cause of connection problems, 400 responses,
 bad performance and other issues.
