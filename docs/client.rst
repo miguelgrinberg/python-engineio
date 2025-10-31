@@ -199,9 +199,13 @@ terminal::
     # asyncio
     eio = engineio.AsyncClient(logger=True)
 
-The ``logger`` argument can be set to ``True`` to output logs to ``stderr``, or
-to an object compatible with Python's ``logging`` package where the logs should
-be emitted to. A value of ``False`` disables logging.
+The ``logger`` argument controls logging behavior:
+
+* ``True``: Enables log output to ``stderr`` at the ``INFO`` level.
+* ``False``: Enables log output to ``stderr`` at the ``ERROR`` level. This is
+  the default.
+* A ``logging.Logger`` instance: Uses the provided logger without additional
+  configuration.
 
 Logging can help identify the cause of connection problems, unexpected
 disconnections and other issues.
