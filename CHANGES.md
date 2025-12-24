@@ -1,5 +1,14 @@
 # python-engineio change log
 
+**Release 4.13.0** - 2025-12-24
+
+- Apply escaping rules when parsing cookie values ([commit](https://github.com/miguelgrinberg/python-engineio/commit/04e7c4dd4792d1f551b71930ec771fbb96cdaaf2))
+- Several minor improvements to the aiohttp integration [#419](https://github.com/miguelgrinberg/python-engineio/issues/419) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/f7cb71c9d7ef961e839f0eb1e570d76b4ce481da)) (thanks **PaulWasTaken**!)
+- Clarify logging behavior in documentation [#421](https://github.com/miguelgrinberg/python-engineio/issues/421) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7fe1771e7463960f6ef08f9bcc22b42c8df1012b)) (thanks **ZipFile**!)
+- Address deprecation warnings [#422](https://github.com/miguelgrinberg/python-engineio/issues/422) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/b90cbf2b981c301968611b495dd548c4b0153223))
+- Add 3.14 and pypy-3.11 CI builds ([commit](https://github.com/miguelgrinberg/python-engineio/commit/df3d9741495d93f4ad0f2ec9f7b3a1d795f2234c))
+- Drop Python 3.8 and 3.9 from CI builds ([commit](https://github.com/miguelgrinberg/python-engineio/commit/697b50f5bbc68b2416778d537ed88fefc8b004f0))
+
 **Release 4.12.3** - 2025-09-28
 
 - Reset client queue upon disconnection [#414](https://github.com/miguelgrinberg/python-engineio/issues/414) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/af57bf235b824f7f179a68ef61a03d76a2c56655))
