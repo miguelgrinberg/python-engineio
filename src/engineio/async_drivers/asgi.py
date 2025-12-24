@@ -1,6 +1,6 @@
+import inspect
 import os
 import sys
-import asyncio
 
 from engineio.static_files import get_static_file
 
@@ -102,7 +102,7 @@ class ASGIApp:
                 if self.on_startup:
                     try:
                         await self.on_startup() \
-                            if asyncio.iscoroutinefunction(self.on_startup) \
+                            if inspect.iscoroutinefunction(self.on_startup) \
                             else self.on_startup()
                     except:
                         await send({'type': 'lifespan.startup.failed'})
@@ -112,7 +112,7 @@ class ASGIApp:
                 if self.on_shutdown:
                     try:
                         await self.on_shutdown() \
-                            if asyncio.iscoroutinefunction(self.on_shutdown) \
+                            if inspect.iscoroutinefunction(self.on_shutdown) \
                             else self.on_shutdown()
                     except:
                         await send({'type': 'lifespan.shutdown.failed'})

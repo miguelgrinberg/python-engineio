@@ -1,4 +1,4 @@
-import asyncio
+import inspect
 import sys
 
 from aiohttp.web import Response, WebSocketResponse
@@ -98,7 +98,7 @@ class WebSocket:  # pragma: no cover
             f = self._sock.send_bytes
         else:
             f = self._sock.send_str
-        if asyncio.iscoroutinefunction(f):
+        if inspect.iscoroutinefunction(f):
             await f(message)
         else:
             f(message)

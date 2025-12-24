@@ -24,6 +24,10 @@ class TestAsyncClient:
         client.queue.put = mock.AsyncMock()
         client.queue.join = mock.AsyncMock()
 
+    @staticmethod
+    def mock_ws_timeout(ws_close):
+        return ws_close
+
     async def test_is_asyncio_based(self):
         c = async_client.AsyncClient()
         assert c.is_asyncio_based()
@@ -500,6 +504,8 @@ class TestAsyncClient:
         assert c in base_client.connected_clients
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
     async def test_websocket_connection_failed(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
@@ -541,6 +547,8 @@ class TestAsyncClient:
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
     async def test_websocket_upgrade_failed(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
@@ -568,6 +576,8 @@ class TestAsyncClient:
             await c.connect('http://foo', transports=['websocket'])
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
     async def test_websocket_connection_successful(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
@@ -649,6 +659,8 @@ class TestAsyncClient:
         assert kwargs['ssl'].verify_mode == ssl.CERT_NONE
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
     async def test_websocket_connection_with_cookies(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
@@ -682,6 +694,8 @@ class TestAsyncClient:
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
     async def test_websocket_connection_with_cookie_header(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)
@@ -718,6 +732,8 @@ class TestAsyncClient:
         )
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
     async def test_websocket_connection_with_cookies_and_headers(self, _time):
         c = async_client.AsyncClient()
         c.http = mock.MagicMock(closed=False)

@@ -2,7 +2,6 @@ import asyncio
 import time
 import engineio
 
-loop = asyncio.get_event_loop()
 eio = engineio.AsyncClient()
 start_timer = None
 
@@ -33,4 +32,4 @@ async def start_client():
 
 
 if __name__ == '__main__':
-    loop.run_until_complete(start_client())
+    asyncio.run(start_client())

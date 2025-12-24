@@ -1,5 +1,6 @@
 import asyncio
 from http.cookies import SimpleCookie
+import inspect
 import signal
 import ssl
 import threading
@@ -328,7 +329,8 @@ class AsyncClient(base_client.BaseClient):
                 del headers[header]
                 break
 
-        extra_options = {'timeout': self.request_timeout}
+        extra_options = {
+            'timeout': aiohttp.ClientWSTimeout(ws_close=self.request_timeout)}
         if not self.ssl_verify:
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
@@ -468,7 +470,7 @@ class AsyncClient(base_client.BaseClient):
         run_async = kwargs.pop('run_async', False)
         ret = None
         if event in self.handlers:
-            if asyncio.iscoroutinefunction(self.handlers[event]) is True:
+            if inspect.iscoroutinefunction(self.handlers[event]) is True:
                 if run_async:
                     task = self.start_background_task(self.handlers[event],
                                                       *args)
