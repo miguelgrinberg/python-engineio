@@ -5,7 +5,7 @@
     "enchilada": "0.13.0",
     "engine.io": "^6.6.2",
     "engine.io-client": "^6.6.0",
-    "express": "^4.21.2",
+    "express": "^4.22.1",
     "smoothie": "1.19.0"
   }
 }
