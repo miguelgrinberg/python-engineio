@@ -27,7 +27,7 @@ client = [
     "websocket-client >= 0.54.0",
 ]
 asyncio_client = [
-    "aiohttp >= 3.4"
+    "aiohttp >= 3.11"
 ]
 dev = [
     "tox",
