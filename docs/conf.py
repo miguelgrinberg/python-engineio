@@ -67,29 +67,20 @@ language = None
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
-
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'furo'
+html_title = 'python-engineio'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
 html_theme_options = {
-    'github_user': 'miguelgrinberg',
-    'github_repo': 'python-engineio',
-    'github_banner': True,
-    'github_button': True,
-    'github_type': 'star',
-    'fixed_sidebar': True,
-
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

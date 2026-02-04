@@ -1,0 +1,3 @@
+.. autoclass:: engineio.Middleware
+   :members:
+

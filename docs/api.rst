@@ -2,32 +2,13 @@ API Reference
 =============
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
 
-.. module:: engineio
-
-.. autoclass:: Client
-   :members:
-   :inherited-members:
-
-.. autoclass:: AsyncClient
-   :members:
-   :inherited-members:
-
-.. autoclass:: Server
-   :members:
-   :inherited-members:
-
-.. autoclass:: AsyncServer
-   :members:
-   :inherited-members:
-
-.. autoclass:: WSGIApp
-   :members:
-
-.. autoclass:: ASGIApp
-   :members:
-
-.. autoclass:: Middleware
-   :members:
+   api_client
+   api_async_client
+   api_server
+   api_async_server
+   api_wsgiapp
+   api_asgiapp
+   api_middleware
 
