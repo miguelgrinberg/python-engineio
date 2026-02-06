@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.13.1** - 2026-02-06
+
+- Document that a process can have only one custom JSON module ([commit](https://github.com/miguelgrinberg/python-engineio/commit/119ec1ee1f486035e837625161eea10183b9c52b))
+- Switch to Furo documentation template ([commit](https://github.com/miguelgrinberg/python-engineio/commit/15e59899fe6387eb0fbe14160dbf298c01c115d5))
+
 **Release 4.13.0** - 2025-12-24
 
 - Apply escaping rules when parsing cookie values ([commit](https://github.com/miguelgrinberg/python-engineio/commit/04e7c4dd4792d1f551b71930ec771fbb96cdaaf2))
