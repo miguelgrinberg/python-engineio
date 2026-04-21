@@ -404,6 +404,40 @@ class Client(base_client.BaseClient):
             self.state = 'connected'
             base_client.connected_clients.append(self)
             self._trigger_event('connect', run_async=False)
+
+            # Flush any packets queued by the connect event handler (e.g.,
+            # Socket.IO CONNECT) and receive the response synchronously.
+            # This avoids a race condition where concurrent send/recv on SSL
+            # sockets can corrupt the connection.
+            try:
+                while True:
+                    pkt = self.queue.get_nowait()
+                    if pkt is None:
+                        self.queue.task_done()
+                        break
+                    self.logger.info(
+                        'Sending packet %s data %s (during handshake)',
+                        packet.packet_names[pkt.packet_type],
+                        pkt.data if not isinstance(pkt.data, bytes)
+                        else '<binary>')
+                    if pkt.binary:
+                        ws.send_binary(pkt.encode())
+                    else:
+                        ws.send(pkt.encode())
+                    self.queue.task_done()
+            except self.queue_empty:
+                pass
+
+            # Receive the response (e.g., Socket.IO CONNECT ACK) synchronously
+            try:
+                p = ws.recv()
+                if p:
+                    pkt = packet.Packet(encoded_packet=p)
+                    self._receive_packet(pkt)
+            except Exception:  # pragma: no cover
+                # If recv fails here, the read loop will handle it
+                pass
+
         self.ws = ws
         self.ws.settimeout(self.ping_interval + self.ping_timeout)
 
