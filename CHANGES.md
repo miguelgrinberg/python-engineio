@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.13.2** - 2026-05-21
+
+- Prevent unnecessary resource allocations [#441](https://github.com/miguelgrinberg/python-engineio/issues/441) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ceeeb5eae3ce070f4c5e313ea9a1f91307fe5e2b))
+- Add zizmor to CI builds [#437](https://github.com/miguelgrinberg/python-engineio/issues/437) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/68eb36aecd623d1b84386a39be76f6e5f7fdd5c1))
+
 **Release 4.13.1** - 2026-02-06
 
 - Document that a process can have only one custom JSON module ([commit](https://github.com/miguelgrinberg/python-engineio/commit/119ec1ee1f486035e837625161eea10183b9c52b))
