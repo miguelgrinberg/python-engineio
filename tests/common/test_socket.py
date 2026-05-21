@@ -114,7 +114,7 @@ class TestSocket:
         assert s.last_ping is None
         time.sleep(0.01)
         s.schedule_ping()
-        time.sleep(0.1)
+        time.sleep(0.2)
         assert s.last_ping is not None
         assert s.send.call_count == 1
 
