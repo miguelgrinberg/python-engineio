@@ -105,13 +105,13 @@ class TestSocket:
 
     async def test_schedule_ping_twice(self):
         mock_server = self._get_mock_server()
-        mock_server.ping_interval = 0.01
+        mock_server.ping_interval = 0.1
         s = async_socket.AsyncSocket(mock_server, 'sid')
         s.send = mock.AsyncMock()
 
         async def schedule_ping_and_sleep():
             s.schedule_ping()
-            await asyncio.sleep(0.05)
+            await asyncio.sleep(0.2)
 
         s.schedule_ping()
         assert s.last_ping is None
