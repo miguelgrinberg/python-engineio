@@ -21,6 +21,7 @@ class TestSocket:
         mock_server.ping_interval_grace_period = 0.001
         mock_server.async_handlers = True
         mock_server.max_http_buffer_size = 128
+        mock_server.sleep = time.sleep
 
         try:
             import queue
@@ -103,6 +104,19 @@ class TestSocket:
         time.sleep(0.05)
         assert s.last_ping is not None
         assert s.send.call_args_list[0][0][0].encode() == '2'
+
+    def test_schedule_ping_twice(self):
+        mock_server = self._get_mock_server()
+        mock_server.ping_interval = 0.1
+        s = socket.Socket(mock_server, 'sid')
+        s.send = mock.MagicMock()
+        s.schedule_ping()
+        assert s.last_ping is None
+        time.sleep(0.01)
+        s.schedule_ping()
+        time.sleep(0.1)
+        assert s.last_ping is not None
+        assert s.send.call_count == 1
 
     def test_schedule_ping_closed_socket(self):
         mock_server = self._get_mock_server()
