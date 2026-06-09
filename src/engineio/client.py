@@ -584,6 +584,15 @@ class Client(base_client.BaseClient):
                 packets = [self.queue.get(timeout=timeout)]
             except self.queue_empty:
                 self.logger.error('packet queue is empty, aborting')
+                # signal the read loop to exit so it fires the disconnect event
+                if self.current_transport == 'websocket' and \
+                        self.ws is not None:
+                    try:
+                        self.ws.close()
+                    except Exception as e:
+                        self.logger.warning('Error closing WebSocket: %s', e)
+                else:
+                    self.write_loop_task = None
                 break
             if packets == [None]:
                 self.queue.task_done()

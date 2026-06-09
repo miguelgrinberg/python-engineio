@@ -638,6 +638,15 @@ class AsyncClient(base_client.BaseClient):
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
             except (self.queue_empty, asyncio.TimeoutError):
                 self.logger.error('packet queue is empty, aborting')
+                # signal the read loop to exit so it fires the disconnect event
+                if self.current_transport == 'websocket' and \
+                        self.ws is not None:
+                    try:
+                        await self.ws.close()
+                    except Exception as e:
+                        self.logger.warning('Error closing WebSocket: %s', e)
+                else:
+                    self.write_loop_task = None
                 break
             except asyncio.CancelledError:  # pragma: no cover
                 break

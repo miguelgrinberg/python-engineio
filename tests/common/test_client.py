@@ -1,5 +1,6 @@
 import logging
 import ssl
+import threading
 import time
 from unittest import mock
 
@@ -1508,6 +1509,98 @@ class TestClient:
         c.queue.get.side_effect = c.queue_empty
         c._write_loop()
         c.queue.get.assert_called_once_with(timeout=7)
+
+    def test_write_loop_empty_queue_polling(self):
+        c = client.Client()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'polling'
+        self.mock_queue(c)
+        c.queue.get.side_effect = c.queue_empty
+        c.write_loop_task = mock.MagicMock()
+        c._write_loop()
+        assert c.write_loop_task is None
+        c.queue.get.assert_called_once_with(timeout=7)
+
+    def test_write_loop_empty_queue_websocket(self):
+        c = client.Client()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'websocket'
+        self.mock_queue(c)
+        c.queue.get.side_effect = c.queue_empty
+        c.ws = mock.MagicMock()
+        c.write_loop_task = mock.MagicMock()
+        c._write_loop()
+        # websocket unblocks the read loop by closing the socket, not by
+        # nulling write_loop_task (which the websocket read loop ignores)
+        c.ws.close.assert_called_once_with()
+        assert c.write_loop_task is not None
+        c.queue.get.assert_called_once_with(timeout=7)
+
+    def test_write_loop_empty_queue_propagates_disconnect(self):
+        """
+        When _write_loop's queue.get() times out (queue stays empty for
+        max(ping_interval, ping_timeout)+5 seconds), the write loop must close
+        the WebSocket so _read_loop_websocket's error path fires on_disconnect.
+
+        The asymmetry bug: write-loop timeout (max(ping_interval,
+        ping_timeout)+5, e.g. 40s) can expire while the read-loop recv()
+        timeout (ping_interval+ping_timeout, e.g. 60s) has not. The write loop
+        exits silently, leaving state='connected', no on_disconnect callback,
+        and the read loop alive indefinitely receiving pings it can't answer.
+        """
+        c = client.Client()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'websocket'
+        base_client.connected_clients.append(c)
+
+        disconnect_calls = []
+        c.on('disconnect', lambda reason: disconnect_calls.append(reason))
+
+        # queue.get() raises immediately, simulating write-loop timeout expiry
+        self.mock_queue(c)
+        c.queue.get.side_effect = c.queue_empty
+
+        # ws.recv() blocks until ws.close() signals it, then raises;
+        # this faithfully models a server that never enforces PONG timeouts
+        ws_closed = threading.Event()
+
+        def fake_recv():
+            ws_closed.wait()
+            raise websocket.WebSocketConnectionClosedException()
+
+        ws = mock.MagicMock()
+        ws.recv.side_effect = fake_recv
+        ws.close.side_effect = lambda: ws_closed.set()
+        c.ws = ws
+
+        write_thread = threading.Thread(target=c._write_loop, daemon=True)
+        read_thread = threading.Thread(target=c._read_loop_websocket,
+                                       daemon=True)
+        c.write_loop_task = write_thread
+
+        try:
+            write_thread.start()
+            read_thread.start()
+
+            write_thread.join(timeout=1)
+            read_thread.join(timeout=1)
+
+            assert not write_thread.is_alive(), \
+                'write_loop_task should have exited'
+            assert c.state != 'connected', \
+                'client must not remain connected after write loop timeout'
+            assert len(disconnect_calls) == 1, \
+                f'expected 1 disconnect callback, got {len(disconnect_calls)}'
+        finally:
+            ws_closed.set()  # unblock fake_recv so the daemon thread can exit
+            if c in base_client.connected_clients:
+                base_client.connected_clients.remove(c)
 
     def test_write_loop_polling_one_packet(self):
         c = client.Client()

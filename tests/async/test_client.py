@@ -1212,6 +1212,95 @@ class TestAsyncClient:
         await c._write_loop()
         c.queue.get.assert_awaited_once_with()
 
+    async def test_write_loop_empty_queue_polling(self):
+        c = async_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'polling'
+        self.mock_queue(c)
+        c.queue.get = mock.AsyncMock(side_effect=c.queue_empty)
+        c.write_loop_task = mock.MagicMock()
+        await c._write_loop()
+        assert c.write_loop_task is None
+        c.queue.get.assert_awaited_once_with()
+
+    async def test_write_loop_empty_queue_websocket(self):
+        c = async_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'websocket'
+        self.mock_queue(c)
+        c.queue.get = mock.AsyncMock(side_effect=c.queue_empty)
+        c.ws = mock.MagicMock()
+        c.ws.close = mock.AsyncMock()
+        c.write_loop_task = mock.MagicMock()
+        await c._write_loop()
+        # websocket unblocks the read loop by closing the socket, not by
+        # nulling write_loop_task (which the websocket read loop ignores)
+        c.ws.close.assert_awaited_once_with()
+        assert c.write_loop_task is not None
+        c.queue.get.assert_awaited_once_with()
+
+    async def test_write_loop_empty_queue_propagates_disconnect(self):
+        """Async counterpart of the threading test of the same name: on a
+        WebSocket write-loop timeout the loop closes the WebSocket so the read
+        loop unblocks and fires exactly one disconnect event."""
+        c = async_client.AsyncClient()
+        c.state = 'connected'
+        c.ping_interval = 1
+        c.ping_timeout = 2
+        c.current_transport = 'websocket'
+        base_client.connected_clients.append(c)
+
+        disconnect_calls = []
+        c.on('disconnect', lambda reason: disconnect_calls.append(reason))
+
+        # queue.get() raises immediately, simulating write-loop timeout expiry
+        self.mock_queue(c)
+        c.queue.get = mock.AsyncMock(side_effect=c.queue_empty)
+
+        # ws.receive() blocks until ws.close() signals it, then raises
+        ws_closed = asyncio.Event()
+
+        async def fake_receive():
+            await ws_closed.wait()
+            raise aiohttp.client_exceptions.ServerDisconnectedError()
+
+        async def fake_close():
+            ws_closed.set()
+
+        ws = mock.MagicMock()
+        ws.receive = fake_receive
+        ws.close = fake_close
+        c.ws = ws
+
+        write_task = asyncio.ensure_future(c._write_loop())
+        read_task = asyncio.ensure_future(c._read_loop_websocket())
+        c.write_loop_task = write_task
+
+        try:
+            done, pending = await asyncio.wait(
+                {write_task, read_task}, timeout=1
+            )
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except BaseException:
+                    pass
+
+            assert write_task.done(), 'write_loop_task should have exited'
+            assert c.state != 'connected', \
+                'client must not remain connected after write loop timeout'
+            assert len(disconnect_calls) == 1, \
+                f'expected 1 disconnect callback, got {len(disconnect_calls)}'
+        finally:
+            ws_closed.set()
+            if c in base_client.connected_clients:
+                base_client.connected_clients.remove(c)
+
     async def test_write_loop_polling_one_packet(self):
         c = async_client.AsyncClient()
         c.base_url = 'http://foo'
