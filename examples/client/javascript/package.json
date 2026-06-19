@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "dependencies": {
     "enchilada": "0.13.0",
-    "engine.io": "^6.6.8",
-    "engine.io-client": "^6.6.5",
+    "engine.io": "^6.6.9",
+    "engine.io-client": "^6.6.6",
     "express": "^4.22.2",
     "smoothie": "1.19.0"
   }
