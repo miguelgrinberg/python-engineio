@@ -521,7 +521,7 @@ class Client(base_client.BaseClient):
 
     def _read_loop_websocket(self):
         """Read packets from the Engine.IO WebSocket connection."""
-        while self.state == 'connected':
+        while self.state == 'connected' and self.write_loop_task:
             p = None
             try:
                 p = self.ws.recv()
@@ -616,7 +616,6 @@ class Client(base_client.BaseClient):
                 if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status_code)
-                    self.write_loop_task = None
                     break
             else:
                 # websocket
@@ -634,3 +633,4 @@ class Client(base_client.BaseClient):
                         'WebSocket connection was closed, aborting')
                     break
         self.logger.info('Exiting write loop task')
+        self.write_loop_task = None
