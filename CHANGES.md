@@ -1,5 +1,11 @@
 # python-engineio change log
 
+**Release 4.13.3** - 2026-06-20
+
+- Make sure client disconnects when write loop exits [#455](https://github.com/miguelgrinberg/python-engineio/issues/455) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7517473bc92ea101b82ce3c2a19f318bea96f145))
+- Address flaky unit test [#444](https://github.com/miguelgrinberg/python-engineio/issues/444) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/cca4e0a99772a161c8e6c3d27850371107d8758d))
+- Stop using codecov service, since it has been failing for a long time ([commit](https://github.com/miguelgrinberg/python-engineio/commit/9e726081a1fe4754f1feade390b2831a15db9c9c))
+
 **Release 4.13.2** - 2026-05-21
 
 - Prevent unnecessary resource allocations [#441](https://github.com/miguelgrinberg/python-engineio/issues/441) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/ceeeb5eae3ce070f4c5e313ea9a1f91307fe5e2b))
