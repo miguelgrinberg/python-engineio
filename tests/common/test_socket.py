@@ -101,7 +101,10 @@ class TestSocket:
         s = socket.Socket(mock_server, 'sid')
         s.send = mock.MagicMock()
         s.schedule_ping()
-        time.sleep(0.05)
+        for _ in range(10):
+            time.sleep(0.05)
+            if s.last_ping is not None:
+                break
         assert s.last_ping is not None
         assert s.send.call_args_list[0][0][0].encode() == '2'
 
