@@ -571,7 +571,7 @@ class AsyncClient(base_client.BaseClient):
 
     async def _read_loop_websocket(self):
         """Read packets from the Engine.IO WebSocket connection."""
-        while self.state == 'connected':
+        while self.state == 'connected' and self.write_loop_task:
             p = None
             try:
                 p = await asyncio.wait_for(
@@ -672,7 +672,6 @@ class AsyncClient(base_client.BaseClient):
                 if r.status < 200 or r.status >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status)
-                    self.write_loop_task = None
                     break
             else:
                 # websocket
@@ -690,3 +689,4 @@ class AsyncClient(base_client.BaseClient):
                         'aborting')
                     break
         self.logger.info('Exiting write loop task')
+        self.write_loop_task = None
