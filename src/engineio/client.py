@@ -508,7 +508,13 @@ class Client(base_client.BaseClient):
 
         if self.write_loop_task:  # pragma: no branch
             self.logger.info('Waiting for write loop task to end')
-            self.write_loop_task.join()
+            try:
+                # the write loop task cleans its own task when it ends, so we
+                # avoid a race condition when using threads with a try/catch
+                self.write_loop_task.join()
+            except AttributeError:  # pragma: no cover
+                if self.write_loop_task is not None:
+                    raise  # for any erros not related to task == None we raise
         if self.state == 'connected':
             self._trigger_event('disconnect', self.reason.TRANSPORT_ERROR,
                                 run_async=False)
@@ -559,7 +565,13 @@ class Client(base_client.BaseClient):
 
         if self.write_loop_task:  # pragma: no branch
             self.logger.info('Waiting for write loop task to end')
-            self.write_loop_task.join()
+            try:
+                # the write loop task cleans its own task when it ends, so we
+                # avoid a race condition when using threads with a try/catch
+                self.write_loop_task.join()
+            except AttributeError:  # pragma: no cover
+                if self.write_loop_task is not None:
+                    raise  # for any erros not related to task == None we raise
         if self.state == 'connected':
             self._trigger_event('disconnect', self.reason.TRANSPORT_ERROR,
                                 run_async=False)
