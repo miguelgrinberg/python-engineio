@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.13.4** - 2026-07-31
+
+- Prevent a race condition in the sync client's connection close handling [#458](https://github.com/miguelgrinberg/python-engineio/issues/458) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/505b5d22bda6df7263969b6f4c1f1df39375c75a))
+- Cleaner WebSocket exit for Werkzeug [#457](https://github.com/miguelgrinberg/python-engineio/issues/457) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/c729c9a416c89e631fd12e4bfde3976d44bbf940))
+
 **Release 4.13.3** - 2026-06-20
 
 - Make sure client disconnects when write loop exits [#455](https://github.com/miguelgrinberg/python-engineio/issues/455) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/7517473bc92ea101b82ce3c2a19f318bea96f145))
