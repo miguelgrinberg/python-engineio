@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.13.5** - 2026-08-12
+
+- Prevent unnecessary resource allocation in ASGI driver ([commit](https://github.com/miguelgrinberg/python-engineio/commit/fc5e2f07f78a47f6442ae1ec64795ff8b6242784))
+
 **Release 4.13.4** - 2026-07-31
 
 - Prevent a race condition in the sync client's connection close handling [#458](https://github.com/miguelgrinberg/python-engineio/issues/458) ([commit](https://github.com/miguelgrinberg/python-engineio/commit/505b5d22bda6df7263969b6f4c1f1df39375c75a))
