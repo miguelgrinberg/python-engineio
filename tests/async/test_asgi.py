@@ -441,6 +441,27 @@ class TestAsgi:
         body = await environ['wsgi.input'].read()
         assert body == b'hello world'
 
+    async def test_translate_request_read_zero(self):
+        receive = mock.AsyncMock(
+            return_value={'type': 'http.request', 'body': b'hello world'}
+        )
+        send = mock.AsyncMock()
+        environ = await async_asgi.translate_request(
+            {
+                'type': 'http',
+                'method': 'PUT',
+                'headers': [
+                    (b'content-type', b'application/json'),
+                    (b'content-length', b'123'),
+                ],
+                'path': '/foo/bar',
+            },
+            receive,
+            send,
+        )
+        body = await environ['wsgi.input'].read(0)
+        assert body == b''
+
     async def test_translate_websocket_request(self):
         receive = mock.AsyncMock(return_value={'type': 'websocket.connect'})
         send = mock.AsyncMock()

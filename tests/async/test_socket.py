@@ -209,6 +209,8 @@ class TestSocket:
         }
         await s.handle_post_request(environ)
         assert s.receive.await_count == 2
+        assert s.receive.call_args_list[0][0][0].data == 'hello'
+        assert s.receive.call_args_list[1][0][0].data == 'bye'
 
     async def test_polling_write_too_large(self):
         mock_server = self._get_mock_server()
@@ -226,6 +228,23 @@ class TestSocket:
         }
         with pytest.raises(exceptions.ContentTooLongError):
             await s.handle_post_request(environ)
+
+    async def test_polling_write_without_content_length(self):
+        mock_server = self._get_mock_server()
+        pkt1 = packet.Packet(packet.MESSAGE, data='hello')
+        pkt2 = packet.Packet(packet.MESSAGE, data='bye')
+        p = payload.Payload(packets=[pkt1, pkt2]).encode().encode('utf-8')
+        s = async_socket.AsyncSocket(mock_server, 'foo')
+        s.receive = mock.AsyncMock()
+        environ = {
+            'REQUEST_METHOD': 'POST',
+            'QUERY_STRING': 'sid=foo',
+            'wsgi.input': self._get_read_mock_coro(p),
+        }
+        await s.handle_post_request(environ)
+        assert s.receive.await_count == 2
+        assert environ['wsgi.input'].read.call_count == 1
+        assert environ['wsgi.input'].read.call_args[0] == (0,)
 
     async def test_upgrade_handshake(self):
         mock_server = self._get_mock_server()
