@@ -25,10 +25,10 @@ jobs:
       - run: tox -eflake8
       - run: tox -edocs
   tests:
-    name: tests
+    name: tests-${{ matrix.python }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         python: ['3.10', '3.11', '3.12', '3.13', '3.14', 'pypy-3.11']
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -52,6 +52,8 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: zizmorcore/zizmor-action@b1d7e1fb5de872772f31590499237e7cce841e8e # v0.5.3
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          advanced-security: false
+          python-version: 3.14
+      - run: pip install zizmor
+      - run: zizmor --offline .forgejo/workflows/*.yml

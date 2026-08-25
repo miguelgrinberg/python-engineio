@@ -1,14 +1,29 @@
 python-engineio
 ===============
 
-[![Build status](https://github.com/miguelgrinberg/python-engineio/workflows/build/badge.svg)](https://github.com/miguelgrinberg/python-engineio/actions) [![codecov](https://codecov.io/gh/miguelgrinberg/python-engineio/branch/main/graph/badge.svg)](https://codecov.io/gh/miguelgrinberg/python-engineio)
+[![tests](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/badges/workflows/tests.yml/badge.svg)](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/actions)
 
 Python implementation of the `Engine.IO` realtime client and server.
 
 Resources
 ---------
 
--  [Documentation](https://python-engineio.readthedocs.io/)
--  [PyPI](https://pypi.python.org/pypi/python-engineio)
--  [Change Log](https://github.com/miguelgrinberg/python-engineio/blob/main/CHANGES.md)
--  Questions? See the [questions](https://stackoverflow.com/questions/tagged/python-socketio) others have asked on Stack Overflow, or [ask](https://stackoverflow.com/questions/ask?tags=python+python-socketio) your own question.
+- [git](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio)
+- [Change Log](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/src/branch/main/CHANGES.md)
+- [Documentation](https://python-engineio.readthedocs.io/)
+- [PyPI](https://pypi.python.org/pypi/python-engineio)
+- [Contributor's guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+
+Sponsor this project
+--------------------
+
+This project relies on contributions from its users. If you benefit from it please consider making a single or ongoing monetary contribution in one of the following platforms:
+
+- [Github Sponsors](https://github.com/sponsors/miguelgrinberg)
+- [Patreon](https://patreon.com/miguelgrinberg)
+- [Buy me a Coffee](https://buymeacoffee.com/miguelgrinberg)
+- [thanks.dev](https://thanks.dev/u/gh/miguelgrinberg)
+- [PayPal](https://paypal.me/miguelgrinberg)
+
+Thank you!
