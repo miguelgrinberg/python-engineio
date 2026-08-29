@@ -45,3 +45,7 @@ htmlcov
 *.swp
 node_modules
 .python-version
+.direnv
+.envrc
+requirements*.txt
+_build.log
