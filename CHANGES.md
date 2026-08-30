@@ -1,5 +1,9 @@
 # python-engineio change log
 
+**Release 4.14.0** - 2026-08-30
+
+- Client: abort connection when connect handler raises an error [#10001](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/issues/10001) ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/commit/2cd05b03b092ad313c733867044d79def7aae63d))
+
 **Release 4.13.5** - 2026-08-12
 
 - Prevent unnecessary resource allocation in ASGI driver ([commit](https://github.com/miguelgrinberg/python-engineio/commit/fc5e2f07f78a47f6442ae1ec64795ff8b6242784))
