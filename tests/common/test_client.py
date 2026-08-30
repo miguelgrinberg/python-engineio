@@ -169,6 +169,53 @@ class TestClient:
             'http://foo', {'Foo': 'Bar'}, 'engine.io'
         )
 
+    @mock.patch('engineio.client.Client._send_request')
+    def test_connect_polling_handler_failure(self, _send_request):
+        _send_request.return_value.status_code = 200
+        _send_request.return_value.content = payload.Payload(
+            packets=[
+                packet.Packet(
+                    packet.OPEN,
+                    {
+                        'sid': '123',
+                        'upgrades': [],
+                        'pingInterval': 1000,
+                        'pingTimeout': 2000,
+                    },
+                )
+            ]
+        ).encode().encode('utf-8')
+        c = client.Client()
+
+        @c.on('connect')
+        def connect():
+            raise ValueError('Failed on purpose')
+
+        with pytest.raises(exceptions.ConnectionError,
+                           match='Connect handler failed: Failed on purpose'):
+            c.connect('http://foo')
+
+    @mock.patch('engineio.client.websocket.create_connection')
+    def test_connect_websocket_handler_failure(self, create_connection):
+        create_connection.return_value.recv.return_value = packet.Packet(
+            packet.OPEN,
+            {
+                'sid': '123',
+                'upgrades': [],
+                'pingInterval': 1000,
+                'pingTimeout': 2000,
+            },
+        ).encode()
+        c = client.Client()
+
+        @c.on('connect')
+        def connect():
+            raise ValueError('Failed on purpose')
+
+        with pytest.raises(exceptions.ConnectionError,
+                           match='Connect handler failed: Failed on purpose'):
+            c.connect('http://foo', transports='websocket')
+
     def test_wait(self):
         c = client.Client()
         c.read_loop_task = mock.MagicMock()
@@ -1281,8 +1328,8 @@ class TestClient:
         def bar(data):
             return 1 / 0
 
-        r = c._trigger_event('connect', run_async=False)
-        assert r is None
+        with pytest.raises(ZeroDivisionError):
+            r = c._trigger_event('connect', run_async=False)
         r = c._trigger_event('message', 123, run_async=False)
         assert r is None
 

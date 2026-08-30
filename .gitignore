@@ -49,3 +49,4 @@ node_modules
 .envrc
 requirements*.txt
 _build.log
+coverage.xml

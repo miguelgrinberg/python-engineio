@@ -229,7 +229,13 @@ class Client(base_client.BaseClient):
 
         self.state = 'connected'
         base_client.connected_clients.append(self)
-        self._trigger_event('connect', run_async=False)
+        try:
+            self._trigger_event('connect', run_async=False, reraise=True)
+        except Exception as exc:
+            base_client.connected_clients.remove(self)
+            self._reset()
+            raise exceptions.ConnectionError(
+                'Connect handler failed: ' + str(exc))
 
         for pkt in p.packets[1:]:
             self._receive_packet(pkt)
@@ -403,7 +409,13 @@ class Client(base_client.BaseClient):
 
             self.state = 'connected'
             base_client.connected_clients.append(self)
-            self._trigger_event('connect', run_async=False)
+            try:
+                self._trigger_event('connect', run_async=False, reraise=True)
+            except Exception as exc:
+                base_client.connected_clients.remove(self)
+                self._reset()
+                raise exceptions.ConnectionError(
+                    'Connect handler failed: ' + str(exc))
         self.ws = ws
         self.ws.settimeout(self.ping_interval + self.ping_timeout)
 
@@ -477,6 +489,10 @@ class Client(base_client.BaseClient):
                             raise
                 except:
                     self.logger.exception(event + ' handler error')
+                    if event == 'connect':
+                        # for the connection event we reraise the exception
+                        # to stop the connection from completing
+                        raise
 
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""

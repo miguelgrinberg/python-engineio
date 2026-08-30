@@ -105,6 +105,62 @@ class TestAsyncClient:
             'http://foo', {'Foo': 'Bar'}, 'engine.io'
         )
 
+    async def test_connect_polling_handler_failure(self):
+        c = async_client.AsyncClient()
+        c._send_request = mock.AsyncMock()
+        c._send_request.return_value.status = 200
+        c._send_request.return_value.read = mock.AsyncMock(
+            return_value=payload.Payload(
+                packets=[
+                    packet.Packet(
+                        packet.OPEN,
+                        {
+                            'sid': '123',
+                            'upgrades': [],
+                            'pingInterval': 1000,
+                            'pingTimeout': 2000,
+                        },
+                    )
+                ]
+            ).encode().encode('utf-8')
+        )
+
+        @c.on('connect')
+        def connect():
+            raise ValueError('Failed on purpose')
+
+        with pytest.raises(exceptions.ConnectionError,
+                           match='Connect handler failed: Failed on purpose'):
+            await c.connect('http://foo')
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
+                new=mock_ws_timeout)
+    async def test_connect_websocket_handler_failure(self, _time):
+        c = async_client.AsyncClient()
+        c.http = mock.MagicMock(closed=False)
+        c.http.ws_connect = mock.AsyncMock()
+        c.http.close = mock.AsyncMock()
+        ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
+            packet.OPEN,
+            {
+                'sid': '123',
+                'upgrades': [],
+                'pingInterval': 1000,
+                'pingTimeout': 2000,
+            },
+        ).encode()
+
+        @c.on('connect')
+        def connect():
+            raise ValueError('Failed on purpose')
+
+        with pytest.raises(exceptions.ConnectionError,
+                           match='Connect handler failed: Failed on purpose'):
+            await c.connect('http://foo', transports='websocket')
+
     async def test_wait(self):
         c = async_client.AsyncClient()
         done = []
@@ -918,7 +974,8 @@ class TestAsyncClient:
         c = async_client.AsyncClient()
         c.on('connect', handler=connect_handler)
         c.on('message', handler=foo_handler)
-        assert not await c._trigger_event('connect', '123')
+        with pytest.raises(ZeroDivisionError):
+            await c._trigger_event('connect', '123')
         assert await c._trigger_event('message', 'bar') is None
 
     async def test_trigger_event_coroutine_error(self):
@@ -931,7 +988,8 @@ class TestAsyncClient:
         c = async_client.AsyncClient()
         c.on('connect', handler=connect_handler)
         c.on('message', handler=foo_handler)
-        assert not await c._trigger_event('connect', '123')
+        with pytest.raises(ZeroDivisionError):
+            await c._trigger_event('connect', '123')
         assert await c._trigger_event('message', 'bar') is None
 
     async def test_trigger_event_function_async(self):

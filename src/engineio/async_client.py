@@ -284,7 +284,13 @@ class AsyncClient(base_client.BaseClient):
 
         self.state = 'connected'
         base_client.connected_clients.append(self)
-        await self._trigger_event('connect', run_async=False)
+        try:
+            await self._trigger_event('connect', run_async=False)
+        except Exception as exc:
+            base_client.connected_clients.remove(self)
+            await self._reset()
+            raise exceptions.ConnectionError(
+                'Connect handler failed: ' + str(exc))
 
         for pkt in p.packets[1:]:
             await self._receive_packet(pkt)
@@ -406,7 +412,13 @@ class AsyncClient(base_client.BaseClient):
 
             self.state = 'connected'
             base_client.connected_clients.append(self)
-            await self._trigger_event('connect', run_async=False)
+            try:
+                await self._trigger_event('connect', run_async=False)
+            except Exception as exc:
+                base_client.connected_clients.remove(self)
+                await self._reset()
+                raise exceptions.ConnectionError(
+                    'Connect handler failed: ' + str(exc))
 
         self.ws = ws
         self.write_loop_task = self.start_background_task(self._write_loop)
@@ -495,9 +507,9 @@ class AsyncClient(base_client.BaseClient):
                     except:
                         self.logger.exception(event + ' async handler error')
                         if event == 'connect':
-                            # if connect handler raised error we reject the
-                            # connection
-                            return False
+                            # for the connection event we reraise the exception
+                            # to stop the connection from completing
+                            raise
             else:
                 if run_async:
                     async def async_handler():
@@ -522,9 +534,9 @@ class AsyncClient(base_client.BaseClient):
                     except:
                         self.logger.exception(event + ' handler error')
                         if event == 'connect':
-                            # if connect handler raised error we reject the
-                            # connection
-                            return False
+                            # for the connection event we reraise the exception
+                            # to stop the connection from completing
+                            raise
         return ret
 
     async def _read_loop_polling(self):
