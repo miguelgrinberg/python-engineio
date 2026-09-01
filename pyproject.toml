@@ -18,11 +18,12 @@ file = "README.md"
 content-type = "text/markdown"
 
 [project.urls]
-homepage = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio"
-documentation = "https://python-engineio.readthedocs.io/"
-repository = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio"
-issues = "https://github.com/miguelgrinberg/python-engineio/issues"
-changelog = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/src/branch/main/CHANGES.md"
+Homepage = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio"
+Documentation = "https://python-engineio.readthedocs.io/"
+"Source Code" = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio"
+"Issue Tracker" = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/issues"
+Changelog = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio/src/branch/main/CHANGES.md"
+Funding = "https://code.miguelgrinberg.com/miguelgrinberg/python-engineio#sponsor-this-project"
 
 [project.optional-dependencies]
 client = [
