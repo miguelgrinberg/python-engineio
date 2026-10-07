@@ -35,6 +35,8 @@ def get_static_file(path, static_files):
             elif path + '/' in static_files:
                 f = static_files[path + '/']
                 break
+    if '../' in extra_path:
+        return None
     if f:
         if isinstance(f, str):
             f = {'filename': f}

@@ -85,6 +85,8 @@ class TestWSGIApp:
                    'Not Found')
         check_path('/bar/foo', '404 Not Found', 'text/plain', 'Not Found')
         check_path('', '404 Not Found', 'text/plain', 'Not Found')
+        check_path('/static/../../LICENSE', '404 Not Found', 'text/plain',
+                   'Not Found')
 
         m.static_files[''] = 'index.html'
         check_path('/static/test/', '200 OK', 'text/html', '<html></html>\n')

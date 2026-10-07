@@ -147,6 +147,8 @@ class TestAsgi:
                          'Not Found')
         await check_path('/bar/foo', 404, 'text/plain', 'Not Found')
         await check_path('', 404, 'text/plain', 'Not Found')
+        await check_path('/static/../../LICENSE', 404, 'text/plain',
+                         'Not Found')
 
         app.static_files[''] = 'index.html'
         await check_path('/static/test/', 200, 'text/html', '<html></html>\n')
