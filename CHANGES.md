@@ -3,7 +3,7 @@
 **Release 4.15.0** - 2026-10-27
 
 - Client: accept HTTP session factory function in the `http_session` argument [#10002](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/issues/10002) ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/e50119d47eb4e219e50c2c683e5dfa6b41c694be))
-- Reject HTTP requests after upgrade to WebSocket ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/dc078a03eb005f85df975f281fb401aa59ba2954))
+- Reject HTTP requests after upgrade to WebSocket ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/dc078a03eb005f85df975f281fb401aa59ba2954)) (thanks **Leo Ruocco**!)
 - WSGI/ASGI: Prevent `../` directory traversal when serving static files ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/9c78b15917b4ee8f705aaa99ae8e87680d53e03c))
 - Add Python 3.15 and PyPy 3.12 to CI builds ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/0d4066bfc8c7fe6fd7b1e3cb77a31fa61bb8acc4))
 
