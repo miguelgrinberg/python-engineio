@@ -717,6 +717,18 @@ class TestAsyncServer:
         assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
+    async def test_post_request_after_upgrade(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
+        )
+        import_module.side_effect = [a]
+        s = async_server.AsyncServer()
+        s.sockets['foo'] = self._get_mock_socket()
+        s.sockets['foo'].upgraded = True
+        await s.handle_request('request')
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
+
+    @mock.patch('importlib.import_module')
     async def test_send(self, import_module):
         a = self.get_async_mock()
         import_module.side_effect = [a]

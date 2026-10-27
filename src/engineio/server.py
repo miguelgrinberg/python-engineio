@@ -276,7 +276,13 @@ class Server(base_server.BaseServer):
                         self._log_error_once(f'{e} {sid}', 'bad-sid')
                         r = self._bad_request(f'{e} {sid}')
                     else:
-                        if self.transport(sid) != transport and \
+                        if socket.upgraded:
+                            # cannot accept HTTP requests once upgraded
+                            self._log_error_once(
+                                f'Unexpected HTTP request for session {sid}',
+                                'unexpected-http')
+                            r = self._bad_request('Unexpected HTTP request')
+                        elif transport != 'polling' and \
                                 transport != upgrade_header:
                             self._log_error_once(
                                 f'Invalid transport for session {sid}',
@@ -304,18 +310,25 @@ class Server(base_server.BaseServer):
                 r = self._bad_request(f'Invalid session {sid}')
             else:
                 socket = self._get_socket(sid)
-                try:
-                    socket.handle_post_request(environ)
-                    r = self._ok(jsonp_index=jsonp_index)
-                except exceptions.EngineIOError:
-                    if sid in self.sockets:  # pragma: no cover
-                        self.disconnect(sid)
-                    r = self._bad_request()
-                except:  # pragma: no cover
-                    # for any other unexpected errors, we log the error
-                    # and keep going
-                    self.logger.exception('post request handler error')
-                    r = self._ok(jsonp_index=jsonp_index)
+                if not socket.upgraded:
+                    try:
+                        socket.handle_post_request(environ)
+                        r = self._ok(jsonp_index=jsonp_index)
+                    except exceptions.EngineIOError:
+                        if sid in self.sockets:  # pragma: no cover
+                            self.disconnect(sid)
+                        r = self._bad_request()
+                    except:  # pragma: no cover
+                        # for any other unexpected errors, we log the error
+                        # and keep going
+                        self.logger.exception('post request handler error')
+                        r = self._ok(jsonp_index=jsonp_index)
+                else:
+                    # cannot accept HTTP requests once upgraded
+                    self._log_error_once(
+                        f'Unexpected HTTP request for session {sid}',
+                        'unexpected-http')
+                    r = self._bad_request('Unexpected HTTP request')
         elif method == 'OPTIONS':
             r = self._ok()
         else:

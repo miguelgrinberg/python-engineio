@@ -859,6 +859,17 @@ class TestServer:
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '400 BAD REQUEST'
 
+    def test_post_request_after_upgrade(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        mock_socket.upgraded = True
+        mock_socket.handle_post_request = mock.MagicMock()
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=4&sid=foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
+
     def test_send(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
