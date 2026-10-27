@@ -55,8 +55,14 @@ class BaseClient:
         self.upgrades = None
         self.ping_interval = None
         self.ping_timeout = None
-        self.http = http_session
-        self.external_http = http_session is not None
+        self.http = None
+        self.http_factory = None
+        if http_session is not None:
+            if callable(http_session):
+                self.http_factory = http_session
+            else:
+                self.http = http_session
+        self.external_http = self.http is not None
         self.handle_sigint = handle_sigint
         self.ws = None
         self.read_loop_task = None

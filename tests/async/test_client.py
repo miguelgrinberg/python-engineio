@@ -133,15 +133,59 @@ class TestAsyncClient:
                            match='Connect handler failed: Failed on purpose'):
             await c.connect('http://foo')
 
-    @mock.patch('engineio.client.time.time', return_value=123.456)
-    @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
-                new=mock_ws_timeout)
-    async def test_connect_websocket_handler_failure(self, _time):
+    @mock.patch('engineio.async_client.aiohttp.ClientSession')
+    async def test_connect_websocket_default_session(self, _session):
+        _session().ws_connect = mock.AsyncMock()
+        ws = _session().ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
+            packet.MESSAGE,  # invaid on purpose
+            {},
+        ).encode()
         c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
+        with pytest.raises(exceptions.ConnectionError,
+                           match='no OPEN packet'):
+            await c.connect('http://foo', transports='websocket')
+
+    async def test_connect_websocket_external_session(self):
+        c = async_client.AsyncClient()
+        c.http = mock.Mock(closed=False)
+        c.external_http = True
         c.http.ws_connect = mock.AsyncMock()
-        c.http.close = mock.AsyncMock()
         ws = c.http.ws_connect.return_value
+        ws.receive = mock.AsyncMock()
+        ws.receive.return_value.data = packet.Packet(
+            packet.MESSAGE,  # invaid on purpose
+            {},
+        ).encode()
+        with pytest.raises(exceptions.ConnectionError,
+                           match='no OPEN packet'):
+            await c.connect('http://foo', transports='websocket')
+
+    async def test_connect_websocket_async_session_factory(self):
+        async def get_session():
+            http = mock.MagicMock(closed=False)
+            http.ws_connect = mock.AsyncMock()
+            http.close = mock.AsyncMock()
+            ws = http.ws_connect.return_value
+            ws.receive = mock.AsyncMock()
+            ws.receive.return_value.data = packet.Packet(
+                packet.MESSAGE,  # invaid on purpose
+                {},
+            ).encode()
+            return http
+
+        c = async_client.AsyncClient(http_session=get_session)
+        with pytest.raises(exceptions.ConnectionError,
+                           match='no OPEN packet'):
+            await c.connect('http://foo', transports='websocket')
+
+    @mock.patch('engineio.client.time.time', return_value=123.456)
+    async def test_connect_websocket_handler_failure(self, _time):
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        http.close = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -152,6 +196,7 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
+        c = async_client.AsyncClient(http_session=lambda: http)
 
         @c.on('connect')
         def connect():
@@ -160,6 +205,41 @@ class TestAsyncClient:
         with pytest.raises(exceptions.ConnectionError,
                            match='Connect handler failed: Failed on purpose'):
             await c.connect('http://foo', transports='websocket')
+
+    @mock.patch('engineio.async_client.aiohttp.ClientSession')
+    async def test_send_request_with_default_session(self, _session):
+        _session().get = mock.AsyncMock()
+        c = async_client.AsyncClient()
+        await c._send_request('GET', '/socket.io')
+        _session().get.assert_awaited_once()
+
+    async def test_send_request_with_session_factory(self):
+        http = mock.Mock()
+        http.closed = False
+        http.get = mock.AsyncMock()
+        c = async_client.AsyncClient(http_session=lambda: http)
+        await c._send_request('GET', '/socket.io')
+        http.get.assert_awaited_once()
+
+    async def test_send_request_with_async_session_factory(self):
+        async def get_session():
+            http = mock.Mock()
+            http.closed = False
+            http.get = mock.AsyncMock()
+            return http
+
+        c = async_client.AsyncClient(http_session=get_session)
+        await c._send_request('GET', '/socket.io')
+        c.http.get.assert_awaited_once()
+
+    async def test_send_request_with_external_session(self):
+        c = async_client.AsyncClient()
+        c.http = mock.Mock()
+        c.http.closed = False
+        c.http.get = mock.AsyncMock()
+        c.external_http = True
+        await c._send_request('GET', '/socket.io')
+        c.http.get.assert_awaited_once()
 
     async def test_wait(self):
         c = async_client.AsyncClient()
@@ -563,18 +643,18 @@ class TestAsyncClient:
     @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
                 new=mock_ws_timeout)
     async def test_websocket_connection_failed(self, _time):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock(
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock(
             side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
         )
+        c = async_client.AsyncClient(http_session=lambda: http)
         with pytest.raises(exceptions.ConnectionError):
             await c.connect(
                 'http://foo',
                 transports=['websocket'],
                 headers={'Foo': 'Bar'},
             )
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
             timeout=5
@@ -582,13 +662,16 @@ class TestAsyncClient:
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     async def test_websocket_connection_extra(self, _time):
-        c = async_client.AsyncClient(websocket_extra_options={
-            'headers': {'Baz': 'Qux'},
-            'timeout': 10
-        })
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock(
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock(
             side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
+        )
+        c = async_client.AsyncClient(
+            http_session=lambda: http,
+            websocket_extra_options={
+                'headers': {'Baz': 'Qux'},
+                'timeout': 10
+            }
         )
         with pytest.raises(exceptions.ConnectionError):
             await c.connect(
@@ -596,7 +679,7 @@ class TestAsyncClient:
                 transports=['websocket'],
                 headers={'Foo': 'Bar'},
             )
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar', 'Baz': 'Qux'},
             timeout=10,
@@ -606,28 +689,28 @@ class TestAsyncClient:
     @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
                 new=mock_ws_timeout)
     async def test_websocket_upgrade_failed(self, _time):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock(
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock(
             side_effect=[aiohttp.client_exceptions.ServerConnectionError()]
         )
+        c = async_client.AsyncClient(http_session=lambda: http)
         c.sid = '123'
         assert not await c.connect('http://foo', transports=['websocket'])
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&sid=123&t=123.456',
             headers={},
             timeout=5,
         )
 
     async def test_websocket_connection_no_open_packet(self):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.CLOSE
         ).encode()
+        c = async_client.AsyncClient(http_session=lambda: http)
         with pytest.raises(exceptions.ConnectionError):
             await c.connect('http://foo', transports=['websocket'])
 
@@ -635,10 +718,9 @@ class TestAsyncClient:
     @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
                 new=mock_ws_timeout)
     async def test_websocket_connection_successful(self, _time):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -649,6 +731,7 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
+        c = async_client.AsyncClient(http_session=lambda: http)
         c._read_loop_polling = mock.AsyncMock()
         c._read_loop_websocket = mock.AsyncMock()
         c._write_loop = mock.AsyncMock()
@@ -668,7 +751,7 @@ class TestAsyncClient:
         assert c.upgrades == []
         assert c.transport() == 'websocket'
         assert c.ws == ws
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
             timeout=5,
@@ -676,10 +759,9 @@ class TestAsyncClient:
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     async def test_websocket_https_noverify_connection_successful(self, _time):
-        c = async_client.AsyncClient(ssl_verify=False)
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -690,6 +772,8 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
+        c = async_client.AsyncClient(
+            http_session=lambda: http, ssl_verify=False)
         c._read_loop_polling = mock.AsyncMock()
         c._read_loop_websocket = mock.AsyncMock()
         c._write_loop = mock.AsyncMock()
@@ -709,7 +793,7 @@ class TestAsyncClient:
         assert c.upgrades == []
         assert c.transport() == 'websocket'
         assert c.ws == ws
-        _, kwargs = c.http.ws_connect.await_args
+        _, kwargs = http.ws_connect.await_args
         assert 'ssl' in kwargs
         assert isinstance(kwargs['ssl'], ssl.SSLContext)
         assert kwargs['ssl'].verify_mode == ssl.CERT_NONE
@@ -718,10 +802,9 @@ class TestAsyncClient:
     @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
                 new=mock_ws_timeout)
     async def test_websocket_connection_with_cookies(self, _time):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -732,18 +815,19 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
-        c.http._cookie_jar = [mock.MagicMock(), mock.MagicMock()]
-        c.http._cookie_jar[0].key = 'key'
-        c.http._cookie_jar[0].value = 'value'
-        c.http._cookie_jar[1].key = 'key2'
-        c.http._cookie_jar[1].value = 'value2'
+        http._cookie_jar = [mock.MagicMock(), mock.MagicMock()]
+        http._cookie_jar[0].key = 'key'
+        http._cookie_jar[0].value = 'value'
+        http._cookie_jar[1].key = 'key2'
+        http._cookie_jar[1].value = 'value2'
+        c = async_client.AsyncClient(http_session=lambda: http)
         c._read_loop_polling = mock.AsyncMock()
         c._read_loop_websocket = mock.AsyncMock()
         c._write_loop = mock.AsyncMock()
         on_connect = mock.MagicMock()
         c.on('connect', on_connect)
         await c.connect('ws://foo', transports=['websocket'])
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
             timeout=5,
@@ -753,10 +837,9 @@ class TestAsyncClient:
     @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
                 new=mock_ws_timeout)
     async def test_websocket_connection_with_cookie_header(self, _time):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -767,7 +850,8 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
-        c.http._cookie_jar = []
+        http._cookie_jar = []
+        c = async_client.AsyncClient(http_session=lambda: http)
         c._read_loop_polling = mock.AsyncMock()
         c._read_loop_websocket = mock.AsyncMock()
         c._write_loop = mock.AsyncMock()
@@ -778,12 +862,12 @@ class TestAsyncClient:
             headers={'Cookie': 'key=value; key2=value2; key3="value3="'},
             transports=['websocket'],
         )
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={},
             timeout=5,
         )
-        c.http.cookie_jar.update_cookies.assert_called_once_with(
+        http.cookie_jar.update_cookies.assert_called_once_with(
             {'key': 'value', 'key2': 'value2', 'key3': 'value3='}
         )
 
@@ -791,10 +875,9 @@ class TestAsyncClient:
     @mock.patch('engineio.async_client.aiohttp.ClientWSTimeout',
                 new=mock_ws_timeout)
     async def test_websocket_connection_with_cookies_and_headers(self, _time):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -805,11 +888,12 @@ class TestAsyncClient:
                 'pingTimeout': 2000,
             },
         ).encode()
-        c.http._cookie_jar = [mock.MagicMock(), mock.MagicMock()]
-        c.http._cookie_jar[0].key = 'key'
-        c.http._cookie_jar[0].value = 'value'
-        c.http._cookie_jar[1].key = 'key2'
-        c.http._cookie_jar[1].value = 'value2'
+        http._cookie_jar = [mock.MagicMock(), mock.MagicMock()]
+        http._cookie_jar[0].key = 'key'
+        http._cookie_jar[0].value = 'value'
+        http._cookie_jar[1].key = 'key2'
+        http._cookie_jar[1].value = 'value2'
+        c = async_client.AsyncClient(http_session=lambda: http)
         c._read_loop_polling = mock.AsyncMock()
         c._read_loop_websocket = mock.AsyncMock()
         c._write_loop = mock.AsyncMock()
@@ -820,20 +904,19 @@ class TestAsyncClient:
             headers={'Foo': 'Bar', 'Cookie': 'key3=value3'},
             transports=['websocket'],
         )
-        c.http.ws_connect.assert_awaited_once_with(
+        http.ws_connect.assert_awaited_once_with(
             'ws://foo/engine.io/?transport=websocket&EIO=4&t=123.456',
             headers={'Foo': 'Bar'},
             timeout=5,
         )
-        c.http.cookie_jar.update_cookies.assert_called_once_with(
+        http.cookie_jar.update_cookies.assert_called_once_with(
             {'key3': 'value3'}
         )
 
     async def test_websocket_upgrade_no_pong(self):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.OPEN,
@@ -845,6 +928,7 @@ class TestAsyncClient:
             },
         ).encode()
         ws.send_str = mock.AsyncMock()
+        c = async_client.AsyncClient(http_session=lambda: http)
         c.sid = '123'
         c.current_transport = 'polling'
         c._read_loop_polling = mock.AsyncMock()
@@ -862,15 +946,15 @@ class TestAsyncClient:
         ws.send_str.assert_awaited_once_with('2probe')
 
     async def test_websocket_upgrade_successful(self):
-        c = async_client.AsyncClient()
-        c.http = mock.MagicMock(closed=False)
-        c.http.ws_connect = mock.AsyncMock()
-        ws = c.http.ws_connect.return_value
+        http = mock.MagicMock(closed=False)
+        http.ws_connect = mock.AsyncMock()
+        ws = http.ws_connect.return_value
         ws.receive = mock.AsyncMock()
         ws.receive.return_value.data = packet.Packet(
             packet.PONG, 'probe'
         ).encode()
         ws.send_str = mock.AsyncMock()
+        c = async_client.AsyncClient(http_session=lambda: http)
         c.sid = '123'
         c.base_url = 'http://foo'
         c.current_transport = 'polling'

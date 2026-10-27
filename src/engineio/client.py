@@ -183,6 +183,8 @@ class Client(base_client.BaseClient):
                 self.queue.task_done()
             except self.queue_empty:
                 break
+        if not self.external_http:  # pragma: no cover
+            self.http = None
 
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
@@ -274,6 +276,8 @@ class Client(base_client.BaseClient):
         # so that they are preserved when connecting to the WebSocket route
         cookies = None
         extra_options = {}
+        if self.http is None and self.http_factory:
+            self.http = self.http_factory()
         if self.http:
             # cookies
             ck = SimpleCookie()
@@ -458,7 +462,10 @@ class Client(base_client.BaseClient):
             self, method, url, headers=None, body=None,
             timeout=None):  # pragma: no cover
         if self.http is None:
-            self.http = requests.Session()
+            if self.http_factory:
+                self.http = self.http_factory()
+            else:
+                self.http = requests.Session()
         if not self.ssl_verify:
             self.http.verify = False
         try:

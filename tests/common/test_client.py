@@ -44,6 +44,17 @@ class TestClient:
         assert c.queue.__class__.__name__ == 'Queue'
         assert c.queue_empty.__name__ == 'Empty'
 
+    def test_external_session(self):
+        c = client.Client(http_session='foo')
+        assert c.http == 'foo'
+        assert c.external_http
+
+    def test_callable_session(self):
+        c = client.Client(http_session=lambda: 'foo')
+        assert c.http is None
+        assert c.http_factory() == 'foo'
+        assert c.external_http is False
+
     def test_custom_json(self):
         client.Client()
         assert packet.Packet.json == json
@@ -351,6 +362,22 @@ class TestClient:
         assert not e.is_set()
         e.set()
         assert e.is_set()
+
+    @mock.patch('engineio.client.requests.Session')
+    def test_polling_connection_default_session(self, _session):
+        _session.return_value.request.return_value.status_code = 200
+        _session.return_value.request.return_value.content = payload.Payload(
+            packets=[
+                packet.Packet(
+                    packet.MESSAGE,  # incorrect on purpose
+                    {},
+                )
+            ]
+        ).encode().encode('utf-8')
+        c = client.Client()
+        with pytest.raises(exceptions.ConnectionError,
+                           match='OPEN packet not returned by server'):
+            c.connect('http://foo', headers={'Foo': 'Bar'})
 
     @mock.patch('engineio.client.time.time', return_value=123.456)
     @mock.patch('engineio.client.Client._send_request', return_value=None)
@@ -796,7 +823,7 @@ class TestClient:
         http.auth = None
         http.proxies = None
         http.cert = None
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -829,7 +856,7 @@ class TestClient:
         http.auth = None
         http.proxies = None
         http.cert = None
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -872,7 +899,7 @@ class TestClient:
         http.auth = None
         http.proxies = None
         http.cert = None
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -909,7 +936,7 @@ class TestClient:
         http.auth = ('foo', 'bar')
         http.proxies = None
         http.cert = None
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -941,7 +968,7 @@ class TestClient:
         http.auth = None
         http.proxies = None
         http.cert = 'foo.crt'
-        c = client.Client(http_session=http, ssl_verify=False)
+        c = client.Client(http_session=lambda: http, ssl_verify=False)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -974,7 +1001,7 @@ class TestClient:
         http.auth = None
         http.proxies = None
         http.cert = ('foo.crt', 'key.pem')
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -1010,7 +1037,7 @@ class TestClient:
         http.proxies = None
         http.cert = ('foo.crt', 'key.pem')
         http.verify = 'ca-bundle.crt'
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -1076,7 +1103,7 @@ class TestClient:
             http.auth = None
             http.proxies = proxies
             http.cert = None
-            c = client.Client(http_session=http)
+            c = client.Client(http_session=lambda: http)
             c._read_loop_polling = mock.MagicMock()
             c._read_loop_websocket = mock.MagicMock()
             c._write_loop = mock.MagicMock()
@@ -1115,7 +1142,7 @@ class TestClient:
         http.proxies = None
         http.cert = None
         http.verify = False
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()
@@ -1149,7 +1176,7 @@ class TestClient:
         http.proxies = None
         http.cert = None
         http.verify = 'ca-bundle.crt'
-        c = client.Client(http_session=http)
+        c = client.Client(http_session=lambda: http)
         c._read_loop_polling = mock.MagicMock()
         c._read_loop_websocket = mock.MagicMock()
         c._write_loop = mock.MagicMock()

@@ -226,6 +226,7 @@ class AsyncClient(base_client.BaseClient):
         if not self.external_http:  # pragma: no cover
             if self.http and not self.http.closed:
                 await self.http.close()
+                self.http = None
 
     def __del__(self):  # pragma: no cover
         # try to close the aiohttp session if it is still open
@@ -323,8 +324,13 @@ class AsyncClient(base_client.BaseClient):
             self.logger.info(
                 'Attempting WebSocket connection to ' + websocket_url)
 
-        if self.http is None or self.http.closed:  # pragma: no cover
-            self.http = aiohttp.ClientSession()
+        if self.http is None or self.http.closed:
+            if self.http_factory:
+                self.http = self.http_factory()
+                if inspect.iscoroutine(self.http):
+                    self.http = await self.http
+            else:
+                self.http = aiohttp.ClientSession()
 
         # extract any new cookies passed in a header so that they can also be
         # sent the the WebSocket route
@@ -458,12 +464,17 @@ class AsyncClient(base_client.BaseClient):
 
     async def _send_request(
             self, method, url, headers=None, body=None,
-            timeout=None):  # pragma: no cover
+            timeout=None):
         if self.http is None or self.http.closed:
-            self.http = aiohttp.ClientSession()
+            if self.http_factory:
+                self.http = self.http_factory()
+                if inspect.iscoroutine(self.http):
+                    self.http = await self.http
+            else:
+                self.http = aiohttp.ClientSession()
         http_method = getattr(self.http, method.lower())
 
-        try:
+        try:  # pragma: no cover
             if not self.ssl_verify:
                 return await http_method(
                     url, headers=headers, data=body,
@@ -473,7 +484,8 @@ class AsyncClient(base_client.BaseClient):
                     url, headers=headers, data=body,
                     timeout=aiohttp.ClientTimeout(total=timeout))
 
-        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+        except (aiohttp.ClientError, asyncio.TimeoutError) \
+                as exc:  # pragma: no cover
             self.logger.info('HTTP %s request to %s failed with error %s.',
                              method, url, exc)
             return str(exc)
