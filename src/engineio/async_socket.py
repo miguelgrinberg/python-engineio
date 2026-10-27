@@ -56,8 +56,8 @@ class AsyncSocket(base_socket.BaseSocket):
         """Make sure the client is still sending pings."""
         if self.closed:
             raise exceptions.SocketIsClosedError()
-        if self.last_ping and \
-                time.time() - self.last_ping > self.server.ping_timeout:
+        last_ping = self.last_ping
+        if last_ping and time.time() - last_ping > self.server.ping_timeout:
             self.server.logger.info('%s: Client is gone, closing socket',
                                     self.sid)
             # Passing abort=False here will cause close() to write a
