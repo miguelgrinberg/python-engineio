@@ -35,6 +35,7 @@ class TestServer:
 
     def _get_mock_socket(self):
         mock_socket = mock.MagicMock()
+        mock_socket.connected = False
         mock_socket.closed = False
         mock_socket.closing = False
         mock_socket.upgraded = False
@@ -862,6 +863,7 @@ class TestServer:
     def test_post_request_after_upgrade(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.upgraded = True
         mock_socket.handle_post_request = mock.MagicMock()
         s.sockets['foo'] = mock_socket
@@ -887,6 +889,7 @@ class TestServer:
     def test_get_request(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_get_request = mock.MagicMock(
             return_value=[packet.Packet(packet.MESSAGE, data='hello')]
         )
@@ -903,6 +906,7 @@ class TestServer:
     def test_get_request_custom_response(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_get_request = mock.MagicMock(side_effect=['resp'])
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET', 'QUERY_STRING': 'EIO=4&sid=foo'}
@@ -912,6 +916,7 @@ class TestServer:
     def test_get_request_closes_socket(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
 
         def mock_get_request(*args, **kwargs):
             mock_socket.closed = True
@@ -927,6 +932,7 @@ class TestServer:
     def test_get_request_error(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_get_request = mock.MagicMock(
             side_effect=[exceptions.QueueEmpty]
         )
@@ -940,6 +946,7 @@ class TestServer:
     def test_get_request_bad_websocket_transport(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.upgraded = False
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET',
@@ -951,6 +958,7 @@ class TestServer:
     def test_get_request_bad_polling_transport(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.upgraded = True
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'GET',
@@ -962,6 +970,7 @@ class TestServer:
     def test_post_request(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_post_request = mock.MagicMock()
         s.sockets['foo'] = mock_socket
         environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=4&sid=foo'}
@@ -969,9 +978,20 @@ class TestServer:
         s.handle_request(environ, start_response)
         assert start_response.call_args[0][0] == '200 OK'
 
+    def test_post_request_before_connecting(self):
+        s = server.Server()
+        mock_socket = self._get_mock_socket()
+        mock_socket.handle_post_request = mock.MagicMock()
+        s.sockets['foo'] = mock_socket
+        environ = {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'EIO=4&sid=foo'}
+        start_response = mock.MagicMock()
+        s.handle_request(environ, start_response)
+        assert start_response.call_args[0][0] == '400 BAD REQUEST'
+
     def test_post_request_error(self):
         s = server.Server()
         mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_post_request = mock.MagicMock(
             side_effect=[exceptions.EngineIOError]
         )

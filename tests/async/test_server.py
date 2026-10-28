@@ -688,6 +688,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.upgraded = False
         await s.handle_request('request')
         assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
@@ -701,6 +702,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.upgraded = True
         await s.handle_request('request')
         assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
@@ -724,6 +726,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = self._get_mock_socket()
+        s.sockets['foo'].connected = True
         s.sockets['foo'].upgraded = True
         await s.handle_request('request')
         assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
@@ -757,6 +760,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_get_request.return_value = [
             packet.Packet(packet.MESSAGE, data='hello')
         ]
@@ -777,6 +781,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         mock_socket.handle_get_request.return_value = 'resp'
         r = await s.handle_request('request')
         assert r == 'resp'
@@ -789,6 +794,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
 
         async def mock_get_request(*args, **kwargs):
             mock_socket.closed = True
@@ -807,6 +813,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
 
         async def mock_get_request(*args, **kwargs):
             raise exceptions.QueueEmpty()
@@ -823,9 +830,21 @@ class TestAsyncServer:
         )
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
-        s.sockets['foo'] = self._get_mock_socket()
+        s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
         await s.handle_request('request')
         assert a._async['make_response'].call_args[0][0] == '200 OK'
+
+    @mock.patch('importlib.import_module')
+    async def test_post_request_before_connecting(self, import_module):
+        a = self.get_async_mock(
+            {'REQUEST_METHOD': 'POST', 'QUERY_STRING': 'sid=foo'}
+        )
+        import_module.side_effect = [a]
+        s = async_server.AsyncServer()
+        s.sockets['foo'] = self._get_mock_socket()
+        await s.handle_request('request')
+        assert a._async['make_response'].call_args[0][0] == '400 BAD REQUEST'
 
     @mock.patch('importlib.import_module')
     async def test_post_request_error(self, import_module):
@@ -835,6 +854,7 @@ class TestAsyncServer:
         import_module.side_effect = [a]
         s = async_server.AsyncServer()
         s.sockets['foo'] = mock_socket = self._get_mock_socket()
+        mock_socket.connected = True
 
         async def mock_post_request(*args, **kwargs):
             raise exceptions.ContentTooLongError()

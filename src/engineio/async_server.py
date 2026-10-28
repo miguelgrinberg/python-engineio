@@ -298,7 +298,13 @@ class AsyncServer(base_server.BaseServer):
                         self._log_error_once(f'{e} {sid}', 'bad-sid')
                         r = self._bad_request(f'{e} {sid}')
                     else:
-                        if socket.upgraded:
+                        if not socket.connected:
+                            # cannot accept requests before connecting
+                            self._log_error_once(
+                                f'Socket for session {sid} is not connected',
+                                'not-connected')
+                            r = self._bad_request('Not connected')
+                        elif socket.upgraded:
                             # cannot accept HTTP requests once upgraded
                             self._log_error_once(
                                 f'Unexpected HTTP request for session {sid}',
@@ -332,7 +338,13 @@ class AsyncServer(base_server.BaseServer):
                 r = self._bad_request(f'Invalid session {sid}')
             else:
                 socket = self._get_socket(sid)
-                if not socket.upgraded:
+                if not socket.connected:
+                    # cannot accept requests before connecting
+                    self._log_error_once(
+                        f'Socket for session {sid} is not connected',
+                        'not-connected')
+                    r = self._bad_request('Not connected')
+                elif not socket.upgraded:
                     try:
                         await socket.handle_post_request(environ)
                         r = self._ok(jsonp_index=jsonp_index)
