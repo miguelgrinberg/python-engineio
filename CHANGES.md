@@ -1,5 +1,10 @@
 # python-engineio change log
 
+**Release 4.15.1** - 2026-10-28
+
+- Reject requests before the connection completes ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/89ce40654dcb23405e7f78b04d9b38aacf05987c))
+- Address possible race condition when checking the last pong response to a ping ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/db422a77f0e7c6b1c58fd2b22ec24186dbed9b6c)) (thanks **Joey Muirhead**!)
+
 **Release 4.15.0** - 2026-10-27
 
 - Client: accept HTTP session factory function in the `http_session` argument [#10002](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/issues/10002) ([commit](https://code.miguelgrinberg.com/miguelgrinberg/python-engineio.git/commit/e50119d47eb4e219e50c2c683e5dfa6b41c694be))
